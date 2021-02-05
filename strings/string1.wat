@@ -45,7 +45,9 @@
 	(local $cpos i32)
 	(local.set $curLength (i32.load (local.get $strOff)))
 	(local.set $cpos (i32.const 0))
-	(call $C.print (i32.load8_u (local.get $strOff)))
+	(call $C.print (i32.const 34)) ;; double quote
+	(call $C.print (i32.load8_u (i32.add (i32.const 8) (local.get $strOff)) ))
+	(call $C.print (i32.const 34)) ;; double quote
   )
   (func $str.mk (result i32) ;; returns an offset
 	;; Strings start as an i32 curLength (0), 
@@ -66,10 +68,10 @@
 	(call $i32.print(local.get $Offset))
 	(local.set $curLength (i32.load (local.get $Offset)))
 	(local.set $maxLength (i32.load (i32.add (i32.const 4)(local.get $Offset))))
-	(i32.add (local.get $curLength) (i32.const 1)) 
-	(local.set $curLength) ;; length it will be
+	(i32.store8 (i32.add (i32.const 8)(i32.add (local.get $curLength)(local.get $Offset)))(local.get $C))
+	(local.set $curLength(i32.add (local.get $curLength) (i32.const 1)) ) ;; incr new length
+	(i32.store (local.get $Offset) (local.get $curLength))
 	(call $i32.print(local.get $curLength))
-	(i32.store (local.get $curLength)(local.get $Offset))
 	;; (if (result i32)
 	  ;; (i32.gt_u (local.get $maxLength)(local.get $curLength))
 	  ;; (then (i32.const 0))
@@ -87,10 +89,12 @@
 	(local.get $sp)
 	(call $i32.print)
 	;;(call $str.addChar (local.get $sp) (i32.add (i32.const 3) (global.get $zero)))
-	(call $str.addChar (local.get $sp) (i32.const 66))
-	;;(local.set $sp)
-	drop  ;; shouldn't have changed yet!!
+	(call $str.addChar (local.get $sp) (i32.const 66)) 
+	(local.set $sp)
+	(call $str.addChar (local.get $sp) (i32.const 67))
+	(local.set $sp)
 	(call $C.print (i32.const 67)) ;; 'C'
 	(call $str.print (local.get $sp))
+	(call $C.print (i32.const 68))
   )
 )
