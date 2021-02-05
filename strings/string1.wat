@@ -23,7 +23,7 @@
 	  (br_if $digitLoop (local.get $Ntemp))
 	)
 	(call $C.print (i32.const 10))  ;; linefeed
-	)
+  )
   (func $C.print (param $C i32)
 	;; iovs start at 200, buffer at 300
 	(i32.store (i32.const 200) (i32.const 300))
@@ -39,17 +39,25 @@
 		(i32.const 0) ;; length?
 	)
 	drop
-	)
+  )
   (func $str.print (param $strOff i32)
 	(local $curLength i32)
+	(local $cOff i32)
 	(local $cpos i32)
 	(local.set $curLength (i32.load (local.get $strOff)))
 	(local.set $cpos (i32.const 0))
 	(call $C.print (i32.const 34)) ;; double quote
-	(call $C.print (i32.load8_u (i32.add (i32.const 8) (local.get $strOff)) ))
-	(call $C.print (i32.load8_u (i32.add (i32.const 9) (local.get $strOff)) ))
-	(call $C.print (i32.load8_u (i32.add (i32.const 10) (local.get $strOff)) ))
+	(local.set $cOff (i32.add (local.get $strOff)(i32.const 8)))
+	(loop $cLoop
+	  (if (i32.lt_u (local.get $cpos)(local.get $curLength))
+		(then
+		 (i32.load8_u (i32.add (local.get $cOff)(local.get $cpos)))
+		 (call $C.print)   
+	     (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
+	     (br $cLoop)
+	)))
 	(call $C.print (i32.const 34)) ;; double quote
+ 	(call $C.print (i32.const 10))  ;; linefeed
   )
   (func $str.mk (result i32) ;; returns an offset
 	;; Strings start as an i32 curLength (0), 
@@ -63,41 +71,25 @@
 	;; increment by 4 again
 	(global.get $nextStrOff)(i32.const 4)(i32.add)(global.set $nextStrOff)
   )  
-
  (func $str.addChar (param $Offset i32)(param $C i32)(result i32) ;; returns an offset
 	(local $maxLength i32) (local $curLength i32)
-	(call $C.print (i32.const 69));; 'E'
-	(call $i32.print(local.get $Offset))
 	(local.set $curLength (i32.load (local.get $Offset)))
 	(local.set $maxLength (i32.load (i32.add (i32.const 4)(local.get $Offset))))
 	(i32.store8 (i32.add (i32.const 8)(i32.add (local.get $curLength)(local.get $Offset)))(local.get $C))
 	(local.set $curLength(i32.add (local.get $curLength) (i32.const 1)) ) ;; incr new length
 	(i32.store (local.get $Offset) (local.get $curLength))
-	(call $i32.print(local.get $curLength))
-	;; (if (result i32)
-	  ;; (i32.gt_u (local.get $maxLength)(local.get $curLength))
-	  ;; (then (i32.const 0))
-	  ;; (else (i32.const 0) )
-	;; )
-	;; drop
     (local.get $Offset)  ;; return same offset if it fits
-
-  )
-  
+  ) 
   (func $main (export "_start")
 	(local $sp i32)
 	(local.set $sp (call $str.mk))
-	(call $C.print (i32.const 65))  ;; 'A'
 	(local.get $sp)
 	(call $i32.print)
-	;;(call $str.addChar (local.get $sp) (i32.add (i32.const 3) (global.get $zero)))
-	(call $str.addChar (local.get $sp) (i32.const 66)) 
-	(local.set $sp)
+	(call $str.addChar (local.get $sp) (i32.const 65))(local.set $sp)
+	(call $str.addChar (local.get $sp) (i32.const 66))(local.set $sp)
 	(call $str.addChar (local.get $sp) (i32.const 67))(local.set $sp)
 	(call $str.addChar (local.get $sp) (i32.const 68))(local.set $sp)
-	
-	(call $C.print (i32.const 67)) ;; 'C'
+	(call $str.addChar (local.get $sp) (i32.const 69))(local.set $sp) ;;ERROR  overstepping allocated str mem
 	(call $str.print (local.get $sp))
-	(call $C.print (i32.const 68))
   )
 )
