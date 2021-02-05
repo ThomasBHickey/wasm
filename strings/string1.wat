@@ -47,6 +47,8 @@
 	(local.set $cpos (i32.const 0))
 	(call $C.print (i32.const 34)) ;; double quote
 	(call $C.print (i32.load8_u (i32.add (i32.const 8) (local.get $strOff)) ))
+	(call $C.print (i32.load8_u (i32.add (i32.const 9) (local.get $strOff)) ))
+	(call $C.print (i32.load8_u (i32.add (i32.const 10) (local.get $strOff)) ))
 	(call $C.print (i32.const 34)) ;; double quote
   )
   (func $str.mk (result i32) ;; returns an offset
@@ -91,8 +93,9 @@
 	;;(call $str.addChar (local.get $sp) (i32.add (i32.const 3) (global.get $zero)))
 	(call $str.addChar (local.get $sp) (i32.const 66)) 
 	(local.set $sp)
-	(call $str.addChar (local.get $sp) (i32.const 67))
-	(local.set $sp)
+	(call $str.addChar (local.get $sp) (i32.const 67))(local.set $sp)
+	(call $str.addChar (local.get $sp) (i32.const 68))(local.set $sp)
+	
 	(call $C.print (i32.const 67)) ;; 'C'
 	(call $str.print (local.get $sp))
 	(call $C.print (i32.const 68))
