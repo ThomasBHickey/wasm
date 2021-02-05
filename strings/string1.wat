@@ -53,31 +53,34 @@
 	;; increment by 4 again
 	(global.get $nextStrOff)(i32.const 4)(i32.add)(global.set $nextStrOff)
   )  
-  (func $str.addChar (param $C i32)(result i32) ;; returns offset
-	 (local.get $C)
-  )
- (func $addChar (param $Offset i32)(param $C i32)(result i32) ;; returns an offset
+
+ (func $str.addChar (param $Offset i32)(param $C i32)(result i32) ;; returns an offset
 	(local $maxLength i32) (local $curLength i32)
+	(call $C.print (i32.const 69));; 'E'
+	(call $i32.print(local.get $Offset))
 	(local.set $curLength (i32.load (local.get $Offset)))
 	(local.set $maxLength (i32.load (i32.add (i32.const 4)(local.get $Offset))))
 	(i32.add (local.get $curLength) (i32.const 1)) 
 	(local.set $curLength) ;; length it will be
-	(if (result i32)
-	  (i32.gt_u (local.get $maxLength)(local.get $curLength))
-	  (then (i32.const 0))
-	  (else (i32.const 0) )
-	)
-	drop
-    (global.get $nextStrOff)  ;; return if it fits
+	;; (if (result i32)
+	  ;; (i32.gt_u (local.get $maxLength)(local.get $curLength))
+	  ;; (then (i32.const 0))
+	  ;; (else (i32.const 0) )
+	;; )
+	;; drop
+    (local.get $Offset)  ;; return same offset if it fits
 
   )
   
   (func $main (export "_start")
 	(local $sp i32)
 	(local.set $sp (call $str.mk))
+	(call $C.print (i32.const 65))  ;; 'A'
 	(local.get $sp)
 	(call $i32.print)
-	(call $str.addChar (i32.add (i32.const 3) (global.get $zero)))
-	drop
+	;;(call $str.addChar (local.get $sp) (i32.add (i32.const 3) (global.get $zero)))
+	(call $str.addChar (local.get $sp) (i32.const 66))
+	(call $C.print (i32.const 67)) ;; 'C'
+	(call $i32.print)
   )
 )
