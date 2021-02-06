@@ -63,6 +63,9 @@
 	;; Strings start as an i32 curLength (0), 
 	;; an i32 maxLength (4), 4 byte data (empty)
 	;; 12 bytes total
+	;; As they grow beyond their allocation it doubles.
+	;; String operations return an offset into memory which
+	;; should be used, since it may be different than the one passed in
 	(global.get $nextStrOff) ;; this is the offset to return
 	(i32.store (global.get $nextStrOff) (i32.const 0)) ;; length=0
 	;; increment by 4
@@ -71,10 +74,13 @@
 	;; increment by 4 again
 	(global.get $nextStrOff)(i32.const 4)(i32.add)(global.set $nextStrOff)
   )  
- (func $str.addChar (param $Offset i32)(param $C i32)(result i32) ;; returns an offset
+ (func $str.catChar (param $Offset i32)(param $C i32)(result i32) ;; returns an offset
 	(local $maxLength i32) (local $curLength i32)
 	(local.set $curLength (i32.load (local.get $Offset)))
 	(local.set $maxLength (i32.load (i32.add (i32.const 4)(local.get $Offset))))
+	(if (i32.gte (local.get $curLength) (local.get $maxLength))
+		
+	)
 	(i32.store8 (i32.add (i32.const 8)(i32.add (local.get $curLength)(local.get $Offset)))(local.get $C))
 	(local.set $curLength(i32.add (local.get $curLength) (i32.const 1)) ) ;; incr new length
 	(i32.store (local.get $Offset) (local.get $curLength))
@@ -85,11 +91,11 @@
 	(local.set $sp (call $str.mk))
 	(local.get $sp)
 	(call $i32.print)
-	(call $str.addChar (local.get $sp) (i32.const 65))(local.set $sp)
-	(call $str.addChar (local.get $sp) (i32.const 66))(local.set $sp)
-	(call $str.addChar (local.get $sp) (i32.const 67))(local.set $sp)
-	(call $str.addChar (local.get $sp) (i32.const 68))(local.set $sp)
-	(call $str.addChar (local.get $sp) (i32.const 69))(local.set $sp) ;;ERROR  overstepping allocated str mem
+	(call $str.catChar (local.get $sp) (i32.const 65))(local.set $sp)
+	(call $str.catChar (local.get $sp) (i32.const 66))(local.set $sp)
+	(call $str.catChar (local.get $sp) (i32.const 67))(local.set $sp)
+	(call $str.catChar (local.get $sp) (i32.const 68))(local.set $sp)
+	(call $str.catChar (local.get $sp) (i32.const 69))(local.set $sp) ;;ERROR  overstepping allocated str mem
 	(call $str.print (local.get $sp))
   )
 )
