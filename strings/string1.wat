@@ -40,18 +40,18 @@
 	)
 	drop
   )
-  (func $str.print (param $strOff i32)
+  (func $str.print (param $strOffset i32)
 	(local $curLength i32)
-	(local $cOff i32)
-	(local $cpos i32)
-	(local.set $curLength (i32.load (local.get $strOff)))
+	(local $dataOffset i32)  ;; offset to string data
+	(local $cpos i32)  ;; steps through character positions
+	(local.set $curLength (i32.load (local.get $strOffset)))
 	(local.set $cpos (i32.const 0))
 	(call $C.print (i32.const 34)) ;; double quote
-	(local.set $cOff (i32.add (local.get $strOff)(i32.const 8)))
+	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $strOffset))))
 	(loop $cLoop
 	  (if (i32.lt_u (local.get $cpos)(local.get $curLength))
 		(then
-		 (i32.load8_u (i32.add (local.get $cOff)(local.get $cpos)))
+		 (i32.load8_u (i32.add (local.get $dataOffset)(local.get $cpos)))
 		 (call $C.print)   
 	     (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
 	     (br $cLoop)
@@ -61,31 +61,33 @@
   )
   (func $str.mk (result i32) ;; returns an offset as string pointer
 	;; Strings start as an i32 curLength (0), 
-	;; an i32 maxLength (4), an i32 offset to the data
+	;; an i32 maxLength (4), an i32 offset to the data,
 	;; (initially a 4 byte chunk)
-	;; 16 bytes total minimum/string
+	;; 16 bytes total minimum/string: curLen, maxLen, data offset, 4 data bytes
 	;; As they grow beyond their allocation it doubles.
 	;; An offset into memory serves as a string pointer
+	;; !!!Right now the assumption is the characters are 7-bit safe!!!
 
-	(global.get $nextStrOff) ;; this is the offset that gets returned
 	(i32.store (global.get $nextStrOff) (i32.const 0)) ;; length=0
-	;; increment by 4
-	(global.get $nextStrOff)(i32.const 4)(i32.add)(global.set $nextStrOff)
-	(i32.store (global.get $nextStrOff) (i32.const 4))  ;; 4 bytes allocated for string data
-	;; increment by 4 again
-	(global.get $nextStrOff)(i32.const 4)(i32.add)(global.set $nextStrOff)
+	(i32.store (i32.add (global.get $nextStrOff)(i32.const 4))(i32.const 4));;4 bytes allocated
+	(i32.store 
+		(i32.add (global.get $nextStrOff)(i32.const 8))
+		(i32.add (global.get $nextStrOff)(i32.const 12))) ;; offset to initial data
+	;; increment $nextStrOff over 16 bytes 
+	(global.get $nextStrOff) ;; this is the offset that gets returned
+	(global.set $nextStrOff (i32.add (global.get $nextStrOff)(i32.const 16)))
+	;; return old $nextStrOff sitting on the stack
   )  
  (func $str.catChar (param $Offset i32)(param $C i32)
-	(local $maxLength i32) (local $curLength i32)
+	(local $maxLength i32) (local $curLength i32) (local $dataOffset i32)
 	(local.set $curLength (i32.load (local.get $Offset)))
 	(local.set $maxLength (i32.load (i32.add (i32.const 4)(local.get $Offset))))
+	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $Offset))))
 	;; (if (i32.gte (local.get $curLength) (local.get $maxLength))
-		
+		;; handle reallocation!
 	;; )
-	(i32.store8 (i32.add (i32.const 8)(i32.add (local.get $curLength)(local.get $Offset)))(local.get $C))
-	(local.set $curLength(i32.add (local.get $curLength) (i32.const 1)) ) ;; incr new length
-	(i32.store (local.get $Offset) (local.get $curLength))
-    ;;(local.get $Offset)  ;; return same offset if it fits
+	(i32.store8 (i32.add (local.get $curLength)(local.get $dataOffset))(local.get $C)) 
+	(i32.store (local.get $Offset) (i32.add (local.get $curLength)(i32.const 1)));; new length
   ) 
   (func $main (export "_start")
 	(local $sp i32)
