@@ -77,15 +77,37 @@
 	(global.get $nextStrOff) ;; this is the offset that gets returned
 	(global.set $nextStrOff (i32.add (global.get $nextStrOff)(i32.const 16)))
 	;; return old $nextStrOff sitting on the stack
-  )  
- (func $str.catChar (param $Offset i32)(param $C i32)
+  )
+ (func $str.extend(param $Offset i32)
+	;; double the space available for characters
+	;; move old data into new data
+	;; update maxLength and data offset
 	(local $maxLength i32) (local $curLength i32) (local $dataOffset i32)
+	(local $newMaxLength i32) (local $newDataOffset i32)
 	(local.set $curLength (i32.load (local.get $Offset)))
 	(local.set $maxLength (i32.load (i32.add (i32.const 4)(local.get $Offset))))
 	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $Offset))))
-	;; (if (i32.gte (local.get $curLength) (local.get $maxLength))
-		;; handle reallocation!
-	;; )
+	(local.set $newMaxLength (i32.mul (local.get $maxLength)(i32.const 2)))
+	(local.set $newDataOffset (global.get $nextStrOff))
+	(global.set $nextStrOff (i32.add (global.get $nextStrOff)(local.get $newMaxLength)))
+	(i32.store (i32.add (local.get $Offset)(i32.const 4))(local.get $newMaxLength))
+	(i32.store (i32.add (local.get $Offset)(i32.const 8))(local.get $newDataOffset))
+ 	(call $C.print (i32.const 70))
+)
+ (func $str.catChar (param $Offset i32)(param $C i32)
+	(local $maxLength i32) (local $curLength i32) (local $dataOffset i32)
+	(local.set $curLength (i32.load (local.get $Offset)))
+	(local.set $maxLength (i32.load (i32.add (local.get $Offset)(i32.const 8))))
+	(call $i32.print(local.get $maxLength))
+	(if (i32.ge_u (local.get $curLength) (local.get $maxLength))
+		;;handle reallocation!
+		(then
+		  (call $str.extend (local.get $Offset))
+		  (local.set $maxLength (i32.load (i32.add (i32.const 4)(local.get $Offset))))
+		  (local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $Offset))))
+		  (call $i32.print (local.get $maxLength))
+		  )
+	)
 	(i32.store8 (i32.add (local.get $curLength)(local.get $dataOffset))(local.get $C)) 
 	(i32.store (local.get $Offset) (i32.add (local.get $curLength)(i32.const 1)));; new length
   ) 
