@@ -9,6 +9,10 @@
   
   (memory 1)
   (export "memory" (memory 0))
+  (data (i32.const 128) "Hello World\00") ;; null not part of string
+  
+  (func $plus1 (param $v i32)(result i32)
+   (i32.add (local.get $v)(i32.const 1)))
 
   (func $i32.print (param $N i32)
 	(local $Ntemp i32)
@@ -40,12 +44,32 @@
 	)
 	drop
   )
+  (func $str.mkdata (param $dataOffset i32) (result i32)
+	;; Make a string from null-terminated chunk of memory
+	;; null terminator not counted as part of string
+	(local $length i32) (local $curByte i32)
+	(local.set $length (i32.const 0))
+	(loop $cLoop
+		(local.set $curByte (i32.load8_u (i32.add (local.get $length)(local.get $dataOffset))))
+		(if (i32.ne (i32.const 0)(local.get $curByte)) ;; checking for null
+		  (then
+		    (local.set $length (i32.add (local.get $length)(i32.const 1)))
+			(br $cLoop)
+		  )
+		)
+	)
+	(global.get $nextStrOff) ;; this gets returned
+	(i32.store (global.get $nextStrOff) (local.get $length))  ;; cur length
+	(i32.store (i32.add (global.get $nextStrOff)(i32.const 4)) (local.get $length));; maxLength
+	(i32.store (i32.add (global.get $nextStrOff)(i32.const 8)) (local.get $dataOffset))
+	(global.set $nextStrOff (i32.add (global.get $nextStrOff)(i32.const 12)))
+  )
+
   (func $str.print (param $strOffset i32)
 	(local $curLength i32)
 	(local $dataOffset i32)  ;; offset to string data
 	(local $cpos i32)  ;; steps through character positions
 	(local.set $curLength (i32.load (local.get $strOffset)))
-	;;(call $i32.print (local.get $curLength))
 	(local.set $cpos (i32.const 0))
 	(call $C.print (i32.const 34)) ;; double quote
 	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $strOffset))))
@@ -132,8 +156,8 @@
   ) 
   (func $main (export "_start")
 	(local $sp i32)
+	(call $str.print (call $str.mkdata (i32.const 128)))
 	(local.set $sp (call $str.mk))
-	;;(local.get $sp)	(call $i32.print)
 	(call $str.catChar (local.get $sp) (i32.const 65))
 	(call $str.catChar (local.get $sp) (i32.const 66))
 	(call $str.catChar (local.get $sp) (i32.const 67))
