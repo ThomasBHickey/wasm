@@ -138,8 +138,8 @@
 	(call $str.catChar (local.get $sp) (i32.const 66))
 	(call $str.catChar (local.get $sp) (i32.const 67))
 	(call $str.catChar (local.get $sp) (i32.const 68))
-	(call $str.catChar (local.get $sp) (i32.const 69));;ERROR  overstepping allocated str mem
-	(call $str.catChar (local.get $sp) (i32.const 70));;ERROR  overstepping allocated str mem
+	(call $str.catChar (local.get $sp) (i32.const 69))
+	(call $str.catChar (local.get $sp) (i32.const 70))
 	(call $str.print (local.get $sp))
   )
 )
