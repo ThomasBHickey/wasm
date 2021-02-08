@@ -1,5 +1,5 @@
-# wasm
-WebAssembly explorations
+# Hand Written WebAssembly (Wasm)
+Exploring hand written WebAssembly
 
 An interest in minimal systems makes WebAssembly an attractive system
 to explore.  That it appears to be rapidly becoming essential to the Web
