@@ -18,7 +18,7 @@ The next project might be implementing Schorre's Meta II compiler
 manipulation system.
 
 My approach is to to do as much in WebAssembly as possible.  Currently the code's
-external calls are to fd_read and fd_write as supported by bytecodealliance/wasmtime.
+external calls are to fd_read and fd_write as supported by github.com/bytecodealliance/wasmtime.
 In addition to wasmtime I find it helpful to use WebAssembly/wabt/wat2wasm since
 it often gives more informative diagnotics than wasmtime.  Other than that, it's
 just me and a text editor.  Once I managed to print a single character, and then
