@@ -45,6 +45,25 @@
 	)
 	drop
   )
+  (func $str.curLen (param $strOff i32)(result i32)
+	(i32.load (local.get $strOff))
+  )
+  (func $str.maxLen (param $strOff i32)(result i32)
+	(i32.load (i32.add (local.get $strOff)(i32.const 4)))
+  )
+  (func $str.dataOff (param $strOff i32)(result i32)
+	(i32.load (i32.add (local.get $strOff)(i32.const 8)))
+  )
+  (func $str.Rev (param $strOff i32)
+	(local $head i32)(local $tail i32)(local $dataOff i32)
+	(local.set $head (call $str.dataOff (local.get $strOff)))
+	(local.set $tail (i32.sub (i32.add (local.get $head)(call $str.curLen(local.get $strOff)))
+						(i32.const 1)))
+	(local.set $dataOff (call $str.dataOff(local.get $strOff)))
+  )
+  (func $str.getChar (param $strOff i32) (param $charPos i32)
+	
+  )
   (func $str.mkdata (param $dataOffset i32) (result i32)
 	;; Make a string from null-terminated chunk of memory
 	;; null terminator is not counted as part of string
