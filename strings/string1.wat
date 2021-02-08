@@ -1,8 +1,9 @@
+;; run via "wasmtime string1.wat" 
+;; or "wasmtime string1.wasm" if it has been compiled by wasm2wat
+;; (wasmtime recognizes the func exported as "_start")
 (module
-  (import "wasi_unstable" "fd_read" 
-    (func $fd_read (param i32 i32 i32 i32) (result i32)))
-  (import "wasi_unstable" "fd_write" 
-    (func $fd_write (param i32 i32 i32 i32) (result i32)))
+  (import "wasi_unstable" "fd_read"  (func $fd_read (param i32 i32 i32 i32)  (result i32)))
+  (import "wasi_unstable" "fd_write" (func $fd_write (param i32 i32 i32 i32) (result i32)))
 
   (global $nextStrOff (mut i32) (i32.const 1024))
   (global $zero i32 (i32.const 48))
@@ -12,9 +13,9 @@
   (data (i32.const 128) "Hello World\00") ;; null not part of string
   
   (func $plus1 (param $v i32)(result i32)
-   (i32.add (local.get $v)(i32.const 1)))
-
-  (func $i32.print (param $N i32)
+   (i32.add (local.get $v)(i32.const 1))
+  )
+  (func $i32.print (param $N i32) ;; !Prints the digits backwards!
 	(local $Ntemp i32)
 	(local.set $Ntemp (local.get $N))
 	(loop $digitLoop
@@ -46,7 +47,7 @@
   )
   (func $str.mkdata (param $dataOffset i32) (result i32)
 	;; Make a string from null-terminated chunk of memory
-	;; null terminator not counted as part of string
+	;; null terminator is not counted as part of string
 	(local $length i32) (local $curByte i32)
 	(local.set $length (i32.const 0))
 	(loop $cLoop
@@ -64,7 +65,6 @@
 	(i32.store (i32.add (global.get $nextStrOff)(i32.const 8)) (local.get $dataOffset))
 	(global.set $nextStrOff (i32.add (global.get $nextStrOff)(i32.const 12)))
   )
-
   (func $str.print (param $strOffset i32)
 	(local $curLength i32)
 	(local $dataOffset i32)  ;; offset to string data
@@ -105,7 +105,7 @@
 	(global.set $nextStrOff (i32.add (global.get $nextStrOff)(i32.const 16)))
 	;; return old $nextStrOff sitting on the stack
   )
- (func $str.extend(param $Offset i32)
+  (func $str.extend(param $Offset i32)
 	;; double the space available for characters
 	;; move old data into new data
 	;; update maxLength and data offset
@@ -136,8 +136,8 @@
 		(br_if $wordLoop (i32.lt_u (local.get $wordPos)(local.get $wordCount)))
 	)
  	;;(call $C.print (i32.const 70))
-)
- (func $str.catChar (param $Offset i32)(param $C i32)
+  )
+  (func $str.catChar (param $Offset i32)(param $C i32)
 	(local $maxLength i32) (local $curLength i32) (local $dataOffset i32)
 	(local.set $curLength (i32.load (local.get $Offset)))
 	(local.set $maxLength (i32.load (i32.add (local.get $Offset)(i32.const 4))))
