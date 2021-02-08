@@ -26,4 +26,4 @@ function to print a character to the console, then an i32, and from there
 some useful string routines.  No Rust or Javascript involved from my point
 of view.
 
-So far, string1.wat has a few minimal string functions to create and display strings.
+So far, strings/string1.wat has a few minimal string functions to create and display strings.
