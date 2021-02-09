@@ -54,15 +54,29 @@
   (func $str.dataOff (param $strOff i32)(result i32)
 	(i32.load (i32.add (local.get $strOff)(i32.const 8)))
   )
-  (func $str.Rev (param $strOff i32)
-	(local $head i32)(local $tail i32)(local $dataOff i32)
-	(local.set $head (call $str.dataOff (local.get $strOff)))
-	(local.set $tail (i32.sub (i32.add (local.get $head)(call $str.curLen(local.get $strOff)))
-						(i32.const 1)))
-	(local.set $dataOff (call $str.dataOff(local.get $strOff)))
+  (func $str.Rev (param $strPtr i32)
+	;; Returns a new string with reverse characters
+	(local $cpos i32)(local $curLen i32)(local $revStrPtr i32)(local $curChar i32)
+	(local.set $revStrPtr (call $str.mk))
+	(local.set $cpos (i32.const 0))
+	(local.set $curLen (call $str.curLen(local.get $strPtr)))
+	(loop $cloop
+	  (if (i32.lt_u (local.get $cpos)(local.get $curLen))
+		(then
+			(local.set $curChar (call $str.getChar (local.get $strPtr)(local.get $cpos)))
+			(call $str.LcatChar (local.get $revStrPtr)(local.get $curChar))
+		)
+	  )
+	)
   )
-  (func $str.getChar (param $strOff i32) (param $charPos i32)
-	
+  ;; how to show an error beyond returning null?
+  (func $str.getChar (param $strOff i32) (param $charPos i32)(result i32)
+	(if (result i32) (i32.lt_u (local.get $charPos)(call $str.curLen (local.get $strOff)) )
+	  (then
+		(i32.load8_u (i32.add (call $str.dataOff (local.get $strOff))(local.get $charPos)))
+	  )
+	  (else (i32.const 0))
+	)
   )
   (func $str.mkdata (param $dataOffset i32) (result i32)
 	;; Make a string from null-terminated chunk of memory
@@ -173,6 +187,23 @@
 	(i32.store8 (i32.add (local.get $curLength)(local.get $dataOffset))(local.get $C)) 
 	(i32.store (local.get $Offset) (i32.add (local.get $curLength)(i32.const 1)));; new length
   ) 
+  ;; Add a character to beginning of a string
+  ;; Not multibyte character safe
+  (func $str.LcatChar (param $strPtr i32)(param $Lchar i32)
+	(local $cpos i32)(local $dataOff i32)(local $curC i32)
+	;; first make room for the new character (should work for multibyte characters)
+	;; tack it on at the end (it will get overwritten)
+	(local.set $cpos (call $str.curLen (local.get $strPtr))) ;; new length -1
+	(call $str.catChar (local.get $strPtr)(local.get $Lchar))
+	(local.set $dataOff (call $str.dataOff (local.get $strPtr)))
+	(loop $cloop
+		(i32.store8 (i32.add (local.get $dataOff)(local.get $cpos))
+			(i32.load8_u (i32.sub (i32.add (local.get $dataOff)(local.get $cpos))(i32.const 1))))
+		(local.set $cpos (i32.sub (local.get $cpos)(i32.const 1)))
+		(br_if $cloop (local.get $cpos))
+	)
+	(i32.store8 (local.get $dataOff)(local.get $Lchar))
+  )
   (func $main (export "_start")
 	(local $sp i32)
 	(call $str.print (call $str.mkdata (i32.const 128)))
@@ -183,6 +214,8 @@
 	(call $str.catChar (local.get $sp) (i32.const 68))
 	(call $str.catChar (local.get $sp) (i32.const 69))
 	(call $str.catChar (local.get $sp) (i32.const 70))
+	(call $str.print (local.get $sp))
+	(call $str.LcatChar (local.get $sp) (i32.const 71))
 	(call $str.print (local.get $sp))
   )
 )
