@@ -5,7 +5,7 @@
   (import "wasi_unstable" "fd_read"  (func $fd_read (param i32 i32 i32 i32)  (result i32)))
   (import "wasi_unstable" "fd_write" (func $fd_write (param i32 i32 i32 i32) (result i32)))
 
-  (global $nextStrOff (mut i32) (i32.const 1024))
+  (global $nextstrPtr (mut i32) (i32.const 1024))
   (global $zero i32 (i32.const 48))
   
   (memory 1)
@@ -45,35 +45,39 @@
 	)
 	drop
   )
-  (func $str.curLen (param $strOff i32)(result i32)
-	(i32.load (local.get $strOff))
+  (func $str.curLen (param $strPtr i32)(result i32)
+	(i32.load (local.get $strPtr))
   )
-  (func $str.maxLen (param $strOff i32)(result i32)
-	(i32.load (i32.add (local.get $strOff)(i32.const 4)))
+  (func $str.maxLen (param $strPtr i32)(result i32)
+	(i32.load (i32.add (local.get $strPtr)(i32.const 4)))
   )
-  (func $str.dataOff (param $strOff i32)(result i32)
-	(i32.load (i32.add (local.get $strOff)(i32.const 8)))
+  (func $str.dataOff (param $strPtr i32)(result i32)
+	(i32.load (i32.add (local.get $strPtr)(i32.const 8)))
   )
-  (func $str.Rev (param $strPtr i32)
+  (func $str.Rev (param $strPtr i32)(result i32)
 	;; Returns a new string with reverse characters
 	(local $cpos i32)(local $curLen i32)(local $revStrPtr i32)(local $curChar i32)
 	(local.set $revStrPtr (call $str.mk))
 	(local.set $cpos (i32.const 0))
 	(local.set $curLen (call $str.curLen(local.get $strPtr)))
+	(call $C.print (i32.const 35))(call $i32.print (local.get $curLen))
 	(loop $cloop
 	  (if (i32.lt_u (local.get $cpos)(local.get $curLen))
 		(then
+			(call $C.print (i32.const 36))(call $i32.print (local.get $cpos))
 			(local.set $curChar (call $str.getChar (local.get $strPtr)(local.get $cpos)))
 			(call $str.LcatChar (local.get $revStrPtr)(local.get $curChar))
+			(local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
 		)
 	  )
 	)
+	(local.get $revStrPtr)
   )
   ;; how to show an error beyond returning null?
-  (func $str.getChar (param $strOff i32) (param $charPos i32)(result i32)
-	(if (result i32) (i32.lt_u (local.get $charPos)(call $str.curLen (local.get $strOff)) )
+  (func $str.getChar (param $strPtr i32) (param $charPos i32)(result i32)
+	(if (result i32) (i32.lt_u (local.get $charPos)(call $str.curLen (local.get $strPtr)) )
 	  (then
-		(i32.load8_u (i32.add (call $str.dataOff (local.get $strOff))(local.get $charPos)))
+		(i32.load8_u (i32.add (call $str.dataOff (local.get $strPtr))(local.get $charPos)))
 	  )
 	  (else (i32.const 0))
 	)
@@ -92,20 +96,20 @@
 		  )
 		)
 	)
-	(global.get $nextStrOff) ;; this gets returned
-	(i32.store (global.get $nextStrOff) (local.get $length))  ;; cur length
-	(i32.store (i32.add (global.get $nextStrOff)(i32.const 4)) (local.get $length));; maxLength
-	(i32.store (i32.add (global.get $nextStrOff)(i32.const 8)) (local.get $dataOffset))
-	(global.set $nextStrOff (i32.add (global.get $nextStrOff)(i32.const 12)))
+	(global.get $nextstrPtr) ;; this gets returned
+	(i32.store (global.get $nextstrPtr) (local.get $length))  ;; cur length
+	(i32.store (i32.add (global.get $nextstrPtr)(i32.const 4)) (local.get $length));; maxLength
+	(i32.store (i32.add (global.get $nextstrPtr)(i32.const 8)) (local.get $dataOffset))
+	(global.set $nextstrPtr (i32.add (global.get $nextstrPtr)(i32.const 12)))
   )
-  (func $str.print (param $strOffset i32)
+  (func $str.print (param $strPtrset i32)
 	(local $curLength i32)
 	(local $dataOffset i32)  ;; offset to string data
 	(local $cpos i32)  ;; steps through character positions
-	(local.set $curLength (i32.load (local.get $strOffset)))
+	(local.set $curLength (i32.load (local.get $strPtrset)))
 	(local.set $cpos (i32.const 0))
 	(call $C.print (i32.const 34)) ;; double quote
-	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $strOffset))))
+	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $strPtrset))))
 	(loop $cLoop
 	  (if (i32.lt_u (local.get $cpos)(local.get $curLength))
 		(then
@@ -128,15 +132,15 @@
 	;; Code assumes that the maxLength starts at 4 (for i32 alignment and doubling)
 	;; !!!Right now (2021-02-05) the assumption is the characters are 7-bit safe!!!
 
-	(i32.store (global.get $nextStrOff) (i32.const 0)) ;; length=0
-	(i32.store (i32.add (global.get $nextStrOff)(i32.const 4))(i32.const 4));;4 bytes allocated
+	(i32.store (global.get $nextstrPtr) (i32.const 0)) ;; length=0
+	(i32.store (i32.add (global.get $nextstrPtr)(i32.const 4))(i32.const 4));;4 bytes allocated
 	(i32.store 
-		(i32.add (global.get $nextStrOff)(i32.const 8))
-		(i32.add (global.get $nextStrOff)(i32.const 12))) ;; offset to initial data
-	;; increment $nextStrOff over 16 bytes 
-	(global.get $nextStrOff) ;; this is the offset that gets returned
-	(global.set $nextStrOff (i32.add (global.get $nextStrOff)(i32.const 16)))
-	;; return old $nextStrOff sitting on the stack
+		(i32.add (global.get $nextstrPtr)(i32.const 8))
+		(i32.add (global.get $nextstrPtr)(i32.const 12))) ;; offset to initial data
+	;; increment $nextstrPtr over 16 bytes 
+	(global.get $nextstrPtr) ;; this is the offset that gets returned
+	(global.set $nextstrPtr (i32.add (global.get $nextstrPtr)(i32.const 16)))
+	;; return old $nextstrPtr sitting on the stack
   )
   (func $str.extend(param $Offset i32)
 	;; double the space available for characters
@@ -151,8 +155,8 @@
 	(local.set $maxLength (i32.load (i32.add (i32.const 4)(local.get $Offset))))
 	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $Offset))))
 	(local.set $newMaxLength (i32.mul (local.get $maxLength)(i32.const 2)))
-	(local.set $newDataOffset (global.get $nextStrOff))
-	(global.set $nextStrOff (i32.add (global.get $nextStrOff)(local.get $newMaxLength)))
+	(local.set $newDataOffset (global.get $nextstrPtr))
+	(global.set $nextstrPtr (i32.add (global.get $nextstrPtr)(local.get $newMaxLength)))
 	(i32.store (i32.add (local.get $Offset)(i32.const 4))(local.get $newMaxLength))
 	(i32.store (i32.add (local.get $Offset)(i32.const 8))(local.get $newDataOffset))
 	;; now move old data into the new space, i32 at a time
@@ -217,5 +221,6 @@
 	(call $str.print (local.get $sp))
 	(call $str.LcatChar (local.get $sp) (i32.const 71))
 	(call $str.print (local.get $sp))
+	(call $str.print (call $str.Rev (local.get $sp)))
   )
 )
