@@ -10,12 +10,13 @@
   
   (memory 1)
   (export "memory" (memory 0))
-  (data (i32.const 128) "Hello World\00") ;; null not part of string
+  (data (i32.const 128) "Hello\00") ;; null not part of string
   
   (func $plus1 (param $v i32)(result i32)
    (i32.add (local.get $v)(i32.const 1))
   )
-  (func $i32.print (param $N i32) ;; !Prints the digits backwards!
+  ;; Doesn't understand negative numbers!
+  (func $i32.print1 (param $N i32) ;; !Prints the digits backwards!
 	(local $Ntemp i32)
 	(local.set $Ntemp (local.get $N))
 	(loop $digitLoop
@@ -28,6 +29,22 @@
 	  (br_if $digitLoop (local.get $Ntemp))
 	)
 	(call $C.print (i32.const 10))  ;; linefeed
+  )
+  ;; Doesn't understand negative numbers
+  (func $i32.print (param $N i32)
+	(local $Ntemp i32)(local $sptr i32)
+	(local.set $sptr (call $str.mk))
+	(local.set $Ntemp (local.get $N))
+	(loop $digitLoop
+	  (call $str.LcatChar (local.get $sptr)
+		(i32.add
+		  (i32.rem_u (local.get $Ntemp)(i32.const 10))
+			(global.get $zero)))
+	  (i32.div_s (local.get $Ntemp)(i32.const 10))
+	  (local.set $Ntemp)
+	  (br_if $digitLoop (local.get $Ntemp))
+	)
+	(call $str.print (local.get $sptr))
   )
   (func $C.print (param $C i32)
 	;; iovs start at 200, buffer at 300
@@ -60,16 +77,17 @@
 	(local.set $revStrPtr (call $str.mk))
 	(local.set $cpos (i32.const 0))
 	(local.set $curLen (call $str.curLen(local.get $strPtr)))
-	(call $C.print (i32.const 35))(call $i32.print (local.get $curLen))
+	;;(call $C.print (i32.const 35))(call $i32.print1 (local.get $curLen)) ;; '#'
 	(loop $cloop
 	  (if (i32.lt_u (local.get $cpos)(local.get $curLen))
 		(then
-			(call $C.print (i32.const 36))(call $i32.print (local.get $cpos))
+			;;(call $C.print (i32.const 36))(call $i32.print1 (local.get $cpos)) ;; '$'
 			(local.set $curChar (call $str.getChar (local.get $strPtr)(local.get $cpos)))
 			(call $str.LcatChar (local.get $revStrPtr)(local.get $curChar))
 			(local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
 		)
 	  )
+	  (br_if $cloop (i32.lt_u (local.get $cpos)(local.get $curLen)))
 	)
 	(local.get $revStrPtr)
   )
@@ -102,14 +120,14 @@
 	(i32.store (i32.add (global.get $nextstrPtr)(i32.const 8)) (local.get $dataOffset))
 	(global.set $nextstrPtr (i32.add (global.get $nextstrPtr)(i32.const 12)))
   )
-  (func $str.print (param $strPtrset i32)
+  (func $str.print (param $strPtr i32)
 	(local $curLength i32)
 	(local $dataOffset i32)  ;; offset to string data
 	(local $cpos i32)  ;; steps through character positions
-	(local.set $curLength (i32.load (local.get $strPtrset)))
+	(local.set $curLength (i32.load (local.get $strPtr)))
 	(local.set $cpos (i32.const 0))
 	(call $C.print (i32.const 34)) ;; double quote
-	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $strPtrset))))
+	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $strPtr))))
 	(loop $cLoop
 	  (if (i32.lt_u (local.get $cpos)(local.get $curLength))
 		(then
@@ -197,30 +215,38 @@
 	(local $cpos i32)(local $dataOff i32)(local $curC i32)
 	;; first make room for the new character (should work for multibyte characters)
 	;; tack it on at the end (it will get overwritten)
-	(local.set $cpos (call $str.curLen (local.get $strPtr))) ;; new length -1
+	(local.set $cpos (call $str.curLen (local.get $strPtr)))
+	;;(call $C.print (i32.const 33))(call $i32.print1 (local.get $cpos));; '!'
 	(call $str.catChar (local.get $strPtr)(local.get $Lchar))
+	;;(call $C.print (i32.const 94))(call $str.print (local.get $strPtr)) ;; '^'
+	;;(call $C.print (i32.const 91))(call $C.print (local.get $Lchar))  ;; '['
 	(local.set $dataOff (call $str.dataOff (local.get $strPtr)))
+	;;(call $C.print (i32.const 37))(call $i32.print1 (local.get $dataOff)) ;; '%'
 	(loop $cloop
+		;;(call $C.print (i32.const 38))(call $i32.print1 (local.get $cpos)) ;; '&'
 		(i32.store8 (i32.add (local.get $dataOff)(local.get $cpos))
 			(i32.load8_u (i32.sub (i32.add (local.get $dataOff)(local.get $cpos))(i32.const 1))))
 		(local.set $cpos (i32.sub (local.get $cpos)(i32.const 1)))
-		(br_if $cloop (local.get $cpos))
+		(br_if $cloop (i32.gt_s (local.get $cpos)(i32.const 0)))
 	)
 	(i32.store8 (local.get $dataOff)(local.get $Lchar))
   )
   (func $main (export "_start")
-	(local $sp i32)
-	(call $str.print (call $str.mkdata (i32.const 128)))
-	(local.set $sp (call $str.mk))
-	(call $str.catChar (local.get $sp) (i32.const 65))
-	(call $str.catChar (local.get $sp) (i32.const 66))
-	(call $str.catChar (local.get $sp) (i32.const 67))
-	(call $str.catChar (local.get $sp) (i32.const 68))
-	(call $str.catChar (local.get $sp) (i32.const 69))
-	(call $str.catChar (local.get $sp) (i32.const 70))
+	(local $sp i32)(local $rsp i32)
+	;;(call $i32.print (i32.const -1))
+	(local.set $sp (call $str.mkdata (i32.const 128)))
 	(call $str.print (local.get $sp))
-	(call $str.LcatChar (local.get $sp) (i32.const 71))
-	(call $str.print (local.get $sp))
-	(call $str.print (call $str.Rev (local.get $sp)))
+	(local.set $rsp (call $str.Rev (local.get $sp)))
+	(call $str.print (local.get $rsp))
+	;;(local.set $sp (call $str.mk))
+	;; (call $str.catChar (local.get $sp) (i32.const 65))
+	;; (call $str.catChar (local.get $sp) (i32.const 66))
+	;; (call $str.catChar (local.get $sp) (i32.const 67))
+	;; (call $str.catChar (local.get $sp) (i32.const 68))
+	;; (call $str.catChar (local.get $sp) (i32.const 69))
+	;; (call $str.catChar (local.get $sp) (i32.const 70))
+	;; (call $str.print (local.get $sp))
+	;; (call $str.LcatChar (local.get $sp) (i32.const 71))
+	;; (call $str.print (local.get $sp))
   )
 )
