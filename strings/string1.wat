@@ -12,9 +12,8 @@
   (export "memory" (memory 0))
   (data (i32.const 128) "Hello\00") ;; null not part of string
   
-  (func $plus1 (param $v i32)(result i32)
-   (i32.add (local.get $v)(i32.const 1))
-  )
+  (func $plus1 (param $v i32)(result i32)(i32.add (local.get $v)(i32.const 1)))
+  
   ;; Doesn't understand negative numbers!
   (func $i32.print1 (param $N i32) ;; !Prints the digits backwards!
 	(local $Ntemp i32)
@@ -65,6 +64,9 @@
   (func $str.curLen (param $strPtr i32)(result i32)
 	(i32.load (local.get $strPtr))
   )
+  (func $str.setCurLen(param $strPtr)(param $newLen i32)
+	(i32.store (local.get $strPr) (local.get $newLen))
+  )
   (func $str.maxLen (param $strPtr i32)(result i32)
 	(i32.load (i32.add (local.get $strPtr)(i32.const 4)))
   )
@@ -103,6 +105,7 @@
   (func $str.mkdata (param $dataOffset i32) (result i32)
 	;; Make a string from null-terminated chunk of memory
 	;; null terminator is not counted as part of string
+	;; maxLen might not be a power of 2--makes a difference in extending space
 	(local $length i32) (local $curByte i32)
 	(local.set $length (i32.const 0))
 	(loop $cLoop
@@ -160,37 +163,49 @@
 	(global.set $nextstrPtr (i32.add (global.get $nextstrPtr)(i32.const 16)))
 	;; return old $nextstrPtr sitting on the stack
   )
-  (func $str.extend(param $Offset i32)
+  (func $str.extend(param $strPtr i32)
 	;; double the space available for characters
 	;; move old data into new data
 	;; update maxLength and data offset
 	;; old space is abandoned, but future optimization could recognize
 	;; if new space is adjacent and avoid moving old data
 	(local $maxLength i32) (local $curLength i32) (local $dataOffset i32)
-	(local $newMaxLength i32) (local $newDataOffset i32)
-	(local $wordPos i32) (local $wordCount i32)
-	(local.set $curLength (i32.load (local.get $Offset)))
-	(local.set $maxLength (i32.load (i32.add (i32.const 4)(local.get $Offset))))
-	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $Offset))))
+	(local $newMaxLength i32) (local $newDataOffset i32)(local $newSptr i32)
+	(local $cpos)
+	;;(local $wordPos i32) (local $wordCount i32)
+	(local.set $curLength (call $str.curLen (local.get $strPtr)))
+	(local.set $maxLength (call $str.maxLen (local.get $strPtr)))
+	(local.set $dataOff   (call $str.dataOff (local.get $strPtr)))
+	;; worry about non power of 2 maxLen's
 	(local.set $newMaxLength (i32.mul (local.get $maxLength)(i32.const 2)))
 	(local.set $newDataOffset (global.get $nextstrPtr))
 	(global.set $nextstrPtr (i32.add (global.get $nextstrPtr)(local.get $newMaxLength)))
-	(i32.store (i32.add (local.get $Offset)(i32.const 4))(local.get $newMaxLength))
-	(i32.store (i32.add (local.get $Offset)(i32.const 8))(local.get $newDataOffset))
+	(i32.store (i32.add (local.get $strPtr)(i32.const 4))(local.get $newMaxLength))
+	(i32.store (i32.add (local.get $strPtr)(i32.const 8))(local.get $newDataOffset))
 	;; now move old data into the new space, i32 at a time
-	(local.set $wordCount (i32.div_u (local.get $maxLength)(i32.const 4)))
+	;;(local.set $wordCount (i32.div_u (local.get $maxLength)(i32.const 4)))
 	;;(call $C.print (i32.const 61))(call $i32.print (local.get $wordCount))
-	(local.set $wordPos (i32.const 0))
-	(loop $wordLoop
-		;;(call $C.print (i32.const 62)) ;; '>'
-		;;(call $i32.print (local.get $wordPos))
-		(i32.store 
-		  (i32.add (local.get $newDataOffset)(local.get $wordPos))
-		  (i32.load (i32.add (local.get $dataOffset)(local.get $wordPos))))
-		(local.set $wordPos (i32.add (local.get $wordPos)(i32.const 1)))
-		(br_if $wordLoop (i32.lt_u (local.get $wordPos)(local.get $wordCount)))
-	)
+	;; commented out as premature optimization
+	;; (local.set $wordPos (i32.const 0))
+	;; (loop $wordLoop
+		;; ;;(call $C.print (i32.const 62)) ;; '>'
+		;; ;;(call $i32.print (local.get $wordPos))
+		;; (i32.store 
+		  ;; (i32.add (local.get $newDataOffset)(local.get $wordPos))
+		  ;; (i32.load (i32.add (local.get $dataOffset)(local.get $wordPos))))
+		;; (local.set $wordPos (i32.add (local.get $wordPos)(i32.const 1)))
+		;; (br_if $wordLoop (i32.lt_u (local.get $wordPos)(local.get $wordCount)))
+	;; )
  	;;(call $C.print (i32.const 70))
+	(local.set cpos i32.const 0)
+	(loop $cloop
+		if (i32.lt_u (local.get $cpos)(local.get $curLen))
+		  (then
+			(call $str.catChar (local.get $strPtr) (call $str.getChar (local.get $strPtr)(local.get $cpos)))
+			(local.set $cpos (call $plus1 (local.get $cpos)))
+			(br $cloop)
+		  )
+	)
   )
   (func $str.catChar (param $Offset i32)(param $C i32)
 	(local $maxLength i32) (local $curLength i32) (local $dataOffset i32)
