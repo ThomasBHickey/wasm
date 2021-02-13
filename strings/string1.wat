@@ -21,7 +21,8 @@
 
   (func $plus1 (param $v i32)(result i32)(i32.add (local.get $v)(i32.const 1)))
 
-  (func $i32.print1 (param $N i32) ;; Simpler, but prints the digits backwards!
+  ;; Simple i32 print, but prints the digits backwards!
+  (func $i32.print1 (param $N i32) 
 	(local $Ntemp i32)
 	(local.set $Ntemp (local.get $N))
 	(loop $digitLoop
@@ -55,7 +56,7 @@
 	;; iovs start at 200, buffer at 300
 	(i32.store (i32.const 200) (i32.const 300))
 	(i32.store (i32.const 204) (i32.const 10))  ;; length of 10?
-	;; Compute char value for the number mod 10, store a offset 300
+	;; Compute char value for the number mod 10, store at offset 300
 	(i32.store
 		(i32.const 300)
 		(local.get $C))
@@ -91,7 +92,8 @@
   ;; Concatenate s2 onto s1
   (func $str.catOntoStr (param $s1Ptr i32)(param $s2Ptr i32)
 	(local $c2pos i32)(local $s2curLen i32)
-	(local.set $c2pos (i32.const 0))(local.set $s2curLen (call $str.curLen (local.get $s2curLen)))
+	(local.set $c2pos (i32.const 0))
+	(local.set $s2curLen (call $str.curLen (local.get $s2curLen)))
 	(loop $cloop
 		(if (i32.lt_u (local.get $c2pos)(local.get $s2curLen))
 		  (then
@@ -102,8 +104,8 @@
 		)
 	)		
   )
+  ;; Returns a pointer to a new string with reversed characters
   (func $str.Rev (param $strPtr i32)(result i32)
-	;; Returns a new string with reverse characters
 	(local $cpos i32)(local $curLen i32)(local $revStrPtr i32)(local $curChar i32)
 	(local.set $revStrPtr (call $str.mk))
 	(local.set $cpos (i32.const 0))
@@ -129,8 +131,8 @@
 	  (else (i32.const 0))
 	)
   )
+  ;; Make a string from null-terminated chunk of memory
   (func $str.mkdata (param $dataOffset i32) (result i32)
-	;; Make a string from null-terminated chunk of memory
 	;; null terminator is not counted as part of string
 	;; maxLen might not be a power of 2--makes a difference in extending space
 	(local $length i32) (local $curByte i32)
@@ -210,12 +212,10 @@
 	(local.set $maxLen (i32.load (i32.add (local.get $Offset)(i32.const 4))))
 	;;(call $C.print (i32.const 77))(call $C.print (i32.const 58))(call $i32.print(local.get $maxLen))
 	(if (i32.ge_u (local.get $curLen) (local.get $maxLen))
-		;;handle reallocation!
+		;;handle reallocation
 		(then
-		  ;;(call $str.print(call $str.mkdata(global.get $reallocatingString)))
 		  (call $str.extend (local.get $Offset))
 		  (local.set $maxLen (i32.load (i32.add (i32.const 4)(local.get $Offset))))
-		  ;;(call $i32.print1 (local.get $maxLen))
 		)
 	)
 	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $Offset))))
@@ -252,10 +252,8 @@
 	(call $str.catChar (local.get $sp) (i32.const 69))
 	(call $str.catChar (local.get $sp) (i32.const 70))
 	(call $i32.print (call $str.dataOff (local.get $sp)))
-	(call $str.print (local.get $sp))
 	(local.set $rsp (call $str.Rev (local.get $sp)))
 	(call $str.print (local.get $rsp))
-	(call $str.print (local.get $sp))
 	(call $str.catOntoStr (local.get $sp)(local.get $rsp))
 	(call $str.print (local.get $sp))
   )
