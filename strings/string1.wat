@@ -239,8 +239,35 @@
 	)
 	(i32.store8 (local.get $dataOff)(local.get $Lchar))
   )
+  ;; Return a new string without any leading $charToStrip's
+  (func $str.stripLeading (param $strPtr i32)(param $charToStrip i32)(result i32)
+	(local $spos i32)(local $curLen i32)(local $stripped i32)
+	(local.set $spos (i32.const 0))
+	(loop $strip
+		;; $str.getChar returns Null if $spos goes out of bounds
+		(if (i32.eq (local.get $charToStrip)(call $str.getChar (local.get $strPtr)(local.get $spos)))
+		  (then
+			(local.set $spos (i32.add (local.get $spos)(i32.const 1)))
+			(br $strip)
+		  )
+		)
+	)
+	(local.set $curLen (call $str.curLen(local.get $strPtr)))
+	(local.set $stripped (call $str.mk))
+	(loop $copy
+		(if (i32.lt_u (local.get $spos)(local.get $curLen))
+		  (then
+		    (call $str.catChar (local.get $stripped)
+							   (call $str.getChar(local.get $strPtr)(local.get $spos)))
+			(local.set $spos (i32.add (local.get $spos)(i32.const 1)))
+			(br $copy)
+		  )
+		)
+	)
+	(local.get $stripped)
+  )
   (func $main (export "_start")
-	(local $sp i32)(local $rsp i32)
+	(local $sp i32)(local $rsp i32)(local $stripped i32)
 	(local.set $sp (call $str.mkdata (global.get $Hello1Data)))
 	(call $str.print (local.get $sp))
 	;; test multiple cat's
@@ -256,5 +283,10 @@
 	(call $str.print (local.get $rsp))
 	(call $str.catOntoStr (local.get $sp)(local.get $rsp))
 	(call $str.print (local.get $sp))
+	(call $str.LcatChar (local.get $sp)(i32.const 120)) ;; x
+	(call $str.LcatChar (local.get $sp)(i32.const 120)) ;; x
+	(call $str.print (local.get $sp))
+	(local.set $stripped(call $str.stripLeading (local.get $sp)(i32.const 120)))
+	(call $str.print (local.get $stripped))
   )
 )
