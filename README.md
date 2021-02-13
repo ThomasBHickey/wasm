@@ -20,7 +20,7 @@ manipulation system.
 My approach is to to do as much in WebAssembly as possible.  Currently the code's
 external calls are to fd_read and fd_write as supported by github.com/bytecodealliance/wasmtime.
 In addition to wasmtime I find wat2wasm (github.com/WebAssembly/wabt) which
-often gives more informative diagnotics than wasmtime usefull.  Other than that, it's
+often gives more informative diagnotics than wasmtime useful.  Other than that, it's
 just me, a text editor and a bash shell.  The routines were built up from a
 function to print a character to the console, then an i32, and from there
 some useful string routines.  No Rust or Javascript involved from my point
