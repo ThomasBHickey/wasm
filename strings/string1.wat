@@ -12,17 +12,16 @@
 
   (data (i32.const 128) "Hello1\00") ;; null not part of string
   (global $Hello1Data i32 (i32.const 128))
-  (data (i32.const 168) "Hello2\00") ;; null not part of string
+  (data (i32.const 168) "Hello2\00")
   (global $Hello2Data i32 (i32.const 168))
-  (data (i32.const 208) "Catted string:\00") ;; null not part of string
+  (data (i32.const 208) "Catted string:\00")
   (global $CattedData i32 (i32.const 208))
-  (data (i32.const 228) "reallocating string\00") ;; null not part of string
+  (data (i32.const 228) "reallocating string\00")
   (global $reallocatingString i32 (i32.const 228))
 
   (func $plus1 (param $v i32)(result i32)(i32.add (local.get $v)(i32.const 1)))
-  
-  ;; no calls to LcatChar!!
-  (func $i32.print1 (param $N i32) ;; !Prints the digits backwards!
+
+  (func $i32.print1 (param $N i32) ;; Simpler, but prints the digits backwards!
 	(local $Ntemp i32)
 	(local.set $Ntemp (local.get $N))
 	(loop $digitLoop
@@ -89,6 +88,20 @@
   (func $str.incrNextstrPtr
 	(global.set $nextstrPtr (i32.add (global.get $nextstrPtr)(i32.const 16)))
   )
+  ;; Concatenate s2 onto s1
+  (func $str.catOntoStr (param $s1Ptr i32)(param $s2Ptr i32)
+	(local $c2pos i32)(local $s2curLen i32)
+	(local.set $c2pos (i32.const 0))(local.set $s2curLen (call $str.curLen (local.get $s2curLen)))
+	(loop $cloop
+		(if (i32.lt_u (local.get $c2pos)(local.get $s2curLen))
+		  (then
+			(call $str.catChar(local.get $s1Ptr)(call $str.getChar (local.get $s2Ptr)(local.get $c2pos)))
+			(local.set $c2pos (i32.add (local.get $c2pos)(i32.const 1)))
+			(br $cloop)
+		  )
+		)
+	)		
+  )
   (func $str.Rev (param $strPtr i32)(result i32)
 	;; Returns a new string with reverse characters
 	(local $cpos i32)(local $curLen i32)(local $revStrPtr i32)(local $curChar i32)
@@ -98,9 +111,7 @@
 	(loop $cloop
 	  (if (i32.lt_u (local.get $cpos)(local.get $curLen))
 		(then
-			;;(call $C.print (i32.const 36))(call $i32.print1 (local.get $cpos)) ;; '$'
 			(local.set $curChar (call $str.getChar (local.get $strPtr)(local.get $cpos)))
-			;;(call $C.print (i32.const 62))(call $C.print (local.get $curChar)) ;; '%'
 			(call $str.LcatChar (local.get $revStrPtr)(local.get $curChar))
 			(local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
 		)
@@ -244,5 +255,8 @@
 	(call $str.print (local.get $sp))
 	(local.set $rsp (call $str.Rev (local.get $sp)))
 	(call $str.print (local.get $rsp))
+	(call $str.print (local.get $sp))
+	(call $str.catOntoStr (local.get $sp)(local.get $rsp))
+	(call $str.print (local.get $sp))
   )
 )
