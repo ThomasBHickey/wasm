@@ -1,4 +1,4 @@
-# Hand Written WebAssembly (Wasm)
+# Hand Written WebAssembly with Wasmtime
 Exploring hand written WebAssembly
 
 An interest in minimal systems makes WebAssembly an attractive system
