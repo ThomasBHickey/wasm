@@ -19,7 +19,7 @@
   (data (i32.const 228) "reallocating string\00")
   (global $reallocatingString i32 (i32.const 228))
 
-  (func $plus1 (param $v i32)(result i32)(i32.add (local.get $v)(i32.const 1)))
+  ;;(func $plus1 (param $v i32)(result i32)(i32.add (local.get $v)(i32.const 1)))
 
   ;; Simple i32 print, but prints the digits backwards!
   (func $i32.print1 (param $N i32) 
@@ -266,6 +266,29 @@
 	)
 	(local.get $stripped)
   )
+  (func $str.compare (param $s1ptr i32)(param $s2ptr i32)(result i32)  ;; return True if equal
+	(local $s2len i32)(local $cpos i32)
+	(local.set $s2len (call $str.getCurLen (local.get $s2ptr)))
+	(if (i32.ne (call $str.getCurLen (local.get $s1ptr))(local.get $s2len))
+	  (then (i32.const 0)(return))
+	)
+	(local.set $cpos (i32.const 0))
+	(call $str.print (local.get $s1ptr))
+	(call $str.print (local.get $s2ptr))
+	(loop $cloop
+	  (if (i32.lt_u (local.get $cpos)(local.get $s2len))
+		(then
+			(if (i32.ne (call $str.getChar (local.get $s1ptr)(local.get $cpos))
+						(call $str.getChar (local.get $s2ptr)(local.get $cpos)))
+			(then (i32.const 0) (return)))
+			(local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
+			(call $i32.print(local.get $cpos))
+			(br $cloop)
+		)
+	  )
+	)
+	(i32.const 1)(return)
+  )
   (func $main (export "_start")
 	(local $sp i32)(local $rsp i32)(local $stripped i32)
 	(local.set $sp (call $str.mkdata (global.get $Hello1Data)))
@@ -285,7 +308,8 @@
 	(call $str.LcatChar (local.get $sp)(i32.const 120)) ;; x
 	(call $str.LcatChar (local.get $sp)(i32.const 120)) ;; x
 	(call $str.print (local.get $sp))
-	(local.set $stripped(call $str.stripLeading (local.get $sp)(i32.const 120)))
+	(local.set $stripped(call $str.stripLeading (local.get $sp)(i32.const 120))) ;; x
 	(call $str.print (local.get $stripped))
+	(call $i32.print (call $str.compare (local.get $sp)(local.get $rsp)))
   )
 )
