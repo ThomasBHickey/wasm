@@ -1,6 +1,3 @@
-;; run via "wasmtime string1.wat" 
-;; or "wasmtime string1.wasm" if it has been compiled by wasm2wat
-;; (wasmtime recognizes the func exported as "_start")
 (module
   (import "wasi_unstable" "fd_read"  (func $fd_read (param i32 i32 i32 i32)  (result i32)))
   (import "wasi_unstable" "fd_write" (func $fd_write (param i32 i32 i32 i32) (result i32)))
@@ -100,7 +97,9 @@
 			(call $str.catChar(local.get $s1Ptr)(call $str.getChar (local.get $s2Ptr)(local.get $c2pos)))
 			(local.set $c2pos (i32.add (local.get $c2pos)(i32.const 1)))
 			(br $cloop)
-		  )))		
+		  )
+		)
+	)		
   )
   ;; Returns a pointer to a new string with reversed characters
   (func $str.Rev (param $strPtr i32)(result i32)
@@ -214,7 +213,8 @@
 		(then
 		  (call $str.extend (local.get $Offset))
 		  (local.set $maxLen (i32.load (i32.add (i32.const 4)(local.get $Offset))))
-		))
+		)
+	)
 	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $Offset))))
 	(i32.store8 (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $C)) 
 	(i32.store (local.get $Offset) (i32.add (local.get $curLen)(i32.const 1)));; new length
@@ -258,7 +258,9 @@
 							   (call $str.getChar(local.get $strPtr)(local.get $spos)))
 			(local.set $spos (i32.add (local.get $spos)(i32.const 1)))
 			(br $copy)
-		  )))
+		  )
+		)
+	)
 	(local.get $stripped)
   )
   (func $str.compare (param $s1ptr i32)(param $s2ptr i32)(result i32)  ;; return True if equal
@@ -279,7 +281,9 @@
 			(local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
 			(call $i32.print(local.get $cpos))
 			(br $cloop)
-		)))
+		)
+	  )
+	)
 	(i32.const 1)(return)
   )
   (func $main (export "_start")
