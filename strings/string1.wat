@@ -103,7 +103,44 @@
   (func $i32list.setDataOff (param $listPtr i32)(param $newDataOff i32)
     (i32.store (i32.add (local.get $listPtr)(i32.const 8))(local.get $newDataOff))
   )
-  
+  (func $i32list.extend (param $listPtr i32))
+  (func $i32list.cat (param $listPtr i32)(param $i i32)
+	(local $maxLen i32) (local $curLen i32)(local $dataOffset i32)
+	(local.set $curLen (call $i32list.getCurLen(local.get $listPtr)))
+	(local.set $maxLen (call $i32list.getMaxLen(local.get $listPtr)))
+	(if (i32.ge_u (local.get $curLen) (local.get $maxLen))
+		;;handle reallocation
+		(then
+		  (call $i32list.extend (local.get $listPtr))
+		  (local.set $maxLen (call $i32list.getMaxLen(local.get $listPtr)))
+		))
+	
+	(local.set $dataOffset (call $i32list.getDataOff (local.get $listPtr)))
+	
+	(i32.store (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $i))
+	(call $i32list.setCurLen (local.get $listPtr)(i32.add (local.get $curLen)(i32.const 1)))
+	(i32.store (local.get $listPtr) (i32.add (local.get $curLen)(i32.const 1)));; new length
+  ) 
+
+  (func $i32list.print (param $listPtr i32)
+	(local $curLength i32)
+	(local $dataOffset i32)
+	(local $ipos i32)
+	(local.set $curLength (call $i32list.getCurLen (local.get $listPtr)))
+	(local.set $ipos (i32.const 0))
+	
+	(call $C.print (i32.const 91)) ;; left bracket
+	(loop $iLoop
+	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
+		(then
+		 (i32.load (i32.add (local.get $dataOffset)(local.get $ipos)))
+		 (call $i32.print)   
+	     (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
+	     (br $iLoop)
+	)))
+	(call $C.print (i32.const 93)) ;; right bracket
+	(call $C.print (i32.const 10)) ;; new line
+  )
   (func $str.mk (result i32)
 	;; returns a memory offset for a string pointer:
 	;; 		curLength, maxLength, dataOffset
@@ -205,7 +242,7 @@
 	(local $curLength i32)
 	(local $dataOffset i32)  ;; offset to string data
 	(local $cpos i32)  ;; steps through character positions
-	(local.set $curLength (i32.load (local.get $strPtr)))
+	(local.set $curLength (call $str.getCurLen(local.get $strPtr)))
 	(local.set $cpos (i32.const 0))
 	(call $C.print (i32.const 34)) ;; double quote
 	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $strPtr))))
@@ -319,6 +356,7 @@
   )
   (func $main (export "_start")
 	(local $sp i32)(local $rsp i32)(local $stripped i32)
+	(local $listPtr i32)
 	(local.set $sp (call $str.mkdata (global.get $Hello1Data)))
 	;; test multiple cat's
 	(local.set $sp (call $str.mk))
@@ -339,5 +377,8 @@
 	(local.set $stripped(call $str.stripLeading (local.get $sp)(i32.const 120))) ;; x
 	(call $str.print (local.get $stripped))
 	(call $i32.print (call $str.compare (local.get $sp)(local.get $rsp)))
+	(local.set $listPtr (call $i32list.mk))
+	(call $i32list.cat (local.get $listPtr) (i32.const 42))
+	(call $i32list.print(local.get $listPtr))
   )
 )
