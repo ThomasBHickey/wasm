@@ -68,6 +68,59 @@
 	)
 	drop
   )
+  ;; i32List's
+  ;; an i32list pointer points at
+  ;; a curLen, maxLen, memory pointer, all i32
+  ;; the list starts out with a maxLen of 1
+  ;; which is allocated in the next i32 (16 bytes total)
+
+  (func $i32list.mk (result i32)
+	;; returns a memory offset for an i32list pointer:
+	;; 		curLength, maxLength, dataOffset
+	(local $listPtr i32)
+	(local.set $listPtr (global.get $nextstrPtr))
+	(call $str.incrNextstrPtr)
+	(call $str.setCurLen (local.get $listPtr) (i32.const 0))
+	(call $str.setMaxLen (local.get $listPtr)(i32.const 4))
+	(call $str.setDataOff (local.get $listPtr)(global.get $nextstrPtr))
+	(local.get $listPtr)
+  )
+  (func $i32list.getCurLen(param $listPtr i32)(result i32)
+	(i32.load (local.get $listPtr))
+  )
+  (func $i32list.setCurLen (param $listPtr i32)(param $newLen i32)
+	(i32.store (local.get $listPtr)(local.get $newLen))
+  )
+  (func $i32list.getMaxLen (param $listPtr i32)(result i32)
+    (i32.load (i32.add (local.get $listPtr)(i32.const 4)))
+  )
+  (func $i32list.setMaxLen (param $listPtr i32)(param $newMaxLen i32)
+    (i32.store (i32.add (local.get $listPtr)(i32.const 4))(local.get $newMaxLen))
+  )
+  (func $i32list.getDataOff (param $listPtr i32)(result i32)
+    (i32.load (i32.add (local.get $listPtr)(i32.const 8)))
+  )
+  (func $i32list.setDataOff (param $listPtr i32)(param $newDataOff i32)
+    (i32.store (i32.add (local.get $listPtr)(i32.const 8))(local.get $newDataOff))
+  )
+  
+  (func $str.mk (result i32)
+	;; returns a memory offset for a string pointer:
+	;; 		curLength, maxLength, dataOffset
+	;; Strings start as an i32 curLength (0), 
+	;; an i32 maxLength (4), an i32 memory offset to the data,
+	;; (the data is initially a 4 byte chunk)
+	;; 16 bytes total minimum for a string: curLen, maxLen, dataOffset, 4 data bytes
+	;; As they grow beyond their allocation it doubles.
+	;; !!!Right now (2021-02-05) the assumption is the characters are 7-bit safe!!!
+	(local $strPtr i32)
+	(local.set $strPtr (global.get $nextstrPtr))
+	(call $str.incrNextstrPtr)
+	(call $str.setCurLen (local.get $strPtr) (i32.const 0))
+	(call $str.setMaxLen (local.get $strPtr)(i32.const 4))
+	(call $str.setDataOff (local.get $strPtr)(global.get $nextstrPtr))
+	(local.get $strPtr)
+  )
   (func $str.getCurLen (param $strPtr i32)(result i32)
 	(i32.load (local.get $strPtr))
   )
@@ -166,24 +219,6 @@
 	)))
 	(call $C.print (i32.const 34)) ;; double quote
  	(call $C.print (i32.const 10))  ;; linefeed
-  )
-  (func $str.mk (result i32)
-	;; returns a memory offset for a string pointer:
-	;; 		curLength, maxLength, dataOffset
-	;; Strings start as an i32 curLength (0), 
-	;; an i32 maxLength (4), an i32 memory offset to the data,
-	;; (the data is initially a 4 byte chunk)
-	;; 16 bytes total minimum for a string: curLen, maxLen, dataOffset, 4 data bytes
-	;; As they grow beyond their allocation it doubles.
-	;; !!!Right now (2021-02-05) the assumption is the characters are 7-bit safe!!!
-	(local $strPtr i32)
-	(local.set $strPtr (global.get $nextstrPtr))
-	(call $str.incrNextstrPtr)
-	(call $str.setCurLen (local.get $strPtr) (i32.const 0))
-	(call $str.setMaxLen (local.get $strPtr)(i32.const 4))
-	(call $str.setDataOff (local.get $strPtr)(global.get $nextstrPtr))
-	(call $str.incrNextstrPtr) ;; skips over 16 bytes
-	(local.get $strPtr)
   )
   (func $str.extend(param $strPtr i32)
 	;; double the space available for characters
