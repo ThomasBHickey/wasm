@@ -79,11 +79,11 @@
 	;; 		curLength, maxLength, dataOffset
 	(local $listPtr i32)
 	(local.set $listPtr (global.get $nextstrPtr))
-	(call $str.incrNextstrPtr)
-	(call $str.setCurLen (local.get $listPtr) (i32.const 0))
-	(call $str.setMaxLen (local.get $listPtr)(i32.const 4))
-	(call $str.setDataOff (local.get $listPtr)(global.get $nextstrPtr))
-	(local.get $listPtr)
+	(call $i32list.setCurLen (local.get $listPtr) (i32.const 0))
+	(call $i32list.setMaxLen (local.get $listPtr)(i32.const 4))
+	(call $i32list.setDataOff(local.get $listPtr)(i32.add(local.get $listPtr)(i32.const 8)))
+	(global.set $nextstrPtr (i32.add (global.get $nextstrPtr)(i32.const 16)))
+	(local.get $listPtr)  ;; return ptr to the new list
   )
   (func $i32list.getCurLen(param $listPtr i32)(result i32)
 	(i32.load (local.get $listPtr))
@@ -103,7 +103,9 @@
   (func $i32list.setDataOff (param $listPtr i32)(param $newDataOff i32)
     (i32.store (i32.add (local.get $listPtr)(i32.const 8))(local.get $newDataOff))
   )
-  (func $i32list.extend (param $listPtr i32))
+  
+  (func $i32list.extend (param $listPtr i32)) ;; NOT YET IMPLEMENTED
+
   (func $i32list.cat (param $listPtr i32)(param $i i32)
 	(local $maxLen i32) (local $curLen i32)(local $dataOffset i32)
 	(local.set $curLen (call $i32list.getCurLen(local.get $listPtr)))
@@ -119,7 +121,6 @@
 	
 	(i32.store (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $i))
 	(call $i32list.setCurLen (local.get $listPtr)(i32.add (local.get $curLen)(i32.const 1)))
-	(i32.store (local.get $listPtr) (i32.add (local.get $curLen)(i32.const 1)));; new length
   ) 
 
   (func $i32list.print (param $listPtr i32)
@@ -155,7 +156,7 @@
 	(call $str.incrNextstrPtr)
 	(call $str.setCurLen (local.get $strPtr) (i32.const 0))
 	(call $str.setMaxLen (local.get $strPtr)(i32.const 4))
-	(call $str.setDataOff (local.get $strPtr)(global.get $nextstrPtr))
+	(call $str.setDataOff (local.get $strPtr)(i32.add(local.get $strPtr)(i32.const 12)))
 	(local.get $strPtr)
   )
   (func $str.getCurLen (param $strPtr i32)(result i32)
@@ -288,8 +289,9 @@
 		  (local.set $maxLen (i32.load (i32.add (i32.const 4)(local.get $Offset))))
 		))
 	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $Offset))))
-	(i32.store8 (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $C)) 
-	(i32.store (local.get $Offset) (i32.add (local.get $curLen)(i32.const 1)));; new length
+	(i32.store8 (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $C))
+	(call $str.setCurLen(local.get $Offset) (i32.add (local.get $curLen)(i32.const 1)))
+	;;(i32.store (local.get $Offset) (i32.add (local.get $curLen)(i32.const 1)));; new length
   ) 
   ;; Add a character to beginning of a string
   ;; Not multibyte character safe
@@ -314,7 +316,8 @@
 	(local.set $spos (i32.const 0))
 	(loop $strip
 		;; $str.getChar returns Null if $spos goes out of bounds
-		(if (i32.eq (local.get $charToStrip)(call $str.getChar (local.get $strPtr)(local.get $spos)))
+		(if (i32.eq (local.get $charToStrip)
+			(call $str.getChar (local.get $strPtr)(local.get $spos)))
 		  (then
 			(local.set $spos (i32.add (local.get $spos)(i32.const 1)))
 			(br $strip)
@@ -340,8 +343,8 @@
 	  (then (i32.const 0)(return))
 	)
 	(local.set $cpos (i32.const 0))
-	(call $str.print (local.get $s1ptr))
-	(call $str.print (local.get $s2ptr))
+	;;(call $str.print (local.get $s1ptr))
+	;;(call $str.print (local.get $s2ptr))
 	(loop $cloop
 	  (if (i32.lt_u (local.get $cpos)(local.get $s2len))
 		(then
