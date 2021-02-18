@@ -24,13 +24,12 @@
   (func $getMem (param $size i32)(result i32)
 	(local $size4 i32)
 	(local.set $size4 
-	  (i32.mul (i32.const 4) 
-		(i32.div_u 
-		  (i32.add (local.get $size)(i32.const 3))(i32.const 4))))
+	  (i32.mul (i32.div_u 
+	             (i32.add (local.get $size)(i32.const 3))
+	           (i32.const 4))(i32.const 4)))
 	(global.get $nextFreeMem) ;; to return
 	(global.set $nextFreeMem (i32.add (global.get $nextFreeMem)(local.get $size4)))
   )
-
   ;; Simple i32 print, but prints the digits backwards!
   (func $i32.print1 (param $N i32) 
 	(local $Ntemp i32)
@@ -78,7 +77,7 @@
 	)
 	drop
   )
-  ;; i32List's
+  ;; i32Lists
   ;; an i32list pointer points at
   ;; a curLen, maxLen, data pointer, all i32
   ;; the list starts out with a maxLen of 1 (4 bytes)
@@ -88,7 +87,8 @@
 	;; returns a memory offset for an i32list pointer:
 	;; 		curLength, maxLength, dataOffset
 	(local $listPtr i32)
-	(local.set $listPtr (call $getMem (i32.const 16))) ;; 12 for the pointer info, 4 for first int32
+	;; 12 for the pointer info, 4 for first int32
+	(local.set $listPtr (call $getMem (i32.const 16))) 
 	(call $i32list.setCurLen (local.get $listPtr) (i32.const 0))
 	(call $i32list.setMaxLen (local.get $listPtr)(i32.const 1))
 	(call $i32list.setDataOff(local.get $listPtr)
@@ -117,7 +117,7 @@
   (func $i32list.extend (param $listPtr i32)
     ;; double the space available
 	(local $maxLen i32) (local $curLen i32) (local $dataOff i32)
-	(local $newMaxLen i32)(local $newi32ptr i32)(local $newDataOff i32)
+	(local $newMaxLen i32)(local $newDataOff i32)
 	(local $cpos i32)
 	(local.set $curLen (call $i32list.getCurLen (local.get $listPtr)))
 	(local.set $maxLen (call $i32list.getMaxLen (local.get $listPtr)))
@@ -132,11 +132,10 @@
   (func $i32list.set@ (param $listPtr i32)(param $pos i32)(param $val i32)
     (local $dataOff i32)
 	(local.set $dataOff (call $i32list.getDataOff (local.get $listPtr)))
-    (i32.store (i32.add (local.get $dataOff)
-						(i32.mul
-							(call $i32list.getCurLen (local.get $listPtr))
-							(i32.const 4)))
-				(local.get $val))
+    (i32.store 
+		(i32.add (local.get $dataOff)
+			(i32.mul (call $i32list.getCurLen (local.get $listPtr))(i32.const 4)))
+		(local.get $val))
   )
   (func $i32list.get@ (param $listPtr i32)(param $pos i32)(result i32)
 	(i32.load
@@ -165,7 +164,7 @@
 
   (func $i32list.print (param $listPtr i32)
 	(local $curLength i32)
-	(local $dataOffset i32)
+	;;(local $dataOffset i32)
 	(local $ipos i32)
 	(local.set $curLength (call $i32list.getCurLen (local.get $listPtr)))
 	(local.set $ipos (i32.const 0))
@@ -174,7 +173,8 @@
 	(loop $iLoop
 	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
 		(then
-		 (i32.load (i32.add (local.get $dataOffset)(local.get $ipos)))
+		  (call $i32list.get@ (local.get $listPtr)(local.get $ipos))
+		 ;;(i32.load (i32.add (local.get $dataOffset)(local.get $ipos)))
 		 (call $i32.print)   
 	     (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
 	     (br $iLoop)
@@ -396,11 +396,6 @@
 	(local $listPtr i32)
 	(local.set $sp (call $str.mkdata (global.get $Hello1Data)))
 	;; test multiple cat's
-	(call $getMem (i32.const 0))(drop)
-	(call $getMem (i32.const 1))(drop)
-	(call $getMem (i32.const 3))(drop)
-	(call $getMem (i32.const 4))(drop)
-	(call $getMem (i32.const 5))(drop)
 	(local.set $sp (call $str.mk))
 	(call $str.catChar (local.get $sp) (i32.const 65))
 	(call $str.catChar (local.get $sp) (i32.const 66))
