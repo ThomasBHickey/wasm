@@ -104,9 +104,39 @@
     (i32.store (i32.add (local.get $listPtr)(i32.const 8))(local.get $newDataOff))
   )
   
-  (func $i32list.extend (param $listPtr i32)) ;; NOT YET IMPLEMENTED
-
-  (func $i32list.cat (param $listPtr i32)(param $i i32)
+  (func $i32list.extend (param $listPtr i32)
+    ;; double the number of i32's that it can hold
+	(local $maxLen i32) (local $curLen i32) (local $dataOff i32)
+	(local $newMaxLen i32)(local $newi32ptr i32)(local $newDataOff i32)
+	(local $cpos i32)
+	(local.set $curLen (call $i32list.getCurLen (local.get $listPtr)))
+	(local.set $maxLen (call $i32list.getMaxLen (local.get $listPtr)))
+	(local.set $dataOff   (call $i32list.getDataOff (local.get $listPtr)))
+	(local.set $newMaxLen (i32.mul (local.get $maxLen)(i32.const 2)))
+	(local.set $newDataOff (global.get $nextstrPtr))
+	(global.set $nextstrPtr
+		(i32.add (global.get $nextstrPtr)
+		  (i32.mul (local.get $newMaxLen)(i32.const 4))))  ;; 4 bytes/i32
+	(call $i32list.setMaxLen (local.get $listPtr)(local.get $newMaxLen))
+	(call $i32list.setDataOff(local.get $listPtr)(local.get $newDataOff))
+	(memory.copy (local.get $newDataOff)(local.get $dataOff)
+				 (i32.mul (local.get $curLen)(i32.const 4)))
+  ) 
+  (func $i32list.set@ (param $listPtr i32)(param $pos i32)(param $val i32)
+    (local $dataOff i32)
+	(local.set $dataOff (call $i32list.getDataOff (local.get $listPtr)))
+    (i32.store (i32.add (local.get $dataOff)
+						(i32.mul
+							(call $i32list.getCurLen (local.get $listPtr))
+							(i32.const 4)))
+				(local.get $val))
+  )
+  (func $i32list.get@ (param $listPtr i32)(param $pos i32)(result i32)
+	(i32.load
+		(i32.add (call $i32list.getDataOff (local.get $listPtr))
+			(i32.mul (i32.const 4) (call $i32list.getCurLen (local.get $listPtr)))))
+  )
+  (func $i32list.cat (param $listPtr i32)(param $val i32)
 	(local $maxLen i32) (local $curLen i32)(local $dataOffset i32)
 	(local.set $curLen (call $i32list.getCurLen(local.get $listPtr)))
 	(local.set $maxLen (call $i32list.getMaxLen(local.get $listPtr)))
@@ -118,8 +148,11 @@
 		))
 	
 	(local.set $dataOffset (call $i32list.getDataOff (local.get $listPtr)))
+	(call $i32list.set@ (local.get $listPtr)
+						  (call $i32list.getCurLen (local.get $listPtr))
+						  (local.get $val))
 	
-	(i32.store (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $i))
+	(i32.store (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $val))
 	(call $i32list.setCurLen (local.get $listPtr)(i32.add (local.get $curLen)(i32.const 1)))
   ) 
 
@@ -381,7 +414,10 @@
 	(call $str.print (local.get $stripped))
 	(call $i32.print (call $str.compare (local.get $sp)(local.get $rsp)))
 	(local.set $listPtr (call $i32list.mk))
+	(call $i32.print (local.get $listPtr))
 	(call $i32list.cat (local.get $listPtr) (i32.const 42))
+	(call $i32list.print(local.get $listPtr))
+	(call $i32list.cat (local.get $listPtr) (i32.const 43))
 	(call $i32list.print(local.get $listPtr))
   )
 )
