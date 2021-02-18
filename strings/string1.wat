@@ -7,7 +7,7 @@
 
   (memory 1)
   (export "memory" (memory 0))
-  (global $nextstrPtr (mut i32) (i32.const 1024))
+  (global $nextFreeMem (mut i32) (i32.const 1024))
   (global $zero i32 (i32.const 48))
 
   (data (i32.const 128) "Hello1\00") ;; null not part of string
@@ -19,7 +19,17 @@
   (data (i32.const 228) "reallocating string\00")
   (global $reallocatingString i32 (i32.const 228))
 
-  ;;(func $plus1 (param $v i32)(result i32)(i32.add (local.get $v)(i32.const 1)))
+  ;; Simple memory allocation done in 4-byte chunks
+  ;; Should this get cleared first? (or checked!)
+  (func $getMem (param $size i32)(result i32)
+	(local $size4 i32)
+	(local.set $size4 
+	  (i32.mul (i32.const 4) 
+		(i32.div_u 
+		  (i32.add (local.get $size)(i32.const 3))(i32.const 4))))
+	(global.get $nextFreeMem) ;; to return
+	(global.set $nextFreeMem (i32.add (global.get $nextFreeMem)(local.get $size4)))
+  )
 
   ;; Simple i32 print, but prints the digits backwards!
   (func $i32.print1 (param $N i32) 
@@ -70,19 +80,19 @@
   )
   ;; i32List's
   ;; an i32list pointer points at
-  ;; a curLen, maxLen, memory pointer, all i32
-  ;; the list starts out with a maxLen of 1
+  ;; a curLen, maxLen, data pointer, all i32
+  ;; the list starts out with a maxLen of 1 (4 bytes)
   ;; which is allocated in the next i32 (16 bytes total)
 
   (func $i32list.mk (result i32)
 	;; returns a memory offset for an i32list pointer:
 	;; 		curLength, maxLength, dataOffset
 	(local $listPtr i32)
-	(local.set $listPtr (global.get $nextstrPtr))
+	(local.set $listPtr (call $getMem (i32.const 16))) ;; 12 for the pointer info, 4 for first int32
 	(call $i32list.setCurLen (local.get $listPtr) (i32.const 0))
-	(call $i32list.setMaxLen (local.get $listPtr)(i32.const 4))
-	(call $i32list.setDataOff(local.get $listPtr)(i32.add(local.get $listPtr)(i32.const 8)))
-	(global.set $nextstrPtr (i32.add (global.get $nextstrPtr)(i32.const 16)))
+	(call $i32list.setMaxLen (local.get $listPtr)(i32.const 1))
+	(call $i32list.setDataOff(local.get $listPtr)
+		(i32.add(local.get $listPtr)(i32.const 12))) ;; the last 4 bytes allocated
 	(local.get $listPtr)  ;; return ptr to the new list
   )
   (func $i32list.getCurLen(param $listPtr i32)(result i32)
@@ -105,7 +115,7 @@
   )
   
   (func $i32list.extend (param $listPtr i32)
-    ;; double the number of i32's that it can hold
+    ;; double the space available
 	(local $maxLen i32) (local $curLen i32) (local $dataOff i32)
 	(local $newMaxLen i32)(local $newi32ptr i32)(local $newDataOff i32)
 	(local $cpos i32)
@@ -113,10 +123,7 @@
 	(local.set $maxLen (call $i32list.getMaxLen (local.get $listPtr)))
 	(local.set $dataOff   (call $i32list.getDataOff (local.get $listPtr)))
 	(local.set $newMaxLen (i32.mul (local.get $maxLen)(i32.const 2)))
-	(local.set $newDataOff (global.get $nextstrPtr))
-	(global.set $nextstrPtr
-		(i32.add (global.get $nextstrPtr)
-		  (i32.mul (local.get $newMaxLen)(i32.const 4))))  ;; 4 bytes/i32
+	(local.set $newDataOff (call $getMem (i32.mul (local.get $newMaxLen)(i32.const 4))))
 	(call $i32list.setMaxLen (local.get $listPtr)(local.get $newMaxLen))
 	(call $i32list.setDataOff(local.get $listPtr)(local.get $newDataOff))
 	(memory.copy (local.get $newDataOff)(local.get $dataOff)
@@ -185,8 +192,7 @@
 	;; As they grow beyond their allocation it doubles.
 	;; !!!Right now (2021-02-05) the assumption is the characters are 7-bit safe!!!
 	(local $strPtr i32)
-	(local.set $strPtr (global.get $nextstrPtr))
-	(call $str.incrNextstrPtr)
+	(local.set $strPtr (call $getMem (i32.const 16)))
 	(call $str.setCurLen (local.get $strPtr) (i32.const 0))
 	(call $str.setMaxLen (local.get $strPtr)(i32.const 4))
 	(call $str.setDataOff (local.get $strPtr)(i32.add(local.get $strPtr)(i32.const 12)))
@@ -209,9 +215,6 @@
   )
   (func $str.setDataOff (param $strPtr i32)(param $newDataOff i32)
     (i32.store (i32.add(local.get $strPtr)(i32.const 8))(local.get $newDataOff))
-  )
-  (func $str.incrNextstrPtr
-	(global.set $nextstrPtr (i32.add (global.get $nextstrPtr)(i32.const 16)))
   )
   ;; Concatenate s2 onto s1
   (func $str.catOntoStr (param $s1Ptr i32)(param $s2Ptr i32)
@@ -256,8 +259,7 @@
   ;; Make a string from null-terminated chunk of memory
   (func $str.mkdata (param $dataOffset i32) (result i32)
 	;; null terminator is not counted as part of string
-	;; maxLen might not be a power of 2--makes a difference in extending space
-	(local $length i32) (local $curByte i32)
+	(local $length i32) (local $curByte i32)(local $strPtr i32)
 	(local.set $length (i32.const 0))
 	(loop $cLoop
 		(local.set $curByte (i32.load8_u (i32.add (local.get $length)(local.get $dataOffset))))
@@ -266,11 +268,11 @@
 		    (local.set $length (i32.add (local.get $length)(i32.const 1)))
 			(br $cLoop)
 	)))
-	(global.get $nextstrPtr) ;; this gets returned
-	(i32.store (global.get $nextstrPtr) (local.get $length))  ;; cur length
-	(i32.store (i32.add (global.get $nextstrPtr)(i32.const 4)) (local.get $length));; maxLength
-	(i32.store (i32.add (global.get $nextstrPtr)(i32.const 8)) (local.get $dataOffset))
-	(global.set $nextstrPtr (i32.add (global.get $nextstrPtr)(i32.const 12)))
+	(local.set $strPtr (call $getMem (i32.const 12)))  ;; just room for pointer info
+	(call $str.setCurLen (local.get $strPtr)(local.get $length))
+	(call $str.setMaxLen (local.get $strPtr)(local.get $length))
+	(call $str.setDataOff (local.get $strPtr)(local.get $dataOffset))
+	(local.get $strPtr)
   )
   (func $str.print (param $strPtr i32)
 	(local $curLength i32)
@@ -298,14 +300,14 @@
 	;; old space is abandoned, but future optimization could recognize
 	;; if new space is adjacent and avoid moving old data
 	(local $maxLen i32) (local $curLen i32) (local $dataOff i32)
-	(local $newMaxLen i32)(local $newSptr i32)(local $newDataOff i32)
+	(local $newMaxLen i32)(local $newDataOff i32)
 	(local $cpos i32)
 	(local.set $curLen (call $str.getCurLen (local.get $strPtr)))
 	(local.set $maxLen (call $str.getMaxLen (local.get $strPtr)))
 	(local.set $dataOff   (call $str.getDataOff (local.get $strPtr)))
 	(local.set $newMaxLen (i32.mul (local.get $maxLen)(i32.const 2)))
-	(local.set $newDataOff (global.get $nextstrPtr))
-	(global.set $nextstrPtr (i32.add (global.get $nextstrPtr)(local.get $newMaxLen)))
+	;;(local.set $newDataOff (global.get $nextstrPtr))
+	(local.set $newDataOff (call $getMem (local.get $newMaxLen)))
 	(call $str.setMaxLen(local.get $strPtr)(local.get $newMaxLen))
 	(call $str.setDataOff(local.get $strPtr)(local.get $newDataOff))
 	(memory.copy (local.get $newDataOff)(local.get $dataOff)(local.get $curLen))
@@ -324,7 +326,6 @@
 	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $Offset))))
 	(i32.store8 (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $C))
 	(call $str.setCurLen(local.get $Offset) (i32.add (local.get $curLen)(i32.const 1)))
-	;;(i32.store (local.get $Offset) (i32.add (local.get $curLen)(i32.const 1)));; new length
   ) 
   ;; Add a character to beginning of a string
   ;; Not multibyte character safe
@@ -395,6 +396,11 @@
 	(local $listPtr i32)
 	(local.set $sp (call $str.mkdata (global.get $Hello1Data)))
 	;; test multiple cat's
+	(call $getMem (i32.const 0))(drop)
+	(call $getMem (i32.const 1))(drop)
+	(call $getMem (i32.const 3))(drop)
+	(call $getMem (i32.const 4))(drop)
+	(call $getMem (i32.const 5))(drop)
 	(local.set $sp (call $str.mk))
 	(call $str.catChar (local.get $sp) (i32.const 65))
 	(call $str.catChar (local.get $sp) (i32.const 66))
