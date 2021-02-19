@@ -16,8 +16,16 @@
   (global $Hello2Data i32 (i32.const 168))
   (data (i32.const 208) "Catted string:\00")
   (global $CattedData i32 (i32.const 208))
-  (data (i32.const 228) "reallocating string\00")
-  (global $reallocatingString i32 (i32.const 228))
+  (data (i32.const 228) "reallocating\00")
+  (global $reallocating i32 (i32.const 228))
+  (data (i32.const 248) "test1\00")
+  (global $test1 i32 (i32.const 248))
+  (data (i32.const 258) "test2\00")
+  (global $test2 i32 (i32.const 258))
+  (data (i32.const 268) "adding \00")
+  (global $adding i32 (i32.const 268))
+  (data (i32.const 278) "at \00")
+  (global $at i32 (i32.const 278))
 
   ;; Simple memory allocation done in 4-byte chunks
   ;; Should this get cleared first? (or checked!)
@@ -61,11 +69,17 @@
 	)
 	(call $str.print (local.get $sptr))
   )
+  (func $PtrDump (param $ptr i32)
+	(call $C.print(i32.const 123)) ;; {
+	   (call $i32.print (call $i32list.getCurLen (local.get $ptr)))
+	   (call $i32.print (call $i32list.getMaxLen (local.get $ptr)))
+	   (call $i32.print (call $i32list.getDataOff (local.get $ptr)))
+	(call $C.print(i32.const 125)) ;; }
+  )
   (func $C.print (param $C i32)
 	;; iovs start at 200, buffer at 300
 	(i32.store (i32.const 200) (i32.const 300))
 	(i32.store (i32.const 204) (i32.const 10))  ;; length of 10?
-	;; Compute char value for the number mod 10, store at offset 300
 	(i32.store
 		(i32.const 300)
 		(local.get $C))
@@ -82,7 +96,9 @@
   ;; a curLen, maxLen, data pointer, all i32
   ;; the list starts out with a maxLen of 1 (4 bytes)
   ;; which is allocated in the next i32 (16 bytes total)
-
+  (func $i32.printMem (param $memOff i32)
+	(call $i32.print (i32.load (local.get $memOff)))
+  )
   (func $i32list.mk (result i32)
 	;; returns a memory offset for an i32list pointer:
 	;; 		curLength, maxLength, dataOffset
@@ -92,7 +108,7 @@
 	(call $i32list.setCurLen (local.get $listPtr) (i32.const 0))
 	(call $i32list.setMaxLen (local.get $listPtr)(i32.const 1))
 	(call $i32list.setDataOff(local.get $listPtr)
-		(i32.add(local.get $listPtr)(i32.const 12))) ;; the last 4 bytes allocated
+		(i32.add(local.get $listPtr)(i32.const 12))) ;; 12 bytes for the pointer
 	(local.get $listPtr)  ;; return ptr to the new list
   )
   (func $i32list.getCurLen(param $listPtr i32)(result i32)
@@ -113,12 +129,13 @@
   (func $i32list.setDataOff (param $listPtr i32)(param $newDataOff i32)
     (i32.store (i32.add (local.get $listPtr)(i32.const 8))(local.get $newDataOff))
   )
-  
   (func $i32list.extend (param $listPtr i32)
     ;; double the space available
 	(local $maxLen i32) (local $curLen i32) (local $dataOff i32)
 	(local $newMaxLen i32)(local $newDataOff i32)
 	(local $cpos i32)
+	;;(call $str.print (call $str.mkdata (global.get $reallocating)))
+	;;(call $PtrDump (local.get $listPtr))
 	(local.set $curLen (call $i32list.getCurLen (local.get $listPtr)))
 	(local.set $maxLen (call $i32list.getMaxLen (local.get $listPtr)))
 	(local.set $dataOff   (call $i32list.getDataOff (local.get $listPtr)))
@@ -128,24 +145,30 @@
 	(call $i32list.setDataOff(local.get $listPtr)(local.get $newDataOff))
 	(memory.copy (local.get $newDataOff)(local.get $dataOff)
 				 (i32.mul (local.get $curLen)(i32.const 4)))
+	;;(call $PtrDump (local.get $listPtr))
   ) 
   (func $i32list.set@ (param $listPtr i32)(param $pos i32)(param $val i32)
-    (local $dataOff i32)
+    (local $dataOff i32)(local $dataOffOff i32)
 	(local.set $dataOff (call $i32list.getDataOff (local.get $listPtr)))
-    (i32.store 
+	;;(call $str.print (call $str.mkdata (global.get $adding)))
+	;;(call $i32.print (local.get $val))
+	(local.set $dataOffOff
 		(i32.add (local.get $dataOff)
-			(i32.mul (call $i32list.getCurLen (local.get $listPtr))(i32.const 4)))
-		(local.get $val))
+		  (i32.mul (call $i32list.getCurLen (local.get $listPtr))(i32.const 4))))
+	;;(call $str.print (call $str.mkdata (global.get $at)))
+	;;(call $i32.print (local.get $dataOffOff))
+    (i32.store (local.get $dataOffOff) (local.get $val))
   )
   (func $i32list.get@ (param $listPtr i32)(param $pos i32)(result i32)
 	(i32.load
 		(i32.add (call $i32list.getDataOff (local.get $listPtr))
-			(i32.mul (i32.const 4) (call $i32list.getCurLen (local.get $listPtr)))))
+				 (i32.mul (i32.const 4) (local.get $pos))))
   )
   (func $i32list.cat (param $listPtr i32)(param $val i32)
 	(local $maxLen i32) (local $curLen i32)(local $dataOffset i32)
 	(local.set $curLen (call $i32list.getCurLen(local.get $listPtr)))
 	(local.set $maxLen (call $i32list.getMaxLen(local.get $listPtr)))
+	;;(call $C.print (i32.const 43))(call $i32.print (local.get $val))
 	(if (i32.ge_u (local.get $curLen) (local.get $maxLen))
 		;;handle reallocation
 		(then
@@ -154,14 +177,10 @@
 		))
 	
 	(local.set $dataOffset (call $i32list.getDataOff (local.get $listPtr)))
-	(call $i32list.set@ (local.get $listPtr)
-						  (call $i32list.getCurLen (local.get $listPtr))
-						  (local.get $val))
-	
-	(i32.store (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $val))
+	(call $i32list.set@ (local.get $listPtr)(local.get $curLen)(local.get $val))
+	;; (i32.store (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $val))
 	(call $i32list.setCurLen (local.get $listPtr)(i32.add (local.get $curLen)(i32.const 1)))
-  ) 
-
+  )
   (func $i32list.print (param $listPtr i32)
 	(local $curLength i32)
 	;;(local $dataOffset i32)
@@ -403,22 +422,29 @@
 	(call $str.catChar (local.get $sp) (i32.const 68))
 	(call $str.catChar (local.get $sp) (i32.const 69))
 	(call $str.catChar (local.get $sp) (i32.const 70))
-	(call $i32.print (call $str.getDataOff (local.get $sp)))
+	;;(call $i32.print (call $str.getDataOff (local.get $sp)))
 	(local.set $rsp (call $str.Rev (local.get $sp)))
 	(call $str.print (local.get $rsp))
 	(call $str.catOntoStr (local.get $sp)(local.get $rsp))
-	(call $str.print (local.get $sp))
+	;;(call $str.print (local.get $sp))
 	(call $str.LcatChar (local.get $sp)(i32.const 120)) ;; x
 	(call $str.LcatChar (local.get $sp)(i32.const 120)) ;; x
-	(call $str.print (local.get $sp))
+	;;(call $str.print (local.get $sp))
 	(local.set $stripped(call $str.stripLeading (local.get $sp)(i32.const 120))) ;; x
 	(call $str.print (local.get $stripped))
 	(call $i32.print (call $str.compare (local.get $sp)(local.get $rsp)))
 	(local.set $listPtr (call $i32list.mk))
-	(call $i32.print (local.get $listPtr))
+	(call $str.print (call $str.mkdata (global.get $test1)))
+	;;(call $PtrDump (local.get $listPtr))
+	;;(call $i32.print (local.get $listPtr))
 	(call $i32list.cat (local.get $listPtr) (i32.const 42))
 	(call $i32list.print(local.get $listPtr))
 	(call $i32list.cat (local.get $listPtr) (i32.const 43))
 	(call $i32list.print(local.get $listPtr))
+	(call $i32list.cat (local.get $listPtr) (i32.const 44))
+	(call $i32list.print(local.get $listPtr))
+	;;(call $str.print (call $str.mkdata (global.get $test2)))
+	;;(call $PtrDump (local.get $listPtr))
+
   )
 )
