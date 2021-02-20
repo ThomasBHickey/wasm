@@ -28,7 +28,7 @@
   (global $at i32 (i32.const 278))
 
   ;; Simple memory allocation done in 4-byte chunks
-  ;; Should this get cleared first? (or checked!)
+  ;; Should this get cleared first?
   (func $getMem (param $size i32)(result i32)
 	(local $size4 i32)
 	(local.set $size4 
@@ -51,7 +51,8 @@
 	  (local.set $Ntemp)
 	  (br_if $digitLoop (local.get $Ntemp))
 	)
-	(call $C.print (i32.const 10))  ;; linefeed
+	;;(call $C.print (i32.const 10))  ;; linefeed
+	(call $C.print (i32.const 32))  ;; space
   )
   ;; Doesn't understand negative numbers
   (func $i32.print (param $N i32)
@@ -91,6 +92,29 @@
 	)
 	drop
   )
+  (func $Test.printTest
+    (call $C.print (i32.const  84)) ;; T
+	(call $C.print (i32.const 101)) ;; e
+	(call $C.print (i32.const 115)) ;; s
+	(call $C.print (i32.const 116)) ;; t
+	(call $C.print (i32.const  32)) ;; space
+  )
+  (func $Test.showOK (param $testnum i32)
+    (call $Test.printTest)
+	(call $i32.print1 (local.get $testnum))
+	(call $C.print (i32.const 79)) ;; O
+	(call $C.print (i32.const 75)) ;; K
+	(call $C.print (i32.const 10)) ;; linefeed
+  )
+  (func $Test.showFailed (param $testnum i32)
+    (call $Test.printTest)
+	(call $i32.print1 (local.get $testnum))
+	(call $C.print (i32.const 78)) ;; N
+	(call $C.print (i32.const 79)) ;; O
+	(call $C.print (i32.const 75)) ;; K
+	(call $C.print (i32.const 10)) ;; linefeed
+	)
+
   ;; i32Lists
   ;; an i32lst pointer points at
   ;; a curLen, maxLen, data pointer, all i32
@@ -110,6 +134,19 @@
 	(call $i32lst.setDataOff(local.get $lstPtr)
 		(i32.add(local.get $lstPtr)(i32.const 12))) ;; 12 bytes for the pointer
 	(local.get $lstPtr)  ;; return ptr to the new list
+  )
+  (func $i32lst.mk.test (result i32)
+	(local $lstPtr i32)
+	(local.set $lstPtr (call $i32lst.mk))
+	(if (call $i32lst.getCurLen (local.get $lstPtr))
+		(then
+		  (call $C.print (i32.const 21)) ;; !
+		  (call $i32.print (call $i32lst.getCurLen (local.get $lstPtr)))
+		  (return (i32.const 1))))
+	(if (i32.ne (i32.const 1)(call $i32lst.getMaxLen (local.get $lstPtr)))
+		(then
+		  (return (i32.const 1))))  ;; failed, should have been 1
+	(i32.const 0) ;; OK
   )
   (func $i32lst.getCurLen(param $lstPtr i32)(result i32)
 	(i32.load (local.get $lstPtr))
@@ -448,7 +485,13 @@
 
   )
   (func $test (export "_test")
-	(local $sp i32)(local $lstPtr i32)
-	(call $str.print (call $str.mkdata (global.get $test1)))
+	(local $testNum i32)(local $strPtr i32)(local $lstPtr i32)
+	(local.set $testNum (i32.const 1))
+	(if (call $i32lst.mk.test (local.get $testNum))
+	  (then (call $Test.showFailed (local.get $testNum)))
+	  (else (call $Test.showOK (local.get $testNum)))
+	)
+	(local.set $testNum (i32.add (local.get $testNum)(i32.const 1)))
+	drop
   )
 )
