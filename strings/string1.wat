@@ -7,6 +7,14 @@
 
   (memory 1)
   (export "memory" (memory 0))
+
+  (type $testSig (func (param i32)(result i32)))
+  (table 2 funcref)
+  (elem (i32.const 0)
+    $i32list.mk.test
+	$i32list.sets.test
+  )
+  (global $numTests i32 (i32.const 2)) ;; Better match!
   (global $nextFreeMem (mut i32) (i32.const 1024))
   (global $zero i32 (i32.const 48))
 
@@ -138,7 +146,7 @@
   (func $i32list.mk.test (param $testNum i32)(result i32)
 	(local $lstPtr i32)
 	(local.set $lstPtr (call $i32list.mk))
-	(if (call $i32list.getCurLen (local.get $lstPtr))
+	(if (call $i32list.getCurLen (local.get $lstPtr)) ;; should be 0
 		(then
 		  (call $C.print (i32.const 21)) ;; !
 		  (call $i32.print (call $i32list.getCurLen (local.get $lstPtr)))
@@ -172,6 +180,12 @@
 	(call $i32list.setCurLen (local.get $lstPtr)(i32.const 37))
 	(call $i32list.setMaxLen (local.get $lstPtr)(i32.const 38))
 	(call $i32list.setDataOff (local.get $lstPtr)(i32.const 39))
+	(if (i32.ne (call $i32list.getCurLen (local.get $lstPtr))(i32.const 37))
+		(then (return (i32.const 0))))
+	(if (i32.ne (call $i32list.getMaxLen (local.get $lstPtr))(i32.const 38))
+		(then (return (i32.const 0))))
+	(if (i32.ne (call $i32list.getDataOff (local.get $lstPtr))(i32.const 39))
+		(then (return (i32.const 0))))
 	(i32.const 1)
   )
   (func $i32list.extend (param $lstPtr i32)
@@ -493,12 +507,16 @@
 
   )
   (func $test (export "_test")
-	(local $testNum i32)(local $strPtr i32)(local $lstPtr i32)
-	(local.set $testNum (i32.const 1))
-	(if (call $i32list.mk.test (local.get $testNum))
-	  (then (call $Test.showOK (local.get $testNum)))
-	  (else (call $Test.showFailed (local.get $testNum)))
+	(local $testNum i32)
+	(local.set $testNum (i32.const 0))
+	(loop $tLoop
+	  (local.get $testNum)
+	  (if ( call_indirect (type $testSig) (local.get $testNum))
+		(then (call $Test.showOK (local.get $testNum)))
+		(else (call $Test.showFailed (local.get $testNum))))
+	  (local.set $testNum (i32.add (local.get $testNum)(i32.const 1)))
+	  (if (i32.lt_u (local.get $testNum)(global.get $numTests))
+	    (then (br $tLoop)))
 	)
-	(local.set $testNum (i32.add (local.get $testNum)(i32.const 1)))
   )
 )
