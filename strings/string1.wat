@@ -9,7 +9,7 @@
   (export "memory" (memory 0))
 
   (type $testSig (func (param i32)(result i32)))
-  (table 7 funcref)
+  (table 8 funcref)
   (elem (i32.const 0)
     $i32list.mk.test	;;0
 	$i32list.sets.test	;;1
@@ -18,8 +18,9 @@
 	$str.mkdata.test	;;4
 	$str.getChar.test	;;5
 	$i32list.cat.test	;;6
+	$str.stripLeading.test ;; 7
   )
-  (global $numTests i32 (i32.const 7)) ;; Better match!
+  (global $numTests i32 (i32.const 8)) ;; Better match!
   (global $nextFreeMem (mut i32) (i32.const 2048))
   (global $zero i32 (i32.const 48))
 
@@ -34,7 +35,7 @@
   (data (i32.const 1278) "at \00")		(global $at i32 (i32.const 1278))
   (data (i32.const 1288) "ABCDEF\00")	(global $ABCDEF i32 (i32.const 1288))
   (data (i32.const 1298) "FEDCBA\00")	(global $FEDCBA i32 (i32.const 1298))
-  (data (i32.const 1308) "AAAZZZ\00")	(global $AAA+ZZZ i32 (i32.const 1308))
+  (data (i32.const 1308) "AAAZZZ\00")	(global $AAAZZZ i32 (i32.const 1308))
   (data (i32.const 2000) "ZZZ\00")		(global $ZZZ i32 (i32.const 2000))
   
   ;; Simple memory allocation done in 4-byte chunks
@@ -508,6 +509,14 @@
 			(local.set $spos (i32.add (local.get $spos)(i32.const 1)))
 			(br $copy))))
 	(local.get $stripped)
+  )
+  (func $str.stripLeading.test (param $testNum i32) (result i32)
+	(local $strAAAZZZ i32)(local $strZZZ i32)
+	(local.set $strAAAZZZ (call $str.mkdata (global.get $AAAZZZ)))
+	(local.set $strZZZ (call $str.mkdata (global.get $ZZZ)))
+	(call $str.compare
+		(local.get $strZZZ)
+		(call $str.stripLeading (local.get $strAAAZZZ) (i32.const 65)))
   )
   (func $str.compare (param $s1ptr i32)(param $s2ptr i32)(result i32)
 	(local $s2len i32)(local $cpos i32)
