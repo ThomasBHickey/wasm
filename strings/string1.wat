@@ -9,7 +9,7 @@
   (export "memory" (memory 0))
 
   (type $testSig (func (param i32)(result i32)))
-  (table 8 funcref)
+  (table 9 funcref)
   (elem (i32.const 0)
     $i32list.mk.test	;;0
 	$i32list.sets.test	;;1
@@ -19,8 +19,9 @@
 	$str.getChar.test	;;5
 	$i32list.cat.test	;;6
 	$str.stripLeading.test ;; 7
+	$str.compare.test	;;8
   )
-  (global $numTests i32 (i32.const 8)) ;; Better match!
+  (global $numTests i32 (i32.const 9)) ;; Better match!
   (global $nextFreeMem (mut i32) (i32.const 2048))
   (global $zero i32 (i32.const 48))
 
@@ -537,6 +538,22 @@
 			(br $cloop)
 		)))
 	(i32.const 1)(return)
+  )
+  (func $str.compare.test (param $testNum i32)(result i32)
+	(local $spAAA i32)(local $spAAA2 i32) (local $spZZZ i32)
+	(local.set $spAAA (call $str.mkdata (global.get $AAA)))
+	(local.set $spAAA2 (call $str.mk))
+	(call $str.catChar (local.get $spAAA2)(i32.const 65))
+	(call $str.catChar (local.get $spAAA2)(i32.const 65))
+	(call $str.catChar (local.get $spAAA2)(i32.const 65))
+	(local.set $spZZZ (call $str.mkdata (global.get $ZZZ)))
+	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA)))
+		(return (i32.const 0)))  ;; same string, should have matched
+	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA2)))
+		(return (i32.const 0)))  ;; same contents, should have matched
+	(if (call $str.compare (local.get $spAAA)(local.get $spZZZ))
+		(return (i32.const 0)))
+	(i32.const 1)
   )
   (func $main (export "_start")
 	(local $sp i32)(local $rsp i32)(local $stripped i32)
