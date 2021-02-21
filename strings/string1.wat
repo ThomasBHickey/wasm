@@ -108,6 +108,7 @@
 	(call $C.print (i32.const  32)) ;; space
   )
   (func $Test.showOK (param $testnum i32)
+	;;(return)
     (call $Test.printTest)
 	(call $i32.print1 (local.get $testnum))
 	(call $C.print (i32.const 79)) ;; O
@@ -120,6 +121,9 @@
 	(call $C.print (i32.const 78)) ;; N
 	(call $C.print (i32.const 79)) ;; O
 	(call $C.print (i32.const 75)) ;; K
+	(call $C.print (i32.const 33)) ;; !
+	(call $C.print (i32.const 33)) ;; !
+	(call $C.print (i32.const 33)) ;; !
 	(call $C.print (i32.const 10)) ;; linefeed
 	)
 
@@ -509,9 +513,9 @@
   (func $test (export "_test")
 	(local $testNum i32)
 	(local.set $testNum (i32.const 0))
-	(loop $tLoop
+	(loop $tLoop  ;; assumes there is a least one test
 	  (local.get $testNum)
-	  (if ( call_indirect (type $testSig) (local.get $testNum))
+	  (if (call_indirect (type $testSig) (local.get $testNum))
 		(then (call $Test.showOK (local.get $testNum)))
 		(else (call $Test.showFailed (local.get $testNum))))
 	  (local.set $testNum (i32.add (local.get $testNum)(i32.const 1)))
