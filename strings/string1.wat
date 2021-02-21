@@ -9,38 +9,33 @@
   (export "memory" (memory 0))
 
   (type $testSig (func (param i32)(result i32)))
-  (table 4 funcref)
+  (table 6 funcref)
   (elem (i32.const 0)
     $i32list.mk.test	;;0
 	$i32list.sets.test	;;1
 	$str.catChar.test	;;2
 	$str.Rev.test		;;3
+	$str.mkdata.test	;;4
+	$str.getChar.test	;;5
   )
-  (global $numTests i32 (i32.const 4)) ;; Better match!
+  (global $numTests i32 (i32.const 6)) ;; Better match!
   (global $nextFreeMem (mut i32) (i32.const 2048))
   (global $zero i32 (i32.const 48))
 
-  (data (i32.const 1128) "Hello1\00") ;; null not part of string
-  (global $Hello1Data i32 (i32.const 1128))
-  (data (i32.const 1168) "Hello2\00")
-  (global $Hello2Data i32 (i32.const 1168))
-  (data (i32.const 1208) "Catted string:\00")
-  (global $CattedData i32 (i32.const 1208))
-  (data (i32.const 1228) "reallocating\00")
-  (global $reallocating i32 (i32.const 1228))
-  (data (i32.const 1248) "test1\00")
-  (global $test1 i32 (i32.const 1248))
-  (data (i32.const 1258) "test2\00")
-  (global $test2 i32 (i32.const 1258))
-  (data (i32.const 1268) "adding \00")
-  (global $adding i32 (i32.const 1268))
-  (data (i32.const 1278) "at \00")
-  (global $at i32 (i32.const 1278))
-  (data (i32.const 1288) "ABCDEF\00")
-  (global $ABCDEF i32 (i32.const 1288))
-  (data (i32.const 1298) "FEDCBA\00")
-  (global $FEDCBA i32 (i32.const 1298))
-
+  (data (i32.const 1000) "AAA\00")		(global $AAA i32 (i32.const 1000))
+  (data (i32.const 1128) "Hello1\00")	(global $Hello1Data i32 (i32.const 1128))
+  (data (i32.const 1168) "Hello2\00")	(global $Hello2Data i32 (i32.const 1168))
+  (data (i32.const 1208) "Catted string:\00")(global $CattedData i32 (i32.const 1208))
+  (data (i32.const 1228) "reallocating\00")(global $reallocating i32 (i32.const 1228))
+  (data (i32.const 1248) "test1\00")	(global $test1 i32 (i32.const 1248))
+  (data (i32.const 1258) "test2\00")	(global $test2 i32 (i32.const 1258))
+  (data (i32.const 1268) "adding \00")	(global $adding i32 (i32.const 1268))
+  (data (i32.const 1278) "at \00")		(global $at i32 (i32.const 1278))
+  (data (i32.const 1288) "ABCDEF\00")	(global $ABCDEF i32 (i32.const 1288))
+  (data (i32.const 1298) "FEDCBA\00")	(global $FEDCBA i32 (i32.const 1298))
+  (data (i32.const 1308) "AAAZZZ\00")	(global $AAA+ZZZ i32 (i32.const 1308))
+  (data (i32.const 2000) "ZZZ\00")		(global $ZZZ i32 (i32.const 2000))
+  
   ;; Simple memory allocation done in 4-byte chunks
   ;; Should this get cleared first?
   (func $getMem (param $size i32)(result i32)
@@ -347,6 +342,19 @@
 	  (else (i32.const 0))
 	)
   )
+  (func $str.getChar.test (param $testNum i32)(result i32)
+    (local $ts i32)(local $lastCharPos i32)
+	(local.set $ts (call $str.mkdata (global.get $ABCDEF)))
+	(local.set $lastCharPos
+		(i32.sub (call $str.getCurLen (local.get $ts))(i32.const 1)))
+	(if (i32.ne (call $str.getChar (local.get $ts)(i32.const 0))
+				(i32.const 65)) ;; 'A'
+		(return (i32.const 0)))
+	(if (i32.ne (call $str.getChar (local.get $ts)(local.get $lastCharPos))
+				(i32.const 70)) ;; 'F'
+		(return (i32.const 0)))
+	(i32.const 1)  ;; success
+  )
   ;; Make a string from null-terminated chunk of memory
   (func $str.mkdata (param $dataOffset i32) (result i32)
 	;; null terminator is not counted as part of string
@@ -364,6 +372,25 @@
 	(call $str.setMaxLen (local.get $strPtr)(local.get $length))
 	(call $str.setDataOff (local.get $strPtr)(local.get $dataOffset))
 	(local.get $strPtr)
+  )
+  (func $str.mkdata.test (param $testNum i32)(result i32)
+	;; see if first or last data stings have gotten stomped on
+	(local $aaa i32)(local $zzz i32)(local $first i32)(local $last i32)
+	(local.set $first (call $str.mkdata (global.get $AAA)))
+	(local.set $last (call $str.mkdata (global.get $ZZZ)))
+	(local.set $aaa (call $str.mk))
+	(call $str.catChar(local.get $aaa) (i32.const 65))
+	(call $str.catChar(local.get $aaa) (i32.const 65))
+	(call $str.catChar(local.get $aaa) (i32.const 65))
+	(local.set $zzz (call $str.mk))
+	(call $str.catChar(local.get $zzz) (i32.const 90))
+	(call $str.catChar(local.get $zzz) (i32.const 90))
+	(call $str.catChar(local.get $zzz) (i32.const 90))
+	(if (i32.eqz (call $str.compare (local.get $aaa)(local.get $first)))
+		(return (i32.const 0)))
+	(if (i32.eqz (call $str.compare (local.get $zzz)(local.get $last)))
+		(return (i32.const 0)))
+	(i32.const 1)
   )
   (func $str.print (param $strPtr i32)
 	(local $curLength i32)
