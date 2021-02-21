@@ -9,7 +9,7 @@
   (export "memory" (memory 0))
 
   (type $testSig (func (param i32)(result i32)))
-  (table 6 funcref)
+  (table 7 funcref)
   (elem (i32.const 0)
     $i32list.mk.test	;;0
 	$i32list.sets.test	;;1
@@ -17,8 +17,9 @@
 	$str.Rev.test		;;3
 	$str.mkdata.test	;;4
 	$str.getChar.test	;;5
+	$i32list.cat.test	;;6
   )
-  (global $numTests i32 (i32.const 6)) ;; Better match!
+  (global $numTests i32 (i32.const 7)) ;; Better match!
   (global $nextFreeMem (mut i32) (i32.const 2048))
   (global $zero i32 (i32.const 48))
 
@@ -239,6 +240,17 @@
 	(call $i32list.set@ (local.get $lstPtr)(local.get $curLen)(local.get $val))
 	(call $i32list.setCurLen (local.get $lstPtr)
 		(i32.add (local.get $curLen)(i32.const 1)))
+  )
+  (func $i32list.cat.test (param $testNum i32)(result i32)
+    (local $lstPtr i32)
+	(local.set $lstPtr (call $i32list.mk))
+	(call $i32list.cat (local.get $lstPtr) (i32.const 42))
+	(call $i32list.cat (local.get $lstPtr) (i32.const 43))
+	(if (i32.ne (i32.const 42)(call $i32list.get@ (local.get $lstPtr)(i32.const 0)))
+		(return (i32.const 0)))
+	(if (i32.ne (i32.const 43)(call $i32list.get@ (local.get $lstPtr)(i32.const 1)))
+		(return (i32.const 0)))
+	(i32.const 1)
   )
   (func $i32list.print (param $lstPtr i32)
 	(local $curLength i32)
