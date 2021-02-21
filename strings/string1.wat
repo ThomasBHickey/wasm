@@ -9,31 +9,37 @@
   (export "memory" (memory 0))
 
   (type $testSig (func (param i32)(result i32)))
-  (table 2 funcref)
+  (table 4 funcref)
   (elem (i32.const 0)
-    $i32list.mk.test
-	$i32list.sets.test
+    $i32list.mk.test	;;0
+	$i32list.sets.test	;;1
+	$str.catChar.test	;;2
+	$str.Rev.test		;;3
   )
-  (global $numTests i32 (i32.const 2)) ;; Better match!
-  (global $nextFreeMem (mut i32) (i32.const 1024))
+  (global $numTests i32 (i32.const 4)) ;; Better match!
+  (global $nextFreeMem (mut i32) (i32.const 2048))
   (global $zero i32 (i32.const 48))
 
-  (data (i32.const 128) "Hello1\00") ;; null not part of string
-  (global $Hello1Data i32 (i32.const 128))
-  (data (i32.const 168) "Hello2\00")
-  (global $Hello2Data i32 (i32.const 168))
-  (data (i32.const 208) "Catted string:\00")
-  (global $CattedData i32 (i32.const 208))
-  (data (i32.const 228) "reallocating\00")
-  (global $reallocating i32 (i32.const 228))
-  (data (i32.const 248) "test1\00")
-  (global $test1 i32 (i32.const 248))
-  (data (i32.const 258) "test2\00")
-  (global $test2 i32 (i32.const 258))
-  (data (i32.const 268) "adding \00")
-  (global $adding i32 (i32.const 268))
-  (data (i32.const 278) "at \00")
-  (global $at i32 (i32.const 278))
+  (data (i32.const 1128) "Hello1\00") ;; null not part of string
+  (global $Hello1Data i32 (i32.const 1128))
+  (data (i32.const 1168) "Hello2\00")
+  (global $Hello2Data i32 (i32.const 1168))
+  (data (i32.const 1208) "Catted string:\00")
+  (global $CattedData i32 (i32.const 1208))
+  (data (i32.const 1228) "reallocating\00")
+  (global $reallocating i32 (i32.const 1228))
+  (data (i32.const 1248) "test1\00")
+  (global $test1 i32 (i32.const 1248))
+  (data (i32.const 1258) "test2\00")
+  (global $test2 i32 (i32.const 1258))
+  (data (i32.const 1268) "adding \00")
+  (global $adding i32 (i32.const 1268))
+  (data (i32.const 1278) "at \00")
+  (global $at i32 (i32.const 1278))
+  (data (i32.const 1288) "ABCDEF\00")
+  (global $ABCDEF i32 (i32.const 1288))
+  (data (i32.const 1298) "FEDCBA\00")
+  (global $FEDCBA i32 (i32.const 1298))
 
   ;; Simple memory allocation done in 4-byte chunks
   ;; Should this get cleared first?
@@ -41,8 +47,8 @@
 	(local $size4 i32)
 	(local.set $size4 
 	  (i32.mul (i32.div_u 
-	             (i32.add (local.get $size)(i32.const 3))
-	           (i32.const 4))(i32.const 4)))
+				(i32.add (local.get $size)(i32.const 3))
+				(i32.const 4))(i32.const 4)))
 	(global.get $nextFreeMem) ;; to return
 	(global.set $nextFreeMem (i32.add (global.get $nextFreeMem)(local.get $size4)))
   )
@@ -153,7 +159,7 @@
 	(if (call $i32list.getCurLen (local.get $lstPtr)) ;; should be 0
 		(then
 		  (call $C.print (i32.const 21)) ;; !
-		  (call $i32.print (call $i32list.getCurLen (local.get $lstPtr)))
+		  ;;(call $i32.print (call $i32list.getCurLen (local.get $lstPtr)))
 		  (return (i32.const 0))))
 	(if (i32.ne (i32.const 1)(call $i32list.getMaxLen (local.get $lstPtr)))
 		(then
@@ -323,6 +329,13 @@
 	)
 	(local.get $revStrPtr)
   )
+  (func $str.Rev.test (param $testNum i32)(result i32)
+	(local $abc i32)(local $abc.rev i32)(local $cba i32)
+	(local.set $abc (call $str.mkdata (global.get $ABCDEF)))
+	(local.set $abc.rev (call $str.Rev (local.get $abc)))
+	(local.set $cba (call $str.mkdata (global.get $FEDCBA)))
+	(call $str.compare (local.get $abc.rev)(local.get $cba))
+  )
   ;; how to show an error beyond returning null?
   (func $str.getChar (param $strPtr i32) (param $charPos i32)(result i32)
 	(if (result i32)
@@ -392,7 +405,6 @@
 	(local $maxLen i32) (local $curLen i32) (local $dataOffset i32)
 	(local.set $curLen (i32.load (local.get $Offset)))
 	(local.set $maxLen (i32.load (i32.add (local.get $Offset)(i32.const 4))))
-	;;(call $C.print (i32.const 77))(call $C.print (i32.const 58))(call $i32.print(local.get $maxLen))
 	(if (i32.ge_u (local.get $curLen) (local.get $maxLen))
 		(then ;;handle reallocation
 		  (call $str.extend (local.get $Offset))
@@ -402,7 +414,21 @@
 	  (i32.add (i32.const 8)(local.get $Offset))))
 	(i32.store8 (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $C))
 	(call $str.setCurLen(local.get $Offset) (i32.add (local.get $curLen)(i32.const 1)))
-  ) 
+  )
+  (func $str.catChar.test (param $testNum i32)(result i32)
+	(local $sp i32)(local $memsp i32)
+	(local.set $sp (call $str.mk))
+	(local.set $memsp (call $str.mkdata (global.get $ABCDEF)))
+	(call $str.catChar (local.get $sp) (i32.const 65))
+	(call $str.catChar (local.get $sp) (i32.const 66))
+	(call $str.catChar (local.get $sp) (i32.const 67))
+	(call $str.catChar (local.get $sp) (i32.const 68))
+	(call $str.catChar (local.get $sp) (i32.const 69))
+	(call $str.catChar (local.get $sp) (i32.const 70))
+	(if (i32.eqz (call $str.compare (local.get $sp)(local.get $memsp)))
+	  (then (return (i32.const 0))))
+	(return (i32.const 1))
+  )
   ;; Add a character to beginning of a string
   ;; Not multibyte character safe
   (func $str.LcatChar (param $strPtr i32)(param $Lchar i32)
@@ -460,7 +486,6 @@
 						(call $str.getChar (local.get $s2ptr)(local.get $cpos)))
 			(then (i32.const 0) (return)))
 			(local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
-			(call $i32.print(local.get $cpos))
 			(br $cloop)
 		)))
 	(i32.const 1)(return)
