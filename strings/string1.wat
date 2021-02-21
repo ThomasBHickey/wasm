@@ -213,8 +213,6 @@
   (func $i32list.set@ (param $lstPtr i32)(param $pos i32)(param $val i32)
     (local $dataOff i32)(local $dataOffOff i32)
 	(local.set $dataOff (call $i32list.getDataOff (local.get $lstPtr)))
-	;;(call $str.print (call $str.mkdata (global.get $adding)))
-	;;(call $i32.print (local.get $val))
 	(local.set $dataOffOff
 		(i32.add (local.get $dataOff)
 		  (i32.mul (call $i32list.getCurLen (local.get $lstPtr))(i32.const 4))))
@@ -231,36 +229,30 @@
 	(local $maxLen i32) (local $curLen i32)(local $dataOffset i32)
 	(local.set $curLen (call $i32list.getCurLen(local.get $lstPtr)))
 	(local.set $maxLen (call $i32list.getMaxLen(local.get $lstPtr)))
-	;;(call $C.print (i32.const 43))(call $i32.print (local.get $val))
-	(if (i32.ge_u (local.get $curLen) (local.get $maxLen))
-		;;handle reallocation
+	(if (i32.ge_u (local.get $curLen) (local.get $maxLen));;handle reallocation
 		(then
 		  (call $i32list.extend (local.get $lstPtr))
 		  (local.set $maxLen (call $i32list.getMaxLen(local.get $lstPtr)))
 		))
-	
 	(local.set $dataOffset (call $i32list.getDataOff (local.get $lstPtr)))
 	(call $i32list.set@ (local.get $lstPtr)(local.get $curLen)(local.get $val))
-	;; (i32.store (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $val))
-	(call $i32list.setCurLen (local.get $lstPtr)(i32.add (local.get $curLen)(i32.const 1)))
+	(call $i32list.setCurLen (local.get $lstPtr)
+		(i32.add (local.get $curLen)(i32.const 1)))
   )
   (func $i32list.print (param $lstPtr i32)
 	(local $curLength i32)
-	;;(local $dataOffset i32)
+	;;(local$dataOffset i32)
 	(local $ipos i32)
 	(local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
 	(local.set $ipos (i32.const 0))
-	
 	(call $C.print (i32.const 91)) ;; left bracket
 	(loop $iLoop
 	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
 		(then
 		  (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))
-		 ;;(i32.load (i32.add (local.get $dataOffset)(local.get $ipos)))
-		 (call $i32.print)   
-	     (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
-	     (br $iLoop)
-	)))
+		  (call $i32.print)   
+	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
+	      (br $iLoop))))
 	(call $C.print (i32.const 93)) ;; right bracket
 	(call $C.print (i32.const 10)) ;; new line
   )
@@ -306,7 +298,8 @@
 	(loop $cloop
 		(if (i32.lt_u (local.get $c2pos)(local.get $s2curLen))
 		  (then
-			(call $str.catChar(local.get $s1Ptr)(call $str.getChar (local.get $s2Ptr)(local.get $c2pos)))
+			(call $str.catChar(local.get $s1Ptr)
+			  (call $str.getChar (local.get $s2Ptr)(local.get $c2pos)))
 			(local.set $c2pos (i32.add (local.get $c2pos)(i32.const 1)))
 			(br $cloop)
 		  )))		
@@ -320,7 +313,8 @@
 	(loop $cloop
 	  (if (i32.lt_u (local.get $cpos)(local.get $curLen))
 		(then
-			(local.set $curChar (call $str.getChar (local.get $strPtr)(local.get $cpos)))
+			(local.set $curChar
+			  (call $str.getChar (local.get $strPtr)(local.get $cpos)))
 			(call $str.LcatChar (local.get $revStrPtr)(local.get $curChar))
 			(local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
 		)
@@ -331,9 +325,11 @@
   )
   ;; how to show an error beyond returning null?
   (func $str.getChar (param $strPtr i32) (param $charPos i32)(result i32)
-	(if (result i32) (i32.lt_u (local.get $charPos)(call $str.getCurLen (local.get $strPtr)) )
+	(if (result i32)
+	  (i32.lt_u (local.get $charPos)(call $str.getCurLen (local.get $strPtr)))
 	  (then
-		(i32.load8_u (i32.add (call $str.getDataOff (local.get $strPtr))(local.get $charPos)))
+		(i32.load8_u (i32.add (call $str.getDataOff
+		  (local.get $strPtr))(local.get $charPos)))
 	  )
 	  (else (i32.const 0))
 	)
@@ -363,15 +359,14 @@
 	(local.set $curLength (call $str.getCurLen(local.get $strPtr)))
 	(local.set $cpos (i32.const 0))
 	(call $C.print (i32.const 34)) ;; double quote
-	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $strPtr))))
+	(local.set $dataOffset (i32.load (i32.add (i32.const 8)(local.get $strPtr))))
 	(loop $cLoop
 	  (if (i32.lt_u (local.get $cpos)(local.get $curLength))
 		(then
 		 (i32.load8_u (i32.add (local.get $dataOffset)(local.get $cpos)))
 		 (call $C.print)   
 	     (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
-	     (br $cLoop)
-	)))
+	     (br $cLoop))))
 	(call $C.print (i32.const 34)) ;; double quote
  	(call $C.print (i32.const 10))  ;; linefeed
   )
@@ -388,7 +383,6 @@
 	(local.set $maxLen (call $str.getMaxLen (local.get $strPtr)))
 	(local.set $dataOff   (call $str.getDataOff (local.get $strPtr)))
 	(local.set $newMaxLen (i32.mul (local.get $maxLen)(i32.const 2)))
-	;;(local.set $newDataOff (global.get $nextstrPtr))
 	(local.set $newDataOff (call $getMem (local.get $newMaxLen)))
 	(call $str.setMaxLen(local.get $strPtr)(local.get $newMaxLen))
 	(call $str.setDataOff(local.get $strPtr)(local.get $newDataOff))
@@ -400,12 +394,12 @@
 	(local.set $maxLen (i32.load (i32.add (local.get $Offset)(i32.const 4))))
 	;;(call $C.print (i32.const 77))(call $C.print (i32.const 58))(call $i32.print(local.get $maxLen))
 	(if (i32.ge_u (local.get $curLen) (local.get $maxLen))
-		;;handle reallocation
-		(then
+		(then ;;handle reallocation
 		  (call $str.extend (local.get $Offset))
 		  (local.set $maxLen (i32.load (i32.add (i32.const 4)(local.get $Offset))))
 		))
-	(local.set $dataOffset(i32.load (i32.add (i32.const 8)(local.get $Offset))))
+	(local.set $dataOffset(i32.load
+	  (i32.add (i32.const 8)(local.get $Offset))))
 	(i32.store8 (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $C))
 	(call $str.setCurLen(local.get $Offset) (i32.add (local.get $curLen)(i32.const 1)))
   ) 
@@ -413,7 +407,7 @@
   ;; Not multibyte character safe
   (func $str.LcatChar (param $strPtr i32)(param $Lchar i32)
 	(local $cpos i32)(local $dataOff i32)(local $curC i32)
-	;; first make room for the new character (should work for multibyte characters)
+	;; first make room for the new character
 	;; tack it on at the end (it will get overwritten)
 	(local.set $cpos (call $str.getCurLen (local.get $strPtr)))
 	(call $str.catChar (local.get $strPtr)(local.get $Lchar))
@@ -430,8 +424,7 @@
   (func $str.stripLeading (param $strPtr i32)(param $charToStrip i32)(result i32)
 	(local $spos i32)(local $curLen i32)(local $stripped i32)
 	(local.set $spos (i32.const 0))
-	(loop $strip
-		;; $str.getChar returns Null if $spos goes out of bounds
+	(loop $strip ;; $str.getChar returns Null if $spos goes out of bounds
 		(if (i32.eq (local.get $charToStrip)
 			(call $str.getChar (local.get $strPtr)(local.get $spos)))
 		  (then
@@ -446,13 +439,12 @@
 		(if (i32.lt_u (local.get $spos)(local.get $curLen))
 		  (then
 		    (call $str.catChar (local.get $stripped)
-							   (call $str.getChar(local.get $strPtr)(local.get $spos)))
+				(call $str.getChar(local.get $strPtr)(local.get $spos)))
 			(local.set $spos (i32.add (local.get $spos)(i32.const 1)))
-			(br $copy)
-		  )))
+			(br $copy))))
 	(local.get $stripped)
   )
-  (func $str.compare (param $s1ptr i32)(param $s2ptr i32)(result i32)  ;; return True if equal
+  (func $str.compare (param $s1ptr i32)(param $s2ptr i32)(result i32)
 	(local $s2len i32)(local $cpos i32)
 	(local.set $s2len (call $str.getCurLen (local.get $s2ptr)))
 	(if (i32.ne (call $str.getCurLen (local.get $s1ptr))(local.get $s2len))
