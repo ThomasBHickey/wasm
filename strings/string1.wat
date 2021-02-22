@@ -30,10 +30,15 @@
   ;; keep FIRST and LAST at the beginning and end of these
   (data (i32.const 1000) "AAA\00")		(global $AAA i32	(i32.const 1000)) ;;FIRST
   (data (i32.const 1020) "at \00")		(global $at i32		(i32.const 1020))
+  (data (i32.const 1030) "realloc\00")	(global $realloc i32	(i32.const 1030))
   (data (i32.const 1040) "ABCDEF\00")	(global $ABCDEF i32	(i32.const 1040))
   (data (i32.const 1080) "FEDCBA\00")	(global $FEDCBA i32	(i32.const 1080))
   (data (i32.const 1100) "AAAZZZ\00")	(global $AAAZZZ i32	(i32.const 1100))
-  (data (i32.const 1110) "AbCDbE")		(global $AbCDbE i32 (i32.const 1110))
+  (data (i32.const 1110) "AbCDbE\00")		(global $AbCDbE i32 (i32.const 1110))
+  (data (i32.const 1120) ">aaa\0A\00")		(global $>aaa i32 (i32.const 1120))
+  (data (i32.const 1130) ">bbb\0A\00")		(global $>bbb i32 (i32.const 1130))
+  (data (i32.const 1140) ">ccc\0A\00")		(global $>ccc i32 (i32.const 1140))
+  (data (i32.const 1150) ">ddd\0A\00")		(global $>ddd i32 (i32.const 1150))
   (data (i32.const 2000) "ZZZ\00")		(global $ZZZ 	i32 (i32.const 2000)) ;;LAST
   
   ;; Simple memory allocation done in 4-byte chunks
@@ -81,9 +86,10 @@
   )
   (func $PtrDump (param $ptr i32)
 	(call $C.print(i32.const 123)) ;; {
-	   (call $i32.print (call $i32list.getCurLen (local.get $ptr)))
-	   (call $i32.print (call $i32list.getMaxLen (local.get $ptr)))
-	   (call $i32.print (call $i32list.getDataOff (local.get $ptr)))
+	  (call $i32.print (local.get $ptr))
+	  (call $i32.print (call $i32list.getCurLen (local.get $ptr)))
+	  (call $i32.print (call $i32list.getMaxLen (local.get $ptr)))
+	  (call $i32.print (call $i32list.getDataOff (local.get $ptr)))
 	(call $C.print(i32.const 125)) ;; }
   )
   (func $C.print (param $C i32)
@@ -198,8 +204,8 @@
 	(local $maxLen i32) (local $curLen i32) (local $dataOff i32)
 	(local $newMaxLen i32)(local $newDataOff i32)
 	(local $cpos i32)
-	;;(call $str.print (call $str.mkdata (global.get $reallocating)))
-	;;(call $PtrDump (local.get $lstPtr))
+	;; (call $str.print (call $str.mkdata (global.get $realloc)))
+	;; (call $PtrDump (local.get $lstPtr))
 	(local.set $curLen (call $i32list.getCurLen (local.get $lstPtr)))
 	(local.set $maxLen (call $i32list.getMaxLen (local.get $lstPtr)))
 	(local.set $dataOff   (call $i32list.getDataOff (local.get $lstPtr)))
@@ -517,12 +523,15 @@
   (func $str.compare (param $s1ptr i32)(param $s2ptr i32)(result i32)
 	(local $s2len i32)(local $cpos i32)
 	(local.set $s2len (call $str.getCurLen (local.get $s2ptr)))
+	;; (call $str.print (call $str.mkdata (global.get $>bbb)))
+	;; (call $i32.print (call $str.getCurLen (local.get $s1ptr)))
+	;; (call $i32.print (call $str.getCurLen (local.get $s2ptr)))
+	;; (call $str.print (local.get $s1ptr))
+	;; (call $str.print (local.get $s2ptr))
 	(if (i32.ne (call $str.getCurLen (local.get $s1ptr))(local.get $s2len))
 	  (then (i32.const 0)(return))
 	)
 	(local.set $cpos (i32.const 0))
-	;;(call $str.print (local.get $s1ptr))
-	;;(call $str.print (local.get $s2ptr))
 	(loop $cloop
 	  (if (i32.lt_u (local.get $cpos)(local.get $s2len))
 		(then
@@ -533,6 +542,22 @@
 			(br $cloop)
 		)))
 	(i32.const 1)(return)
+  )
+  (func $str.compare.test (param $testNum i32)(result i32)
+	(local $spAAA i32)(local $spAAA2 i32) (local $spZZZ i32)
+	(local.set $spAAA (call $str.mkdata (global.get $AAA)))
+	(local.set $spAAA2 (call $str.mk))
+	(call $str.catChar (local.get $spAAA2)(i32.const 65))
+	(call $str.catChar (local.get $spAAA2)(i32.const 65))
+	(call $str.catChar (local.get $spAAA2)(i32.const 65))
+	(local.set $spZZZ (call $str.mkdata (global.get $ZZZ)))
+	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA)))
+		(return (i32.const 0)))  ;; same string, should have matched
+	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA2)))
+		(return (i32.const 0)))  ;; same contents, should have matched
+	(if (call $str.compare (local.get $spAAA)(local.get $spZZZ))
+		(return (i32.const 0)))  ;; should not have matched!
+	(i32.const 1) ;; success
   )
   ;; pass string, char, return list of string split on char
   (func $str.Csplit (param $toSplit i32)(param $splitC i32)(result i32)
@@ -550,38 +575,30 @@
 		  (if (i32.eq (local.get $splitC)(local.get $char))
 			(then
 			  (call $i32list.cat (local.get $splitList)(local.get $strCum))
-			  (local.set $strCum (call $str.mk))))
+			  (local.set $strCum (call $str.mk)))
+			(else
+				(call $str.catChar (local.get $strCum)(local.get $char))))
 		  (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
 		  (br $cloop))))
 	(call $i32list.cat (local.get $splitList)(local.get $strCum))
 	(local.get $splitList)
   )
   (func $str.Csplit.test (param $testNum i32)(result i32)
-	(local $sptr i32)(local $listPtr i32)
-	(local.set $sptr (call $str.mkdata (global.get $AbCDbE)))
-	(local.set $listPtr (call $str.Csplit (local.get $sptr)(i32.const 98)))  ;; 'b'
-	;;(call $i32.print(call $i32list.getCurLen (local.get $listPtr)))
+	(local $AbCDbE i32)(local $listPtr i32)(local $strptr0 i32)
+	(local.set $AbCDbE (call $str.mkdata (global.get $AbCDbE)))
+	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 98)))  ;; 'b'
 	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 3))
 	  (return (i32.const 0)))
-	(local.set $listPtr (call $str.Csplit (local.get $sptr)(i32.const 45)))  ;; 'E'
+	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 45)))  ;; 'E'
 	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 1))
 	  (return (i32.const 0)))
-	(i32.const 1) ;; success
-  )
-  (func $str.compare.test (param $testNum i32)(result i32)
-	(local $spAAA i32)(local $spAAA2 i32) (local $spZZZ i32)
-	(local.set $spAAA (call $str.mkdata (global.get $AAA)))
-	(local.set $spAAA2 (call $str.mk))
-	(call $str.catChar (local.get $spAAA2)(i32.const 65))
-	(call $str.catChar (local.get $spAAA2)(i32.const 65))
-	(call $str.catChar (local.get $spAAA2)(i32.const 65))
-	(local.set $spZZZ (call $str.mkdata (global.get $ZZZ)))
-	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA)))
-		(return (i32.const 0)))  ;; same string, should have matched
-	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA2)))
-		(return (i32.const 0)))  ;; same contents, should have matched
-	(if (call $str.compare (local.get $spAAA)(local.get $spZZZ))
-		(return (i32.const 0)))  ;; should not have matched!
+	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 122)))  ;; 'z'
+	(local.set $strptr0 (call $i32list.get@ (local.get $listPtr)(i32.const 0)))
+	(if (i32.eqz 
+		  (call $str.compare
+			(call $i32list.get@ (local.get $listPtr)(i32.const 0))
+			(local.get $AbCDbE)))
+	  (return (i32.const 0)))
 	(i32.const 1) ;; success
   )
   (func $test (export "_test")
