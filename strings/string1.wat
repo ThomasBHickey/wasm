@@ -2,8 +2,10 @@
 ;; or "wasmtime string1.wasm" if it has been compiled by wasm2wat
 ;; (wasmtime recognizes the func exported as "_start")
 (module
-  (import "wasi_unstable" "fd_read"  (func $fd_read (param i32 i32 i32 i32)  (result i32)))
-  (import "wasi_unstable" "fd_write" (func $fd_write (param i32 i32 i32 i32) (result i32)))
+  (import "wasi_unstable" "fd_read"
+	(func $fd_read (param i32 i32 i32 i32)  (result i32)))
+  (import "wasi_unstable" "fd_write"
+	(func $fd_write (param i32 i32 i32 i32) (result i32)))
 
   (memory 1)
   (export "memory" (memory 0))
@@ -24,20 +26,13 @@
   (global $numTests i32 (i32.const 9)) ;; Better match!
   (global $nextFreeMem (mut i32) (i32.const 2048))
   (global $zero i32 (i32.const 48))
-
-  (data (i32.const 1000) "AAA\00")		(global $AAA i32 (i32.const 1000))
-  (data (i32.const 1128) "Hello1\00")	(global $Hello1Data i32 (i32.const 1128))
-  (data (i32.const 1168) "Hello2\00")	(global $Hello2Data i32 (i32.const 1168))
-  (data (i32.const 1208) "Catted string:\00")(global $CattedData i32 (i32.const 1208))
-  (data (i32.const 1228) "reallocating\00")(global $reallocating i32 (i32.const 1228))
-  (data (i32.const 1248) "test1\00")	(global $test1 i32 (i32.const 1248))
-  (data (i32.const 1258) "test2\00")	(global $test2 i32 (i32.const 1258))
-  (data (i32.const 1268) "adding \00")	(global $adding i32 (i32.const 1268))
-  (data (i32.const 1278) "at \00")		(global $at i32 (i32.const 1278))
-  (data (i32.const 1288) "ABCDEF\00")	(global $ABCDEF i32 (i32.const 1288))
-  (data (i32.const 1298) "FEDCBA\00")	(global $FEDCBA i32 (i32.const 1298))
-  (data (i32.const 1308) "AAAZZZ\00")	(global $AAAZZZ i32 (i32.const 1308))
-  (data (i32.const 2000) "ZZZ\00")		(global $ZZZ i32 (i32.const 2000))
+  ;; keep FIRST and LAST at the beginning and end of these
+  (data (i32.const 1000) "AAA\00")		(global $AAA i32	(i32.const 1000)) ;;FIRST
+  (data (i32.const 1020) "at \00")		(global $at i32		(i32.const 1020))
+  (data (i32.const 1040) "ABCDEF\00")	(global $ABCDEF i32	(i32.const 1040))
+  (data (i32.const 1080) "FEDCBA\00")	(global $FEDCBA i32	(i32.const 1080))
+  (data (i32.const 1100) "AAAZZZ\00")	(global $AAAZZZ i32	(i32.const 1100))
+  (data (i32.const 2000) "ZZZ\00")		(global $ZZZ 	i32 (i32.const 2000)) ;;LAST
   
   ;; Simple memory allocation done in 4-byte chunks
   ;; Should this get cleared first?
@@ -400,11 +395,9 @@
 	(call $str.catChar(local.get $zzz) (i32.const 90))
 	(call $str.catChar(local.get $zzz) (i32.const 90))
 	(call $str.catChar(local.get $zzz) (i32.const 90))
-	(if (i32.eqz (call $str.compare (local.get $aaa)(local.get $first)))
-		(return (i32.const 0)))
-	(if (i32.eqz (call $str.compare (local.get $zzz)(local.get $last)))
-		(return (i32.const 0)))
-	(i32.const 1)
+	(i32.and
+		(call $str.compare (local.get $aaa)(local.get $first))
+		(call $str.compare (local.get $zzz)(local.get $last)))
   )
   (func $str.print (param $strPtr i32)
 	(local $curLength i32)
@@ -552,11 +545,8 @@
 	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA2)))
 		(return (i32.const 0)))  ;; same contents, should have matched
 	(if (call $str.compare (local.get $spAAA)(local.get $spZZZ))
-		(return (i32.const 0)))
+		(return (i32.const 0)))  ;; should not have matched!
 	(i32.const 1)
-  )
-  (func $main (export "_start")
-	(call $test)
   )
   (func $test (export "_test")
 	;; wasmtime strings/string1.wat --invoke _test
@@ -572,4 +562,5 @@
 	    (then (br $tLoop)))
 	)
   )
+  (func $main (export "_start")(call $test))
 )
