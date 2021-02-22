@@ -11,7 +11,7 @@
   (export "memory" (memory 0))
 
   (type $testSig (func (param i32)(result i32)))
-  (table 9 funcref)
+  (table 10 funcref)
   (elem (i32.const 0)
     $i32list.mk.test	;;0
 	$i32list.sets.test	;;1
@@ -22,9 +22,10 @@
 	$i32list.cat.test	;;6
 	$str.stripLeading.test ;; 7
 	$str.compare.test	;;8
+	$str.Csplit.test	;;9
   )
-  (global $numTests i32 (i32.const 9)) ;; Better match!
-  (global $nextFreeMem (mut i32) (i32.const 2048))
+  (global $numTests i32 (i32.const 10)) ;; Better match!
+  (global $nextFreeMem (mut i32) (i32.const 4096))
   (global $zero i32 (i32.const 48))
   ;; keep FIRST and LAST at the beginning and end of these
   (data (i32.const 1000) "AAA\00")		(global $AAA i32	(i32.const 1000)) ;;FIRST
@@ -32,6 +33,7 @@
   (data (i32.const 1040) "ABCDEF\00")	(global $ABCDEF i32	(i32.const 1040))
   (data (i32.const 1080) "FEDCBA\00")	(global $FEDCBA i32	(i32.const 1080))
   (data (i32.const 1100) "AAAZZZ\00")	(global $AAAZZZ i32	(i32.const 1100))
+  (data (i32.const 1110) "AbCDbE")		(global $AbCDbE i32 (i32.const 1110))
   (data (i32.const 2000) "ZZZ\00")		(global $ZZZ 	i32 (i32.const 2000)) ;;LAST
   
   ;; Simple memory allocation done in 4-byte chunks
@@ -239,13 +241,13 @@
 		(i32.add (local.get $curLen)(i32.const 1)))
   )
   (func $i32list.cat.test (param $testNum i32)(result i32)
-    (local $lstPtr i32)
-	(local.set $lstPtr (call $i32list.mk))
-	(call $i32list.cat (local.get $lstPtr) (i32.const 42))
-	(call $i32list.cat (local.get $lstPtr) (i32.const 43))
-	(if (i32.ne (i32.const 42)(call $i32list.get@ (local.get $lstPtr)(i32.const 0)))
+    (local $listPtr i32)
+	(local.set $listPtr (call $i32list.mk))
+	(call $i32list.cat (local.get $listPtr) (i32.const 42))
+	(call $i32list.cat (local.get $listPtr) (i32.const 43))
+	(if (i32.ne (i32.const 42)(call $i32list.get@ (local.get $listPtr)(i32.const 0)))
 		(return (i32.const 0)))
-	(if (i32.ne (i32.const 43)(call $i32list.get@ (local.get $lstPtr)(i32.const 1)))
+	(if (i32.ne (i32.const 43)(call $i32list.get@ (local.get $listPtr)(i32.const 1)))
 		(return (i32.const 0)))
 	(i32.const 1)
   )
@@ -532,6 +534,40 @@
 		)))
 	(i32.const 1)(return)
   )
+  ;; pass string, char, return list of string split on char
+  (func $str.Csplit (param $toSplit i32)(param $splitC i32)(result i32)
+	(local $splitList i32) (local $strCum i32) (local $cpos i32)
+	(local $char i32) (local $strLen i32)
+	(local.set $splitList (call $i32list.mk))
+	(local.set $strCum (call $str.mk)) ;; accumulates chars
+	(local.set $cpos (i32.const 0))
+	(local.set $strLen (call $str.getCurLen (local.get $toSplit)))
+	(loop $cloop
+	  (if (i32.lt_u (local.get $cpos)(local.get $strLen))
+	    (then
+		  (local.set $char (call $str.getChar (local.get $toSplit)(local.get $cpos)))
+		  ;;(call $i32.print (local.get $char))
+		  (if (i32.eq (local.get $splitC)(local.get $char))
+			(then
+			  (call $i32list.cat (local.get $splitList)(local.get $strCum))
+			  (local.set $strCum (call $str.mk))))
+		  (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
+		  (br $cloop))))
+	(call $i32list.cat (local.get $splitList)(local.get $strCum))
+	(local.get $splitList)
+  )
+  (func $str.Csplit.test (param $testNum i32)(result i32)
+	(local $sptr i32)(local $listPtr i32)
+	(local.set $sptr (call $str.mkdata (global.get $AbCDbE)))
+	(local.set $listPtr (call $str.Csplit (local.get $sptr)(i32.const 98)))  ;; 'b'
+	;;(call $i32.print(call $i32list.getCurLen (local.get $listPtr)))
+	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 3))
+	  (return (i32.const 0)))
+	(local.set $listPtr (call $str.Csplit (local.get $sptr)(i32.const 45)))  ;; 'E'
+	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 1))
+	  (return (i32.const 0)))
+	(i32.const 1) ;; success
+  )
   (func $str.compare.test (param $testNum i32)(result i32)
 	(local $spAAA i32)(local $spAAA2 i32) (local $spZZZ i32)
 	(local.set $spAAA (call $str.mkdata (global.get $AAA)))
@@ -546,7 +582,7 @@
 		(return (i32.const 0)))  ;; same contents, should have matched
 	(if (call $str.compare (local.get $spAAA)(local.get $spZZZ))
 		(return (i32.const 0)))  ;; should not have matched!
-	(i32.const 1)
+	(i32.const 1) ;; success
   )
   (func $test (export "_test")
 	;; wasmtime strings/string1.wat --invoke _test
