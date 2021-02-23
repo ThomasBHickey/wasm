@@ -28,18 +28,18 @@
   (global $nextFreeMem (mut i32) (i32.const 4096))
   (global $zero i32 (i32.const 48))
   ;; keep FIRST and LAST at the beginning and end of these
-  (data (i32.const 1000) "AAA\00")		(global $AAA i32	(i32.const 1000)) ;;FIRST
-  (data (i32.const 1020) "at \00")		(global $at i32		(i32.const 1020))
-  (data (i32.const 1030) "realloc\00")	(global $realloc i32	(i32.const 1030))
-  (data (i32.const 1040) "ABCDEF\00")	(global $ABCDEF i32	(i32.const 1040))
-  (data (i32.const 1080) "FEDCBA\00")	(global $FEDCBA i32	(i32.const 1080))
-  (data (i32.const 1100) "AAAZZZ\00")	(global $AAAZZZ i32	(i32.const 1100))
-  (data (i32.const 1110) "AbCDbE\00")		(global $AbCDbE i32 (i32.const 1110))
-  (data (i32.const 1120) ">aaa\0A\00")		(global $>aaa i32 (i32.const 1120))
-  (data (i32.const 1130) ">bbb\0A\00")		(global $>bbb i32 (i32.const 1130))
-  (data (i32.const 1140) ">ccc\0A\00")		(global $>ccc i32 (i32.const 1140))
-  (data (i32.const 1150) ">ddd\0A\00")		(global $>ddd i32 (i32.const 1150))
-  (data (i32.const 2000) "ZZZ\00")		(global $ZZZ 	i32 (i32.const 2000)) ;;LAST
+  (data (i32.const 1000) "AAA\00")		(global $gAAA i32	(i32.const 1000)) ;;FIRST
+  (data (i32.const 1020) "at \00")		(global $gat i32		(i32.const 1020))
+  (data (i32.const 1030) "realloc\00")	(global $grealloc i32	(i32.const 1030))
+  (data (i32.const 1040) "ABCDEF\00")	(global $gABCDEF i32	(i32.const 1040))
+  (data (i32.const 1080) "FEDCBA\00")	(global $gFEDCBA i32	(i32.const 1080))
+  (data (i32.const 1100) "AAAZZZ\00")	(global $gAAAZZZ i32	(i32.const 1100))
+  (data (i32.const 1110) "AbCDbE\00")		(global $gAbCDbE i32 (i32.const 1110))
+  (data (i32.const 1120) ">aaa\0A\00")		(global $g>aaa i32 (i32.const 1120))
+  (data (i32.const 1130) ">bbb\0A\00")		(global $g>bbb i32 (i32.const 1130))
+  (data (i32.const 1140) ">ccc\0A\00")		(global $g>ccc i32 (i32.const 1140))
+  (data (i32.const 1150) ">ddd\0A\00")		(global $g>ddd i32 (i32.const 1150))
+  (data (i32.const 2000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 2000)) ;;LAST
   
   ;; Simple memory allocation done in 4-byte chunks
   ;; Should this get cleared first?
@@ -343,9 +343,9 @@
   )
   (func $str.Rev.test (param $testNum i32)(result i32)
 	(local $abc i32)(local $abc.rev i32)(local $cba i32)
-	(local.set $abc (call $str.mkdata (global.get $ABCDEF)))
+	(local.set $abc (call $str.mkdata (global.get $gABCDEF)))
 	(local.set $abc.rev (call $str.Rev (local.get $abc)))
-	(local.set $cba (call $str.mkdata (global.get $FEDCBA)))
+	(local.set $cba (call $str.mkdata (global.get $gFEDCBA)))
 	(call $str.compare (local.get $abc.rev)(local.get $cba))
   )
   ;; how to show an error beyond returning null?
@@ -361,7 +361,7 @@
   )
   (func $str.getChar.test (param $testNum i32)(result i32)
     (local $ts i32)(local $lastCharPos i32)
-	(local.set $ts (call $str.mkdata (global.get $ABCDEF)))
+	(local.set $ts (call $str.mkdata (global.get $gABCDEF)))
 	(local.set $lastCharPos
 		(i32.sub (call $str.getCurLen (local.get $ts))(i32.const 1)))
 	(if (i32.ne (call $str.getChar (local.get $ts)(i32.const 0))
@@ -393,8 +393,8 @@
   (func $str.mkdata.test (param $testNum i32)(result i32)
 	;; see if first or last data stings have gotten stomped on
 	(local $aaa i32)(local $zzz i32)(local $first i32)(local $last i32)
-	(local.set $first (call $str.mkdata (global.get $AAA)))
-	(local.set $last (call $str.mkdata (global.get $ZZZ)))
+	(local.set $first (call $str.mkdata (global.get $gAAA)))
+	(local.set $last (call $str.mkdata (global.get $gZZZ)))
 	(local.set $aaa (call $str.mk))
 	(call $str.catChar(local.get $aaa) (i32.const 65))
 	(call $str.catChar(local.get $aaa) (i32.const 65))
@@ -460,7 +460,7 @@
   (func $str.catChar.test (param $testNum i32)(result i32)
 	(local $sp i32)(local $memsp i32)
 	(local.set $sp (call $str.mk))
-	(local.set $memsp (call $str.mkdata (global.get $ABCDEF)))
+	(local.set $memsp (call $str.mkdata (global.get $gABCDEF)))
 	(call $str.catChar (local.get $sp) (i32.const 65))
 	(call $str.catChar (local.get $sp) (i32.const 66))
 	(call $str.catChar (local.get $sp) (i32.const 67))
@@ -514,8 +514,8 @@
   )
   (func $str.stripLeading.test (param $testNum i32) (result i32)
 	(local $strAAAZZZ i32)(local $strZZZ i32)
-	(local.set $strAAAZZZ (call $str.mkdata (global.get $AAAZZZ)))
-	(local.set $strZZZ (call $str.mkdata (global.get $ZZZ)))
+	(local.set $strAAAZZZ (call $str.mkdata (global.get $gAAAZZZ)))
+	(local.set $strZZZ (call $str.mkdata (global.get $gZZZ)))
 	(call $str.compare
 		(local.get $strZZZ)
 		(call $str.stripLeading (local.get $strAAAZZZ) (i32.const 65)))
@@ -545,12 +545,12 @@
   )
   (func $str.compare.test (param $testNum i32)(result i32)
 	(local $spAAA i32)(local $spAAA2 i32) (local $spZZZ i32)
-	(local.set $spAAA (call $str.mkdata (global.get $AAA)))
+	(local.set $spAAA (call $str.mkdata (global.get $gAAA)))
 	(local.set $spAAA2 (call $str.mk))
 	(call $str.catChar (local.get $spAAA2)(i32.const 65))
 	(call $str.catChar (local.get $spAAA2)(i32.const 65))
 	(call $str.catChar (local.get $spAAA2)(i32.const 65))
-	(local.set $spZZZ (call $str.mkdata (global.get $ZZZ)))
+	(local.set $spZZZ (call $str.mkdata (global.get $gZZZ)))
 	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA)))
 		(return (i32.const 0)))  ;; same string, should have matched
 	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA2)))
@@ -583,9 +583,10 @@
 	(call $i32list.cat (local.get $splitList)(local.get $strCum))
 	(local.get $splitList)
   )
+  ;; The split character is not part of the split pieces
   (func $str.Csplit.test (param $testNum i32)(result i32)
 	(local $AbCDbE i32)(local $listPtr i32)(local $strptr0 i32)
-	(local.set $AbCDbE (call $str.mkdata (global.get $AbCDbE)))
+	(local.set $AbCDbE (call $str.mkdata (global.get $gAbCDbE)))
 	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 98)))  ;; 'b'
 	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 3))
 	  (return (i32.const 0)))
