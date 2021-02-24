@@ -606,9 +606,8 @@
 	;; Reads a file in and returns a list of string pointers to the lines in it
 	(local $listPtr i32)(local $strPtr i32)(local $nread i32)
 	;; buffer of 1000 chars to read into
-	(i32.store (i32.const 4) (i32.const 16))  ;; data starts at byte 12
+	(i32.store (i32.const 4) (i32.const 16))  ;; data starts at byte 16
 	(i32.store (i32.const 8) (i32.const 1000));; buffer length
-	;;(i32.store (i32.const 8) (i32.const 14));; buffer length
 
 	(call $fd_read
 	  (i32.const 0) ;; 0 for stdin
@@ -616,16 +615,15 @@
 	  (i32.const 1) ;; iovs_len
 	  (i32.const 8) ;; nread goes here
 	)
-	(call $i32.print)  ;; what's on the stack?
-	;;(call $i32.print (i32.load (i32.const 8)))
-	;;(call $i32.print (i32.load (i32.const 12)))
-	;;(call $i32.print (i32.load (i32.const 16)))
+    (call $i32.print)  ;; what's on the stack?
 	(local.set $listPtr (call $i32list.mk))
+	(local.set $strPtr (call $str.mk (local.get $strPtr)))
 	(call $str.setDataOff (local.get $strPtr)(i32.const 16))
 	(call $str.setCurLen  (local.get $strPtr)(i32.load (i32.const 8)))
 	(call $str.setMaxLen  (local.get $strPtr)(i32.load (i32.const 8)))
+	(call $PtrDump (local.get $strPtr))
 	(call $str.print (local.get $strPtr))
-	(local.get $listPtr)
+	;;(local.get $listPtr)
   )
   (func $test (export "_test")
 	;; Run tests: wasmtime strings/string1.wat --invoke _test
