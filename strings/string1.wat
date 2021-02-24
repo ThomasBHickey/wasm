@@ -28,18 +28,18 @@
   (global $nextFreeMem (mut i32) (i32.const 4096))
   (global $zero i32 (i32.const 48))
   ;; keep FIRST and LAST at the beginning and end of these
-  (data (i32.const 1000) "AAA\00")		(global $gAAA i32	(i32.const 1000)) ;;FIRST
-  (data (i32.const 1020) "at \00")		(global $gat i32		(i32.const 1020))
-  (data (i32.const 1030) "realloc\00")	(global $grealloc i32	(i32.const 1030))
-  (data (i32.const 1040) "ABCDEF\00")	(global $gABCDEF i32	(i32.const 1040))
-  (data (i32.const 1080) "FEDCBA\00")	(global $gFEDCBA i32	(i32.const 1080))
-  (data (i32.const 1100) "AAAZZZ\00")	(global $gAAAZZZ i32	(i32.const 1100))
-  (data (i32.const 1110) "AbCDbE\00")		(global $gAbCDbE i32 (i32.const 1110))
-  (data (i32.const 1120) ">aaa\0A\00")		(global $g>aaa i32 (i32.const 1120))
-  (data (i32.const 1130) ">bbb\0A\00")		(global $g>bbb i32 (i32.const 1130))
-  (data (i32.const 1140) ">ccc\0A\00")		(global $g>ccc i32 (i32.const 1140))
-  (data (i32.const 1150) ">ddd\0A\00")		(global $g>ddd i32 (i32.const 1150))
-  (data (i32.const 2000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 2000)) ;;LAST
+  (data (i32.const 3000) "AAA\00")		(global $gAAA i32	(i32.const 3000)) ;;FIRST
+  (data (i32.const 3020) "at \00")		(global $gat i32		(i32.const 3020))
+  (data (i32.const 3030) "realloc\00")	(global $grealloc i32	(i32.const 3030))
+  (data (i32.const 3040) "ABCDEF\00")	(global $gABCDEF i32	(i32.const 3040))
+  (data (i32.const 3080) "FEDCBA\00")	(global $gFEDCBA i32	(i32.const 3080))
+  (data (i32.const 3100) "AAAZZZ\00")	(global $gAAAZZZ i32	(i32.const 3100))
+  (data (i32.const 3110) "AbCDbE\00")		(global $gAbCDbE i32 (i32.const 3110))
+  (data (i32.const 3120) ">aaa\0A\00")		(global $g>aaa i32 (i32.const 3120))
+  (data (i32.const 3130) ">bbb\0A\00")		(global $g>bbb i32 (i32.const 3130))
+  (data (i32.const 3140) ">ccc\0A\00")		(global $g>ccc i32 (i32.const 3140))
+  (data (i32.const 3150) ">ddd\0A\00")		(global $g>ddd i32 (i32.const 3150))
+  (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
   
   ;; Simple memory allocation done in 4-byte chunks
   ;; Should this get cleared first?
@@ -602,8 +602,34 @@
 	  (return (i32.const 0)))
 	(i32.const 1) ;; success
   )
+  (func $readFile (result i32)
+	;; Reads a file in and returns a list of string pointers to the lines in it
+	(local $listPtr i32)(local $strPtr i32)(local $nread i32)
+	;; buffer of 1000 chars to read into
+	(i32.store (i32.const 4) (i32.const 16))  ;; data starts at byte 12
+	(i32.store (i32.const 8) (i32.const 1000));; buffer length
+	;;(i32.store (i32.const 8) (i32.const 14));; buffer length
+
+	(call $fd_read
+	  (i32.const 0) ;; 0 for stdin
+	  (i32.const 4) ;; *iovs
+	  (i32.const 1) ;; iovs_len
+	  (i32.const 8) ;; nread goes here
+	)
+	(call $i32.print)  ;; what's on the stack?
+	;;(call $i32.print (i32.load (i32.const 8)))
+	;;(call $i32.print (i32.load (i32.const 12)))
+	;;(call $i32.print (i32.load (i32.const 16)))
+	(local.set $listPtr (call $i32list.mk))
+	(call $str.setDataOff (local.get $strPtr)(i32.const 16))
+	(call $str.setCurLen  (local.get $strPtr)(i32.load (i32.const 8)))
+	(call $str.setMaxLen  (local.get $strPtr)(i32.load (i32.const 8)))
+	(call $str.print (local.get $strPtr))
+	(local.get $listPtr)
+  )
   (func $test (export "_test")
-	;; wasmtime strings/string1.wat --invoke _test
+	;; Run tests: wasmtime strings/string1.wat --invoke _test
+	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
 	(local $testNum i32)
 	(local.set $testNum (i32.const 0))
 	(loop $tLoop  ;; assumes there is a least one test
@@ -616,5 +642,10 @@
 	    (then (br $tLoop)))
 	)
   )
-  (func $main (export "_start")(call $test))
+  (func $main (export "_start")
+	(local $listPtr i32)
+    (call $test)
+    (local.set $listPtr (call $readFile))
+	(call $i32list.print (local.get $listPtr))
+  )
 )
