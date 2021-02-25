@@ -11,20 +11,22 @@
   (export "memory" (memory 0))
 
   (type $testSig (func (param i32)(result i32)))
-  (table 10 funcref)
+  (table 12 funcref)
   (elem (i32.const 0)
     $i32list.mk.test	;;0
 	$i32list.sets.test	;;1
 	$str.catChar.test	;;2
-	$str.Rev.test		;;3
-	$str.mkdata.test	;;4
-	$str.getChar.test	;;5
-	$i32list.cat.test	;;6
-	$str.stripLeading.test ;; 7
-	$str.compare.test	;;8
-	$str.Csplit.test	;;9
+	$str.catOntoStr.test;;3
+	$str.cat2Strings.test ;;4
+	$str.Rev.test		;;5
+	$str.mkdata.test	;;6
+	$str.getChar.test	;;7
+	$i32list.cat.test	;;8
+	$str.stripLeading.test ;; 9
+	$str.compare.test	;;10
+	$str.Csplit.test	;;11
   )
-  (global $numTests i32 (i32.const 10)) ;; Better match!
+  (global $numTests i32 (i32.const 12)) ;; Better match!
   (global $nextFreeMem (mut i32) (i32.const 4096))
   (global $zero i32 (i32.const 48))
   ;; keep FIRST and LAST at the beginning and end of these
@@ -324,8 +326,8 @@
   (func $str.setDataOff (param $strPtr i32)(param $newDataOff i32)
     (i32.store (i32.add(local.get $strPtr)(i32.const 8))(local.get $newDataOff))
   )
-  ;; Concatenate s2 onto s1
   (func $str.catOntoStr (param $s1Ptr i32)(param $s2Ptr i32)
+	;; Modify s1 by concatenating another string to it
 	(local $c2pos i32)(local $s2curLen i32)
 	(local.set $c2pos (i32.const 0))
 	(local.set $s2curLen (call $str.getCurLen (local.get $s2curLen)))
@@ -338,8 +340,47 @@
 			(br $cloop)
 		  )))		
   )
-  ;; Returns a pointer to a new string with reversed characters
+  (func $str.catOntoStr.test (param $testNum i32)(result i32)
+    (local $AAA i32)(local $ZZZ i32)
+	(local.set $AAA (call $str.mkdata (global.get $gAAA)))
+	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
+	(call $str.catOntoStr (local.get $AAA)(local.get $ZZZ))
+	;; $AAA now has $ZZZ concatenated onto it!
+	(call $str.compare  (local.get $AAA) (call $str.mkdata (global.get $gAAAZZZ)))
+  )
+  (func $str.cat2Strings (param $s1Ptr i32)(param $s2Ptr i32)(result i32)
+	(local $cpos i32)(local $s1-2Ptr i32)(local $curLen1 i32)(local $curLen2 i32)
+	(local.set $s1-2Ptr (call $str.mk))
+	(local.set $curLen1 (call $str.getCurLen (local.get $s1Ptr)))
+	(local.set $curLen2 (call $str.getCurLen (local.get $s2Ptr)))
+	(local.set $cpos (i32.const 0))
+	(loop $cloop1
+	  (if (i32.lt_u (local.get $cpos)(local.get $curLen1))
+		(then
+		  (call $str.catChar (local.get $s1-2Ptr)
+			(call $str.getChar (local.get $s1Ptr)(local.get $cpos)))
+		  (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
+		  (br $cloop1))))
+	(local.set $cpos (i32.const 0))
+	(loop $cloop2
+	  (if (i32.lt_u (local.get $cpos)(local.get $curLen2))
+		(then
+		  (call $str.catChar (local.get $s1-2Ptr)
+			(call $str.getChar (local.get $s2Ptr)(local.get $cpos)))
+		  (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
+		  (br $cloop2))))
+	(local.get $s1-2Ptr)
+  )
+  (func $str.cat2Strings.test (param $testNum i32)(result i32)
+    (local $AAA i32)(local $ZZZ i32)(local $AAAZZZ i32)
+	(local.set $AAA (call $str.mkdata (global.get $gAAA)))
+	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
+	(local.set $AAAZZZ (call $str.cat2Strings(local.get $AAA)(local.get $ZZZ)))
+	;; New string!
+	(call $str.compare (local.get $AAAZZZ) (call $str.mkdata (global.get $gAAAZZZ)))
+  )
   (func $str.Rev (param $strPtr i32)(result i32)
+	;; Returns a pointer to a new string with reversed characters
 	(local $cpos i32)(local $curLen i32)(local $revStrPtr i32)(local $curChar i32)
 	(local.set $revStrPtr (call $str.mk))
 	(local.set $cpos (i32.const 0))
@@ -459,19 +500,17 @@
 	(call $str.setDataOff(local.get $strPtr)(local.get $newDataOff))
 	(memory.copy (local.get $newDataOff)(local.get $dataOff)(local.get $curLen))
   )
-  (func $str.catChar (param $Offset i32)(param $C i32)
-	(local $maxLen i32) (local $curLen i32) (local $dataOffset i32)
-	(local.set $curLen (i32.load (local.get $Offset)))
-	(local.set $maxLen (i32.load (i32.add (local.get $Offset)(i32.const 4))))
+  (func $str.catChar (param $strPtr i32)(param $C i32)
+	(local $maxLen i32) (local $curLen i32)
+	(local.set $curLen (call $str.getCurLen (local.get $strPtr)))
+	(local.set $maxLen (call $str.getMaxLen (local.get $strPtr)))
 	(if (i32.ge_u (local.get $curLen) (local.get $maxLen))
-		(then ;;handle reallocation
-		  (call $str.extend (local.get $Offset))
-		  (local.set $maxLen (i32.load (i32.add (i32.const 4)(local.get $Offset))))
-		))
-	(local.set $dataOffset(i32.load
-	  (i32.add (i32.const 8)(local.get $Offset))))
-	(i32.store8 (i32.add (local.get $curLen)(local.get $dataOffset))(local.get $C))
-	(call $str.setCurLen(local.get $Offset) (i32.add (local.get $curLen)(i32.const 1)))
+	  (then (call $str.extend (local.get $strPtr))))
+	(i32.store8
+	  (i32.add (local.get $curLen)(call $str.getDataOff (local.get $strPtr)))
+	  (local.get $C))
+	(call $str.setCurLen(local.get $strPtr)
+	  (i32.add (local.get $curLen)(i32.const 1)))
   )
   (func $str.catChar.test (param $testNum i32)(result i32)
 	(local $sp i32)(local $memsp i32)
@@ -514,9 +553,7 @@
 		  (then
 			(local.set $spos (i32.add (local.get $spos)(i32.const 1)))
 			(br $strip)
-		  )
-		)
-	)
+		  )))
 	(local.set $curLen (call $str.getCurLen(local.get $strPtr)))
 	(local.set $stripped (call $str.mk))
 	(loop $copy
@@ -596,7 +633,7 @@
 			  (call $str.catChar (local.get $strCum)(local.get $char))))
 		  (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
 		  (br $cloop))))
-	(if (call $str.getCurLen (local.get $strCum))
+	(if (call $str.getCurLen (local.get $strCum));; skip empty last $strCum
 	  (then (call $i32list.cat (local.get $splitList)(local.get $strCum))))
 	(local.get $splitList)
   )
