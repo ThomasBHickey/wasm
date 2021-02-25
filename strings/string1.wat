@@ -669,14 +669,15 @@
 	  (i32.const 1) ;; iovs_len
 	  (i32.const 8) ;; nread goes here
 	)
-    (call $i32.print)  ;; what's on the stack?
+    ;;(call $i32.print)  ;; what's on the stack?
+	drop
 	(local.set $listPtr (call $i32list.mk))
 	(local.set $strPtr (call $str.mk))
 	(call $str.setDataOff (local.get $strPtr)(i32.const 16))
 	(call $str.setCurLen  (local.get $strPtr)(i32.load (i32.const 8)))
 	(call $str.setMaxLen  (local.get $strPtr)(i32.load (i32.const 8)))
-	(call $PtrDump (local.get $strPtr))
-	(call $str.print (local.get $strPtr))
+	;;(call $PtrDump (local.get $strPtr))
+	;;(call $str.print (local.get $strPtr))
 	;; break into lines
 	(local.set $listPtr (call $str.Csplit (local.get $strPtr)(i32.const 10))) 
 	(local.get $listPtr)
@@ -700,7 +701,7 @@
 	(local $listPtr i32)
     (call $test)
     (local.set $listPtr (call $readFile))
-	(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
+	;;(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
 	(call $i32strlist.print (local.get $listPtr))
   )
 )
