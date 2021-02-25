@@ -274,6 +274,22 @@
 	(call $C.print (i32.const 93)) ;; right bracket
 	(call $C.print (i32.const 10)) ;; new line
   )
+  (func $i32strlist.print (param $lstPtr i32)
+	(local $curLength i32)
+	(local $ipos i32)
+	(local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
+	(local.set $ipos (i32.const 0))
+	;;(call $C.print (i32.const 91)) ;; left bracket
+	(loop $iLoop
+	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
+		(then
+		  (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))
+		  (call $str.print)   
+	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
+	      (br $iLoop))))
+	;;(call $C.print (i32.const 93)) ;; right bracket
+	;;(call $C.print (i32.const 10)) ;; new line
+  )
   (func $str.mk (result i32)
 	;; returns a memory offset for a string pointer:
 	;; 		curLength, maxLength, dataOffset
@@ -559,7 +575,7 @@
 		(return (i32.const 0)))  ;; should not have matched!
 	(i32.const 1) ;; success
   )
-  ;; pass string, char, return list of string split on char
+  ;; pass string, char, return list of strings split on char
   (func $str.Csplit (param $toSplit i32)(param $splitC i32)(result i32)
 	(local $splitList i32) (local $strCum i32) (local $cpos i32)
 	(local $char i32) (local $strLen i32)
@@ -577,10 +593,11 @@
 			  (call $i32list.cat (local.get $splitList)(local.get $strCum))
 			  (local.set $strCum (call $str.mk)))
 			(else
-				(call $str.catChar (local.get $strCum)(local.get $char))))
+			  (call $str.catChar (local.get $strCum)(local.get $char))))
 		  (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
 		  (br $cloop))))
-	(call $i32list.cat (local.get $splitList)(local.get $strCum))
+	(if (call $str.getCurLen (local.get $strCum))
+	  (then (call $i32list.cat (local.get $splitList)(local.get $strCum))))
 	(local.get $splitList)
   )
   ;; The split character is not part of the split pieces
@@ -617,13 +634,15 @@
 	)
     (call $i32.print)  ;; what's on the stack?
 	(local.set $listPtr (call $i32list.mk))
-	(local.set $strPtr (call $str.mk (local.get $strPtr)))
+	(local.set $strPtr (call $str.mk))
 	(call $str.setDataOff (local.get $strPtr)(i32.const 16))
 	(call $str.setCurLen  (local.get $strPtr)(i32.load (i32.const 8)))
 	(call $str.setMaxLen  (local.get $strPtr)(i32.load (i32.const 8)))
 	(call $PtrDump (local.get $strPtr))
 	(call $str.print (local.get $strPtr))
-	;;(local.get $listPtr)
+	;; break into lines
+	(local.set $listPtr (call $str.Csplit (local.get $strPtr)(i32.const 10))) 
+	(local.get $listPtr)
   )
   (func $test (export "_test")
 	;; Run tests: wasmtime strings/string1.wat --invoke _test
@@ -644,6 +663,7 @@
 	(local $listPtr i32)
     (call $test)
     (local.set $listPtr (call $readFile))
-	(call $i32list.print (local.get $listPtr))
+	(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
+	(call $i32strlist.print (local.get $listPtr))
   )
 )
