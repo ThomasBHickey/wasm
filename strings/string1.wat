@@ -27,6 +27,16 @@
 	$str.Csplit.test	;;11
   )
   (global $numTests i32 (i32.const 12)) ;; Better match!
+
+  (global $readIOVsOff0 i32 (i32.const 1000))
+  (global $readIOVsOff4 i32 (i32.const 1004))
+  (global $readBuffOff i32 (i32.const 1024))
+  (global $readBuffLen i32 (i32.const 3000))
+  (global $writeIOVsOff0 i32 (i32.const 128))
+  (global $writeIOVsOff4 i32 (i32.const 132))
+  (global $writeBuffOff i32 (i32.const 512))
+  ;;(global $writeBuffOff4 i32 (i32.const 516))
+  (global $writeBufLen i32 (i32.const 512))
   (global $nextFreeMem (mut i32) (i32.const 4096))
   (global $zero i32 (i32.const 48))
   ;; keep FIRST and LAST at the beginning and end of these
@@ -86,24 +96,35 @@
 	)
 	(call $str.print (local.get $sptr))
   )
+  ;; (func $PtrDump (param $ptr i32)
+	;; (call $C.print(i32.const 123)) ;; {
+	  ;; (call $i32.print (local.get $ptr))
+	  ;; (call $i32.print (call $i32list.getCurLen (local.get $ptr)))
+	  ;; (call $i32.print (call $i32list.getMaxLen (local.get $ptr)))
+	  ;; (call $i32.print (call $i32list.getDataOff (local.get $ptr)))
+	;; (call $C.print(i32.const 125)) ;; }
+  ;; )
   (func $PtrDump (param $ptr i32)
 	(call $C.print(i32.const 123)) ;; {
-	  (call $i32.print (local.get $ptr))
-	  (call $i32.print (call $i32list.getCurLen (local.get $ptr)))
-	  (call $i32.print (call $i32list.getMaxLen (local.get $ptr)))
-	  (call $i32.print (call $i32list.getDataOff (local.get $ptr)))
+	  (call $i32.print1 (local.get $ptr))
+	  (call $i32.print1 (call $i32list.getCurLen (local.get $ptr)))
+	  (call $i32.print1 (call $i32list.getMaxLen (local.get $ptr)))
+	  (call $i32.print1 (call $i32list.getDataOff (local.get $ptr)))
 	(call $C.print(i32.const 125)) ;; }
   )
   (func $C.print (param $C i32)
 	;; iovs start at 200, buffer at 300
-	(i32.store (i32.const 200) (i32.const 300))
-	(i32.store (i32.const 204) (i32.const 10))  ;; length of 10?
+	;; (i32.store (i32.const 200) (i32.const 300))
+	;; (i32.store (i32.const 204) (i32.const 10))  ;; length of 10?
+	(i32.store (global.get $writeIOVsOff0)(global.get $writeBuffOff))
+	(i32.store (global.get $writeIOVsOff4)(i32.const 10))
 	(i32.store
-		(i32.const 300)
+		(global.get $writeBuffOff)
 		(local.get $C))
 	(call $fd_write
 		(i32.const 1) ;; stdout
-		(i32.const 200) ;; *iovs
+		;;(i32.const 200) ;; *iovs
+		(global.get $writeIOVsOff0)
 		(i32.const 1) ;; # iovs
 		(i32.const 0) ;; length?
 	)
@@ -330,15 +351,14 @@
 	;; Modify s1 by concatenating another string to it
 	(local $c2pos i32)(local $s2curLen i32)
 	(local.set $c2pos (i32.const 0))
-	(local.set $s2curLen (call $str.getCurLen (local.get $s2curLen)))
+	(local.set $s2curLen (call $str.getCurLen (local.get $s2Ptr)))
 	(loop $cloop
 		(if (i32.lt_u (local.get $c2pos)(local.get $s2curLen))
 		  (then
 			(call $str.catChar(local.get $s1Ptr)
 			  (call $str.getChar (local.get $s2Ptr)(local.get $c2pos)))
 			(local.set $c2pos (i32.add (local.get $c2pos)(i32.const 1)))
-			(br $cloop)
-		  )))		
+			(br $cloop))))		
   )
   (func $str.catOntoStr.test (param $testNum i32)(result i32)
     (local $AAA i32)(local $ZZZ i32)
@@ -660,26 +680,39 @@
 	;; Reads a file in and returns a list of string pointers to the lines in it
 	(local $listPtr i32)(local $strPtr i32)(local $nread i32)
 	;; buffer of 1000 chars to read into
-	(i32.store (i32.const 4) (i32.const 16))  ;; data starts at byte 16
-	(i32.store (i32.const 8) (i32.const 1000));; buffer length
+	;;(i32.store (i32.const 4) (i32.const 16))  ;; data starts at byte 16
+	;;(i32.store (i32.const 8) (i32.const 1000));; buffer length
+	(i32.store (global.get $writeIOVsOff0) (global.get $readBuffOff))
+	(i32.store (global.get $writeIOVsOff4) (global.get $writeBufLen))
 
+	;; (call $fd_read
+	  ;; (i32.const 0) ;; 0 for stdin
+	  ;; (i32.const 4) ;; *iovs
+	  ;; (i32.const 1) ;; iovs_len
+	  ;; (i32.const 8) ;; nread goes here
+	;; )
 	(call $fd_read
 	  (i32.const 0) ;; 0 for stdin
-	  (i32.const 4) ;; *iovs
+	  (global.get $readIOVsOff0) ;; *iovs
 	  (i32.const 1) ;; iovs_len
-	  (i32.const 8) ;; nread goes here
+	  (global.get $readIOVsOff4) ;; nread goes here
 	)
     ;;(call $i32.print)  ;; what's on the stack?
 	drop
 	(local.set $listPtr (call $i32list.mk))
 	(local.set $strPtr (call $str.mk))
-	(call $str.setDataOff (local.get $strPtr)(i32.const 16))
-	(call $str.setCurLen  (local.get $strPtr)(i32.load (i32.const 8)))
-	(call $str.setMaxLen  (local.get $strPtr)(i32.load (i32.const 8)))
-	;;(call $PtrDump (local.get $strPtr))
-	;;(call $str.print (local.get $strPtr))
+	;; (call $str.setDataOff (local.get $strPtr)(i32.const 16))
+	;; (call $str.setCurLen  (local.get $strPtr)(i32.load (i32.const 8)))
+	;; (call $str.setMaxLen  (local.get $strPtr)(i32.load (i32.const 8)))
+	(call $str.setDataOff (local.get $strPtr)(global.get $readBuffOff))
+	(call $str.setCurLen (local.get $strPtr)(global.get $readIOVsOff4))
+	(call $str.setMaxLen (local.get $strPtr)(global.get $readIOVsOff4))
+	(call $PtrDump (local.get $strPtr))
+
+	(call $str.print (local.get $strPtr))
 	;; break into lines
-	(local.set $listPtr (call $str.Csplit (local.get $strPtr)(i32.const 10))) 
+	;;(local.set $listPtr (call $str.Csplit (local.get $strPtr)(i32.const 10))) 
+	(local.set $listPtr (call $i32list.mk))
 	(local.get $listPtr)
   )
   (func $test (export "_test")
@@ -701,7 +734,7 @@
 	(local $listPtr i32)
     (call $test)
     (local.set $listPtr (call $readFile))
-	;;(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
+	(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
 	(call $i32strlist.print (local.get $listPtr))
   )
 )
