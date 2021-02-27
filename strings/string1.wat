@@ -52,9 +52,9 @@
   (data (i32.const 3150) ">ddd\0A\00")		(global $g>ddd i32 (i32.const 3150))
   (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
   
-  ;; Simple memory allocation done in 4-byte chunks
-  ;; Should this get cleared first?
   (func $getMem (param $size i32)(result i32)
+	;; Simple memory allocation done in 4-byte chunks
+	;; Should this get cleared first?
 	(local $size4 i32)
 	(local.set $size4 
 	  (i32.mul (i32.div_u 
@@ -63,8 +63,8 @@
 	(global.get $nextFreeMem) ;; to return
 	(global.set $nextFreeMem (i32.add (global.get $nextFreeMem)(local.get $size4)))
   )
-  ;; Simple i32 print, but prints the digits backwards!
   (func $i32.print1 (param $N i32) 
+	;; Simple i32 print, but prints the digits backwards!
 	(local $Ntemp i32)
 	(local.set $Ntemp (local.get $N))
 	(loop $digitLoop
@@ -76,11 +76,10 @@
 	  (local.set $Ntemp)
 	  (br_if $digitLoop (local.get $Ntemp))
 	)
-	;;(call $C.print (i32.const 10))  ;; linefeed
 	(call $C.print (i32.const 32))  ;; space
   )
-  ;; Doesn't understand negative numbers
   (func $i32.print (param $N i32)
+	;; Doesn't understand negative numbers
 	(local $Ntemp i32)(local $sptr i32)
 	(local.set $sptr (call $str.mk))
 	(local.set $Ntemp (local.get $N))
@@ -95,14 +94,6 @@
 	)
 	(call $str.print (local.get $sptr))
   )
-  ;; (func $PtrDump (param $ptr i32)
-	;; (call $C.print(i32.const 123)) ;; {
-	  ;; (call $i32.print (local.get $ptr))
-	  ;; (call $i32.print (call $i32list.getCurLen (local.get $ptr)))
-	  ;; (call $i32.print (call $i32list.getMaxLen (local.get $ptr)))
-	  ;; (call $i32.print (call $i32list.getDataOff (local.get $ptr)))
-	;; (call $C.print(i32.const 125)) ;; }
-  ;; )
   (func $PtrDump (param $ptr i32)
 	(call $C.print(i32.const 123)) ;; {
 	  (call $i32.print1 (local.get $ptr))
@@ -164,8 +155,8 @@
 	;; returns a memory offset for an i32list pointer:
 	;; 		curLength, maxLength, dataOffset
 	(local $lstPtr i32)
-	;; 12 for the pointer info, 4 for first int32
 	(local.set $lstPtr (call $getMem (i32.const 16))) 
+	  ;; 12 for the pointer info, 4 for first int32
 	(call $i32list.setCurLen (local.get $lstPtr) (i32.const 0))
 	(call $i32list.setMaxLen (local.get $lstPtr)(i32.const 1))
 	(call $i32list.setDataOff(local.get $lstPtr)
@@ -222,8 +213,6 @@
 	(local $maxLen i32) (local $curLen i32) (local $dataOff i32)
 	(local $newMaxLen i32)(local $newDataOff i32)
 	(local $cpos i32)
-	;; (call $str.print (call $str.mkdata (global.get $realloc)))
-	;; (call $PtrDump (local.get $lstPtr))
 	(local.set $curLen (call $i32list.getCurLen (local.get $lstPtr)))
 	(local.set $maxLen (call $i32list.getMaxLen (local.get $lstPtr)))
 	(local.set $dataOff   (call $i32list.getDataOff (local.get $lstPtr)))
@@ -233,7 +222,6 @@
 	(call $i32list.setDataOff(local.get $lstPtr)(local.get $newDataOff))
 	(memory.copy (local.get $newDataOff)(local.get $dataOff)
 				 (i32.mul (local.get $curLen)(i32.const 4)))
-	;;(call $PtrDump (local.get $lstPtr))
   ) 
   (func $i32list.set@ (param $lstPtr i32)(param $pos i32)(param $val i32)
     (local $dataOff i32)(local $dataOffOff i32)
@@ -241,8 +229,6 @@
 	(local.set $dataOffOff
 		(i32.add (local.get $dataOff)
 		  (i32.mul (call $i32list.getCurLen (local.get $lstPtr))(i32.const 4))))
-	;;(call $str.print (call $str.mkdata (global.get $at)))
-	;;(call $i32.print (local.get $dataOffOff))
     (i32.store (local.get $dataOffOff) (local.get $val))
   )
   (func $i32list.get@ (param $lstPtr i32)(param $pos i32)(result i32)
@@ -277,7 +263,6 @@
   )
   (func $i32list.print (param $lstPtr i32)
 	(local $curLength i32)
-	;;(local$dataOffset i32)
 	(local $ipos i32)
 	(local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
 	(local.set $ipos (i32.const 0))
@@ -420,8 +405,8 @@
 	(local.set $cba (call $str.mkdata (global.get $gFEDCBA)))
 	(call $str.compare (local.get $abc.rev)(local.get $cba))
   )
-  ;; how to show an error beyond returning null?
   (func $str.getChar (param $strPtr i32) (param $charPos i32)(result i32)
+    ;; how to show an error beyond returning null?
 	(if (result i32)
 	  (i32.lt_u (local.get $charPos)(call $str.getCurLen (local.get $strPtr)))
 	  (then
@@ -444,8 +429,8 @@
 		(return (i32.const 0)))
 	(i32.const 1)  ;; success
   )
-  ;; Make a string from null-terminated chunk of memory
   (func $str.mkdata (param $dataOffset i32) (result i32)
+    ;; Make a string from null-terminated chunk of memory
 	;; null terminator is not counted as part of string
 	(local $length i32) (local $curByte i32)(local $strPtr i32)
 	(local.set $length (i32.const 0))
@@ -537,13 +522,11 @@
 	(call $str.catChar (local.get $sp) (i32.const 68))
 	(call $str.catChar (local.get $sp) (i32.const 69))
 	(call $str.catChar (local.get $sp) (i32.const 70))
-	(if (i32.eqz (call $str.compare (local.get $sp)(local.get $memsp)))
-	  (then (return (i32.const 0))))
-	(return (i32.const 1))
+	(call $str.compare (local.get $sp)(local.get $memsp)) ;; i32 to return
   )
-  ;; Add a character to beginning of a string
-  ;; Not multibyte character safe
   (func $str.LcatChar (param $strPtr i32)(param $Lchar i32)
+	;; Add a character to beginning of a string
+	;; Not multibyte character safe
 	(local $cpos i32)(local $dataOff i32)(local $curC i32)
 	;; first make room for the new character
 	;; tack it on at the end (it will get overwritten)
@@ -558,8 +541,8 @@
 	)
 	(i32.store8 (local.get $dataOff)(local.get $Lchar))
   )
-  ;; Return a new string without any leading $charToStrip's
   (func $str.stripLeading (param $strPtr i32)(param $charToStrip i32)(result i32)
+	;; Return a new string without any leading $charToStrip's
 	(local $spos i32)(local $curLen i32)(local $stripped i32)
 	(local.set $spos (i32.const 0))
 	(loop $strip ;; $str.getChar returns Null if $spos goes out of bounds
@@ -591,11 +574,6 @@
   (func $str.compare (param $s1ptr i32)(param $s2ptr i32)(result i32)
 	(local $s2len i32)(local $cpos i32)
 	(local.set $s2len (call $str.getCurLen (local.get $s2ptr)))
-	;; (call $str.print (call $str.mkdata (global.get $>bbb)))
-	;; (call $i32.print (call $str.getCurLen (local.get $s1ptr)))
-	;; (call $i32.print (call $str.getCurLen (local.get $s2ptr)))
-	;; (call $str.print (local.get $s1ptr))
-	;; (call $str.print (local.get $s2ptr))
 	(if (i32.ne (call $str.getCurLen (local.get $s1ptr))(local.get $s2len))
 	  (then (i32.const 0)(return))
 	)
@@ -627,8 +605,8 @@
 		(return (i32.const 0)))  ;; should not have matched!
 	(i32.const 1) ;; success
   )
-  ;; pass string, char, return list of strings split on char
   (func $str.Csplit (param $toSplit i32)(param $splitC i32)(result i32)
+	;; pass string, char, return list of strings split on char
 	(local $splitList i32) (local $strCum i32) (local $cpos i32)
 	(local $char i32) (local $strLen i32)
 	(local.set $splitList (call $i32list.mk))
@@ -652,8 +630,8 @@
 	  (then (call $i32list.cat (local.get $splitList)(local.get $strCum))))
 	(local.get $splitList)
   )
-  ;; The split character is not part of the split pieces
   (func $str.Csplit.test (param $testNum i32)(result i32)
+	;; The split character is not part of the split pieces
 	(local $AbCDbE i32)(local $listPtr i32)(local $strptr0 i32)
 	(local.set $AbCDbE (call $str.mkdata (global.get $gAbCDbE)))
 	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 98)))  ;; 'b'
