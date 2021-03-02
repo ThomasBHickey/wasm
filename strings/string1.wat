@@ -1,5 +1,6 @@
 ;; run via "wasmtime string1.wat" 
-;; or "wasmtime string1.wasm" if it has been compiled by wasm2wat
+;; or "wasmtime string1.wasm" if it has been compiled by
+;; via wat2wasm --enable-bulk-memory string1.wat
 ;; (wasmtime recognizes the func exported as "_start")
 (module
   (import "wasi_unstable" "fd_read"
