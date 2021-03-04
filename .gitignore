@@ -9,3 +9,4 @@ string1.wat.2021.02.08
 string1.wasm
 strings/string1.20210217.wat
 *.wast
+npp_language_wat.xml

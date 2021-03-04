@@ -40,18 +40,18 @@
   (global $nextFreeMem (mut i32) (i32.const 4096))
   (global $zero i32 (i32.const 48))
   ;; keep FIRST and LAST at the beginning and end of these
-  (data (i32.const 3000) "AAA\00")		(global $gAAA i32	(i32.const 3000)) ;;FIRST
-  (data (i32.const 3020) "at \00")		(global $gat i32		(i32.const 3020))
-  (data (i32.const 3030) "realloc\00")	(global $grealloc i32	(i32.const 3030))
-  (data (i32.const 3040) "ABCDEF\00")	(global $gABCDEF i32	(i32.const 3040))
-  (data (i32.const 3080) "FEDCBA\00")	(global $gFEDCBA i32	(i32.const 3080))
-  (data (i32.const 3100) "AAAZZZ\00")	(global $gAAAZZZ i32	(i32.const 3100))
-  (data (i32.const 3110) "AbCDbE\00")		(global $gAbCDbE i32 (i32.const 3110))
-  (data (i32.const 3120) ">aaa\0A\00")		(global $g>aaa i32 (i32.const 3120))
-  (data (i32.const 3130) ">bbb\0A\00")		(global $g>bbb i32 (i32.const 3130))
-  (data (i32.const 3140) ">ccc\0A\00")		(global $g>ccc i32 (i32.const 3140))
-  (data (i32.const 3150) ">ddd\0A\00")		(global $g>ddd i32 (i32.const 3150))
-  (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
+  ;; (data (i32.const 3000) "AAA\00")		(global $gAAA i32	(i32.const 3000)) ;;FIRST
+  ;; (data (i32.const 3020) "at \00")		(global $gat i32		(i32.const 3020))
+  ;; (data (i32.const 3030) "realloc\00")	(global $grealloc i32	(i32.const 3030))
+  ;; (data (i32.const 3040) "ABCDEF\00")	(global $gABCDEF i32	(i32.const 3040))
+  ;; (data (i32.const 3080) "FEDCBA\00")	(global $gFEDCBA i32	(i32.const 3080))
+  ;; (data (i32.const 3100) "AAAZZZ\00")	(global $gAAAZZZ i32	(i32.const 3100))
+  ;; (data (i32.const 3110) "AbCDbE\00")		(global $gAbCDbE i32 (i32.const 3110))
+  ;; (data (i32.const 3120) ">aaa\0A\00")		(global $g>aaa i32 (i32.const 3120))
+  ;; (data (i32.const 3130) ">bbb\0A\00")		(global $g>bbb i32 (i32.const 3130))
+  ;; (data (i32.const 3140) ">ccc\0A\00")		(global $g>ccc i32 (i32.const 3140))
+  ;; (data (i32.const 3150) ">ddd\0A\00")		(global $g>ddd i32 (i32.const 3150))
+  ;; (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
   
   (func $getMem (param $size i32)(result i32)
 	;; Simple memory allocation done in 4-byte chunks
@@ -690,6 +690,25 @@
     (call $test)
     (local.set $listPtr (call $readFile))
 	(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
-	(call $i32strlist.print (local.get $listPtr))
+	;;(call $i32strlist.print (local.get $listPtr))
+	(call $wam2wat (local.get $listPtr))
+	(call $i32strlist.print)
   )
+  (func $wam2wat (param $wamList i32) (result i32)
+	(call $str.print (call $str.mkdata (global.get $gAAAZZZ)))
+	(local.get $wamList)
+  )
+  (global $testing i32 (i32.const 42))
+  (data (i32.const 3000) "AAA\00")		(global $gAAA i32	(i32.const 3000)) ;;FIRST
+  (data (i32.const 3020) "at \00")		(global $gat i32		(i32.const 3020))
+  (data (i32.const 3030) "realloc\00")	(global $grealloc i32	(i32.const 3030))
+  (data (i32.const 3040) "ABCDEF\00")	(global $gABCDEF i32	(i32.const 3040))
+  (data (i32.const 3080) "FEDCBA\00")	(global $gFEDCBA i32	(i32.const 3080))
+  (data (i32.const 3100) "AAAZZZ\00")	(global $gAAAZZZ i32	(i32.const 3100))
+  (data (i32.const 3110) "AbCDbE\00")		(global $gAbCDbE i32 (i32.const 3110))
+  (data (i32.const 3120) ">aaa\0A\00")		(global $g>aaa i32 (i32.const 3120))
+  (data (i32.const 3130) ">bbb\0A\00")		(global $g>bbb i32 (i32.const 3130))
+  (data (i32.const 3140) ">ccc\0A\00")		(global $g>ccc i32 (i32.const 3140))
+  (data (i32.const 3150) ">ddd\0A\00")		(global $g>ddd i32 (i32.const 3150))
+  (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
 )
