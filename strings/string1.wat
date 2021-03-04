@@ -38,20 +38,6 @@
   (global $writeBuffOff i32 (i32.const 1400))
   (global $writeBufLen i32 (i32.const 512))
   (global $nextFreeMem (mut i32) (i32.const 4096))
-  (global $zero i32 (i32.const 48))
-  ;; keep FIRST and LAST at the beginning and end of these
-  ;; (data (i32.const 3000) "AAA\00")		(global $gAAA i32	(i32.const 3000)) ;;FIRST
-  ;; (data (i32.const 3020) "at \00")		(global $gat i32		(i32.const 3020))
-  ;; (data (i32.const 3030) "realloc\00")	(global $grealloc i32	(i32.const 3030))
-  ;; (data (i32.const 3040) "ABCDEF\00")	(global $gABCDEF i32	(i32.const 3040))
-  ;; (data (i32.const 3080) "FEDCBA\00")	(global $gFEDCBA i32	(i32.const 3080))
-  ;; (data (i32.const 3100) "AAAZZZ\00")	(global $gAAAZZZ i32	(i32.const 3100))
-  ;; (data (i32.const 3110) "AbCDbE\00")		(global $gAbCDbE i32 (i32.const 3110))
-  ;; (data (i32.const 3120) ">aaa\0A\00")		(global $g>aaa i32 (i32.const 3120))
-  ;; (data (i32.const 3130) ">bbb\0A\00")		(global $g>bbb i32 (i32.const 3130))
-  ;; (data (i32.const 3140) ">ccc\0A\00")		(global $g>ccc i32 (i32.const 3140))
-  ;; (data (i32.const 3150) ">ddd\0A\00")		(global $g>ddd i32 (i32.const 3150))
-  ;; (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
   
   (func $getMem (param $size i32)(result i32)
 	;; Simple memory allocation done in 4-byte chunks
@@ -64,43 +50,20 @@
 	(global.get $nextFreeMem) ;; to return
 	(global.set $nextFreeMem (i32.add (global.get $nextFreeMem)(local.get $size4)))
   )
-  (func $i32.print1 (param $N i32) 
-	;; Simple i32 print, but prints the digits backwards!
-	(local $Ntemp i32)
-	(local.set $Ntemp (local.get $N))
-	(loop $digitLoop
-	  (call $C.print
-		(i32.add
-		  (i32.rem_u (local.get $Ntemp)(i32.const 10))
-		  (global.get $zero)))
-	  (i32.div_s (local.get $Ntemp)(i32.const 10))
-	  (local.set $Ntemp)
-	  (br_if $digitLoop (local.get $Ntemp))
-	)
-	(call $C.print (i32.const 32))  ;; space
-  )
   (func $i32.print (param $N i32)
-	;; Doesn't understand negative numbers
-	(local $Ntemp i32)(local $sptr i32)
-	(local.set $sptr (call $str.mk))
-	(local.set $Ntemp (local.get $N))
-	(loop $digitLoop
-	  (call $str.LcatChar (local.get $sptr)
-		(i32.add
-		  (i32.rem_u (local.get $Ntemp)(i32.const 10))
+	(if (i32.ge_u (local.get $N)(i32.const 10))
+	  (then (call $i32.print (i32.div_u (local.get $N)(i32.const 10)))))
+	(call $C.print (i32.add
+			(i32.rem_u (local.get $N)(i32.const 10))
 			(global.get $zero)))
-	  (i32.div_s (local.get $Ntemp)(i32.const 10))
-	  (local.set $Ntemp)
-	  (br_if $digitLoop (local.get $Ntemp))
-	)
-	(call $str.print (local.get $sptr))
+	;;(call $C.print (i32.const 32))  ;; space
   )
   (func $PtrDump (param $ptr i32)
 	(call $C.print(i32.const 123)) ;; {
-	  (call $i32.print1 (local.get $ptr))
-	  (call $i32.print1 (call $i32list.getCurLen (local.get $ptr)))
-	  (call $i32.print1 (call $i32list.getMaxLen (local.get $ptr)))
-	  (call $i32.print1 (call $i32list.getDataOff (local.get $ptr)))
+	  (call $i32.print (local.get $ptr))
+	  (call $i32.print (call $i32list.getCurLen (local.get $ptr)))
+	  (call $i32.print (call $i32list.getMaxLen (local.get $ptr)))
+	  (call $i32.print (call $i32list.getDataOff (local.get $ptr)))
 	(call $C.print(i32.const 125)) ;; }
   )
   (func $C.print (param $C i32)
@@ -125,16 +88,16 @@
 	(call $C.print (i32.const  32)) ;; space
   )
   (func $Test.showOK (param $testnum i32)
-	;;(return)
     (call $Test.printTest)
-	(call $i32.print1 (local.get $testnum))
+	(call $i32.print (local.get $testnum))
+	(call $C.print (i32.const 32)) ;; space
 	(call $C.print (i32.const 79)) ;; O
 	(call $C.print (i32.const 75)) ;; K
 	(call $C.print (i32.const 10)) ;; linefeed
   )
   (func $Test.showFailed (param $testnum i32)
     (call $Test.printTest)
-	(call $i32.print1 (local.get $testnum))
+	(call $i32.print (local.get $testnum))
 	(call $C.print (i32.const 78)) ;; N
 	(call $C.print (i32.const 79)) ;; O
 	(call $C.print (i32.const 75)) ;; K
@@ -650,7 +613,17 @@
 	  (return (i32.const 0)))
 	(i32.const 1) ;; success
   )
-  (func $readFile (result i32)
+  (func $str.startsAt (param $string i32)(param $pat i32)(param $startPos i32)(result i32)
+	(local $spos i32)(local $tpos i32)(local $stringLen i32)(local $patLen i32)
+	(local.set $stringLen (call $str.getCurLen (local.get $string)))
+	(local.set $patLen (call $str.getCurLen (local.get $pat)))
+;; needs more code!	
+	(i32.const 0)
+  )
+  (func $str.find (param $string i32)(param $pat i32)(result i32)
+	(i32.const 0)
+  )
+(func $readFile (result i32)
 	;; Reads a file in and returns a list of string pointers to the lines in it
 	(local $listPtr i32)(local $strPtr i32)(local $nread i32)
 	(i32.store (global.get $readIOVsOff0) (global.get $readBuffOff))
@@ -699,6 +672,7 @@
 	(local.get $wamList)
   )
   (global $testing i32 (i32.const 42))
+  (global $zero i32 (i32.const 48))
   (data (i32.const 3000) "AAA\00")		(global $gAAA i32	(i32.const 3000)) ;;FIRST
   (data (i32.const 3020) "at \00")		(global $gat i32		(i32.const 3020))
   (data (i32.const 3030) "realloc\00")	(global $grealloc i32	(i32.const 3030))
