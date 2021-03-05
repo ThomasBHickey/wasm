@@ -12,7 +12,7 @@
   (export "memory" (memory 0))
 
   (type $testSig (func (param i32)(result i32)))
-  (table 12 funcref)
+  (table 13 funcref)
   (elem (i32.const 0)
     $i32list.mk.test	;;0
 	$i32list.sets.test	;;1
@@ -26,8 +26,9 @@
 	$str.stripLeading.test ;; 9
 	$str.compare.test	;;10
 	$str.Csplit.test	;;11
+	$str.find.test		;;12
   )
-  (global $numTests i32 (i32.const 12)) ;; Better match!
+  (global $numTests i32 (i32.const 13)) ;; Better match!
 
   (global $readIOVsOff0 i32 (i32.const 100))
   (global $readIOVsOff4 i32 (i32.const 104))
@@ -59,12 +60,12 @@
 	;;(call $C.print (i32.const 32))  ;; space
   )
   (func $PtrDump (param $ptr i32)
-	(call $C.print(i32.const 123)) ;; {
+	(call $C.print(i32.const 123)) ;; '{'
 	  (call $i32.print (local.get $ptr))
 	  (call $i32.print (call $i32list.getCurLen (local.get $ptr)))
 	  (call $i32.print (call $i32list.getMaxLen (local.get $ptr)))
 	  (call $i32.print (call $i32list.getDataOff (local.get $ptr)))
-	(call $C.print(i32.const 125)) ;; }
+	(call $C.print(i32.const 125)) ;; '}'
   )
   (func $C.print (param $C i32)
 	(i32.store (global.get $writeIOVsOff0)(global.get $writeBuffOff))
@@ -613,17 +614,57 @@
 	  (return (i32.const 0)))
 	(i32.const 1) ;; success
   )
-  (func $str.startsAt (param $string i32)(param $pat i32)(param $startPos i32)(result i32)
-	(local $spos i32)(local $tpos i32)(local $stringLen i32)(local $patLen i32)
-	(local.set $stringLen (call $str.getCurLen (local.get $string)))
-	(local.set $patLen (call $str.getCurLen (local.get $pat)))
-;; needs more code!	
-	(i32.const 0)
+  (func $str.startsAt (param $str i32)(param $pat i32)(param $startPos i32)(result i32)
+	(local $patLen i32)(local $patPos i32)(local $cPos i32)
+	(local.set $patLen (call $str.getCurLen(local.get $pat)))
+	(if (i32.gt_u (i32.add (local.get $patLen)(local.get $startPos))
+					(call $str.getCurLen (local.get $str)))
+		(then (return (i32.const 0))))
+	(local.set $patPos (i32.const 0))
+	(local.set $cPos (local.get $startPos))
+	(loop $cloop
+	  (if (i32.lt_u (local.get $patPos)(local.get $patLen))
+		(then
+		  (if (i32.eq (call $str.getChar (local.get $pat)(local.get $patPos))
+						(call $str.getChar (local.get $str)(local.get $cPos)))
+			(then
+			  (local.set $patPos (i32.add (i32.const 1)(local.get $patPos)))
+			  (local.set $cPos   (i32.add (i32.const 1)(local.get $cPos)))
+			  (br $cloop))))))
+	(i32.eq (local.get $patPos)(local.get $patLen))  ;; matched whole pat?
   )
   (func $str.find (param $string i32)(param $pat i32)(result i32)
-	(i32.const 0)
+    ;; returns position where found, otherwise -1
+	(local $cpos i32)(local $lastPos i32)
+	(local.set $lastPos (i32.sub (call $str.getCurLen (local.get $string))
+								(call $str.getCurLen(local.get $pat))))
+	(local.set $cpos (i32.const 0))
+	(loop $cloop
+	  (if (i32.le_s (local.get $cpos) (local.get $lastPos))
+		(then
+		  (if (call $str.startsAt (local.get $string)(local.get $pat)(local.get $cpos))
+			(then (local.get $cpos) return))
+		  (local.set $cpos (i32.add (local.get $cpos) (i32.const 1)))
+		  (br $cloop))))
+	(i32.const -1)
   )
-(func $readFile (result i32)
+  (func $str.find.test (param $testNum i32) (result i32)
+	(local $AAAZZZ i32)(local $AAA i32)(local $ZZZ i32)(local $aaa i32)
+	(local.set $AAAZZZ 	(call $str.mkdata (global.get $gAAAZZZ)))
+	(local.set $AAA 	(call $str.mkdata (global.get $gAAA)))
+	(local.set $ZZZ		(call $str.mkdata (global.get $gZZZ)))
+	(local.set $aaa		(call $str.mkdata (global.get $gaaa)))
+	(if (i32.ne (i32.const 0) (call $str.find (local.get $AAAZZZ)(local.get $AAA)))
+		(return (i32.const 0)))
+	(if (i32.ne (i32.const 3) (call $str.find (local.get $AAAZZZ)(local.get $ZZZ)))
+		(return (i32.const 0)))
+	(if (i32.ne (i32.const -1) (call $str.find (local.get $AAAZZZ)(local.get $aaa)))
+		(return (i32.const 0)))
+	(if (i32.ne (i32.const -1) (call $str.find (local.get $AAA)(local.get $AAAZZZ)))
+		(return (i32.const 0)))
+	(i32.const 1)
+  )
+  (func $readFile (result i32)
 	;; Reads a file in and returns a list of string pointers to the lines in it
 	(local $listPtr i32)(local $strPtr i32)(local $nread i32)
 	(i32.store (global.get $readIOVsOff0) (global.get $readBuffOff))
@@ -680,9 +721,9 @@
   (data (i32.const 3080) "FEDCBA\00")	(global $gFEDCBA i32	(i32.const 3080))
   (data (i32.const 3100) "AAAZZZ\00")	(global $gAAAZZZ i32	(i32.const 3100))
   (data (i32.const 3110) "AbCDbE\00")		(global $gAbCDbE i32 (i32.const 3110))
-  (data (i32.const 3120) ">aaa\0A\00")		(global $g>aaa i32 (i32.const 3120))
-  (data (i32.const 3130) ">bbb\0A\00")		(global $g>bbb i32 (i32.const 3130))
-  (data (i32.const 3140) ">ccc\0A\00")		(global $g>ccc i32 (i32.const 3140))
-  (data (i32.const 3150) ">ddd\0A\00")		(global $g>ddd i32 (i32.const 3150))
+  (data (i32.const 3120) ">aaa\0A\00")		(global $gaaa i32 (i32.const 3120))
+  (data (i32.const 3130) ">bbb\0A\00")		(global $gbbb i32 (i32.const 3130))
+  (data (i32.const 3140) ">ccc\0A\00")		(global $gccc i32 (i32.const 3140))
+  (data (i32.const 3150) ">ddd\0A\00")		(global $gddd i32 (i32.const 3150))
   (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
 )
