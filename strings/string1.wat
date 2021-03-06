@@ -33,10 +33,10 @@
   (global $readIOVsOff0 i32 (i32.const 100))
   (global $readIOVsOff4 i32 (i32.const 104))
   (global $readBuffOff i32 (i32.const 200))
-  (global $readBuffLen i32 (i32.const 1000))
-  (global $writeIOVsOff0 i32 (i32.const 1300))
-  (global $writeIOVsOff4 i32 (i32.const 1304))
-  (global $writeBuffOff i32 (i32.const 1400))
+  (global $readBuffLen i32 (i32.const 2000))
+  (global $writeIOVsOff0 i32 (i32.const 2300))
+  (global $writeIOVsOff4 i32 (i32.const 2304))
+  (global $writeBuffOff i32 (i32.const 2400))
   (global $writeBufLen i32 (i32.const 512))
   (global $nextFreeMem (mut i32) (i32.const 4096))
   
@@ -51,6 +51,7 @@
 	(global.get $nextFreeMem) ;; to return
 	(global.set $nextFreeMem (i32.add (global.get $nextFreeMem)(local.get $size4)))
   )
+  ;; Still doesn't recognize negatives
   (func $i32.print (param $N i32)
 	(if (i32.ge_u (local.get $N)(i32.const 10))
 	  (then (call $i32.print (i32.div_u (local.get $N)(i32.const 10)))))
@@ -435,7 +436,7 @@
 	(local $cpos i32)  ;; steps through character positions
 	(local.set $curLength (call $str.getCurLen(local.get $strPtr)))
 	(local.set $cpos (i32.const 0))
-	(call $C.print (i32.const 34)) ;; double quote
+	;;(call $C.print (i32.const 34)) ;; double quote
 	(local.set $dataOffset (i32.load (i32.add (i32.const 8)(local.get $strPtr))))
 	(loop $cLoop
 	  (if (i32.lt_u (local.get $cpos)(local.get $curLength))
@@ -444,7 +445,7 @@
 		 (call $C.print)   
 	     (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
 	     (br $cLoop))))
-	(call $C.print (i32.const 34)) ;; double quote
+	;;(call $C.print (i32.const 34)) ;; double quote
  	(call $C.print (i32.const 10))  ;; linefeed
   )
   (func $str.extend(param $strPtr i32)
@@ -705,12 +706,29 @@
     (local.set $listPtr (call $readFile))
 	(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
 	;;(call $i32strlist.print (local.get $listPtr))
-	(call $wam2wat (local.get $listPtr))
-	(call $i32strlist.print)
+	
+	(call $i32strlist.print (call $wam2wat (local.get $listPtr)))
   )
-  (func $wam2wat (param $wamList i32) (result i32)
-	(call $str.print (call $str.mkdata (global.get $gAAAZZZ)))
-	(local.get $wamList)
+  (func $wam2wat (param $wamLines i32)(result i32)
+    (local $lineNum i32)(local $numLines i32)(local $curLine i32)
+	(local $patPos i32)(local $CHAR i32)
+	(local.set $CHAR (call $str.mkdata (global.get $gpCHAR)))
+	(local.set $numLines (call $i32list.getCurLen (local.get $wamLines)))
+	(local.set $lineNum (i32.const 0))
+	(loop $lineLoop
+	  (if (i32.lt_s (local.get $lineNum)(local.get $numLines))
+		(then
+		  (local.set $curLine
+		    (call $i32list.get@ (local.get $wamLines)(local.get $lineNum)))
+		  (call $str.print (local.get $curLine))
+		  (local.set $patPos (call $str.find (local.get $curLine)(local.get $CHAR)))
+		  (if (i32.ge_s (local.get $patPos)(i32.const 0))
+			(then (call $i32.print (local.get $patPos))(call $C.print (i32.const 58)) ;; ':'
+				(call $i32.print (local.get $lineNum))
+				(call $C.print (i32.const 10))))
+	      (local.set $lineNum (i32.add (i32.const 1)(local.get $lineNum)))
+	      (br $lineLoop))))
+	(local.get $wamLines)
   )
   (global $testing i32 (i32.const 42))
   (global $zero i32 (i32.const 48))
@@ -725,5 +743,6 @@
   (data (i32.const 3130) ">bbb\0A\00")		(global $gbbb i32 (i32.const 3130))
   (data (i32.const 3140) ">ccc\0A\00")		(global $gccc i32 (i32.const 3140))
   (data (i32.const 3150) ">ddd\0A\00")		(global $gddd i32 (i32.const 3150))
+  (data (i32.const 3160) "(CHAR ")			(global $gpCHAR i32 (i32.const 3160))
   (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
 )
