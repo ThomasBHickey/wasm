@@ -100,6 +100,7 @@
   (func $Test.showFailed (param $testnum i32)
     (call $Test.printTest)
 	(call $i32.print (local.get $testnum))
+	(call $C.print (i32.const 32)) ;; space
 	(call $C.print (i32.const 78)) ;; N
 	(call $C.print (i32.const 79)) ;; O
 	(call $C.print (i32.const 75)) ;; K
@@ -479,16 +480,28 @@
 	  (i32.add (local.get $curLen)(i32.const 1)))
   )
   (func $str.catChar.test (param $testNum i32)(result i32)
-	(local $sp i32)(local $memsp i32)
-	(local.set $sp (call $str.mk))
-	(local.set $memsp (call $str.mkdata (global.get $gABCDEF)))
+	(local $sp i32)
+	(local $memsp i32)
+	(local.set $sp
+	  (call $str.mk))
+	(local.set $memsp 
+	  (call $str.mkdata
+		(global.get $gABCDEF)))
 	(call $str.catChar (local.get $sp) (i32.const 65))
 	(call $str.catChar (local.get $sp) (i32.const 66))
 	(call $str.catChar (local.get $sp) (i32.const 67))
 	(call $str.catChar (local.get $sp) (i32.const 68))
 	(call $str.catChar (local.get $sp) (i32.const 69))
 	(call $str.catChar (local.get $sp) (i32.const 70))
-	(call $str.compare (local.get $sp)(local.get $memsp)) ;; i32 to return
+	(if
+	  (i32.eqz
+		(call $str.compare
+		  (local.get $sp)
+		  (local.get $memsp)))
+	  (then
+		(return (i32.const 0))))  ;; Failure
+	;; Test UTF-8 compliance a bit
+	(return (i32.const 0))
   )
   (func $str.LcatChar (param $strPtr i32)(param $Lchar i32)
 	;; Add a character to beginning of a string
@@ -732,6 +745,10 @@
   )
   (global $testing i32 (i32.const 42))
   (global $zero i32 (i32.const 48))
+  (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024
+  (global $UTF8-2 i32 (i32.const 0xC2A2))		;; U+00A2
+  (global $UTF8-3 i32 (i32.const 0xE0A4B9))		;; U+0939
+  (global $UTF8-4 i32 (i32.const 0xF0908D88))	;; U+10348
   (data (i32.const 3000) "AAA\00")		(global $gAAA i32	(i32.const 3000)) ;;FIRST
   (data (i32.const 3020) "at \00")		(global $gat i32		(i32.const 3020))
   (data (i32.const 3030) "realloc\00")	(global $grealloc i32	(i32.const 3030))
