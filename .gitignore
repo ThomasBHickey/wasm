@@ -11,3 +11,4 @@ strings/string1.20210217.wat
 *.wast
 npp_language_wat.xml
 strings/recur.py
+strings/string1.partialutf8.wat
