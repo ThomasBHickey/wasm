@@ -12,7 +12,7 @@
   (export "memory" (memory 0))
 
   (type $testSig (func (param i32)(result i32)))
-  (table 13 funcref)
+  (table 14 funcref)
   (elem (i32.const 0)
     $i32list.mk.test	;;0
 	$i32list.sets.test	;;1
@@ -27,8 +27,9 @@
 	$str.compare.test	;;10
 	$str.Csplit.test	;;11
 	$str.find.test		;;12
+	$str.catChar.test	;;13
   )
-  (global $numTests i32 (i32.const 13)) ;; Better match!
+  (global $numTests i32 (i32.const 14)) ;; Better match!
 
   (global $readIOVsOff0 i32 (i32.const 100))
   (global $readIOVsOff4 i32 (i32.const 104))
@@ -544,12 +545,23 @@
 	(call $str.setDataOff(local.get $strPtr)(local.get $newDataOff))
 	(memory.copy (local.get $newDataOff)(local.get $dataOff)(local.get $curLen))
   )
-  ;; (func $str.catChar (param $strPtr i32)(param $C i32)
-	;; (local $curByte i32)
-	;; (local.set $curByte
-	  ;; (i32.shr_u (local.get $C)(i32.const 24)))
-	;; (if (local.get $curByte)(then (call $str.addByte (local.get $curByte))))
-  ;; )
+  (func $str.catChar (param $strPtr i32)(param $C i32)
+    (local $byte i32)
+	(loop $byteLoop
+	  (local.set $byte
+		(i32.shr_u
+		  (i32.and
+			(i32.const 0xFF000000)
+			  (local.get $C))
+			  (i32.const 24)))
+	  (if (local.get $byte)  ;; anything left to cat?
+		(then
+		  (call $str.catByte (local.get $strPtr)(local.get $byte))
+		  (local.set $C (i32.shl (local.get $C)(i32.const 8))))))
+  )
+  (func $str.catChar.test (param $testNum i32)(result i32)
+	(i32.const 0)
+  )
   (func $str.catByte (param $strPtr i32)(param $C i32)
 	(local $maxLen i32) (local $byteLen i32)
 	(local.set $byteLen (call $str.getByteLen (local.get $strPtr)))
@@ -803,7 +815,7 @@
   )
   (func $main (export "_start")
 	(local $listPtr i32)
-    ;;(call $test)
+    (call $test)
     ;;(local.set $listPtr (call $readFile))
 	;;(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
 	(call $byte.print (i32.const 10))
@@ -848,10 +860,10 @@
   )
   (global $testing i32 (i32.const 42))
   (global $zero i32 (i32.const 48))
-  (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024
-  (global $UTF8-2 i32 (i32.const 0xC2A2))		;; U+00A2
-  (global $UTF8-3 i32 (i32.const 0xE0A4B9))		;; U+0939
-  (global $UTF8-4 i32 (i32.const 0xF0908D88))	;; U+10348
+  (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024	Dollar sign
+  (global $UTF8-2 i32 (i32.const 0xC2A2))		;; U+00A2	Cent sign
+  (global $UTF8-3 i32 (i32.const 0xE0A4B9))		;; U+0939	Devanagari Letter Ha
+  (global $UTF8-4 i32 (i32.const 0xF0908D88))	;; U+10348	Gothic Letter Hwair
   (data (i32.const 3000) "AAA\00")		(global $gAAA i32	(i32.const 3000)) ;;FIRST
   (data (i32.const 3020) "at \00")		(global $gat i32		(i32.const 3020))
   (data (i32.const 3030) "realloc\00")	(global $grealloc i32	(i32.const 3030))
