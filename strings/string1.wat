@@ -69,6 +69,7 @@
 	(call $byte.print (i32.const 32))  ;; space
   )
   (func $i32.hexprintsup (param $N i32)
+    ;; support for $i32.hexprint
     (local $rem i32)
 	(if (i32.ge_u (local.get $N)(i32.const 16))
 	  (then (call $i32.hexprintsup (i32.div_u (local.get $N)(i32.const 16)))))
@@ -424,6 +425,7 @@
 	;; New string!
 	(call $str.compare (local.get $AAAZZZ) (call $str.mkdata (global.get $gAAAZZZ)))
   )
+  ;; NOT UTF-8 FRIENDLY!!
   (func $str.Rev (param $strPtr i32)(result i32)
 	;; Returns a pointer to a new string with reversed characters
 	(local $cpos i32)(local $curLen i32)(local $revStrPtr i32)(local $curChar i32)
@@ -547,56 +549,39 @@
   )
   (func $str.catChar (param $strPtr i32)(param $C i32)
     (local $byte i32)
-	(call $C.print (i32.const 66))(call $i32.hexprint(local.get $C))
 	(if (i32.eqz (local.get $C))  ;; handle null
 	  (return (call $str.catByte (local.get $strPtr) (i32.const 0))))
 	(loop $byteLoop
 	  (local.set $byte ;;assigned to high order byte in $C
 		(i32.shr_u
 		  (i32.and
-			(i32.const 0xFF000000)
+			(i32.const 0xFF000000)  ;; mask and shift right
 			  (local.get $C))
 			  (i32.const 24)))
-	(call $C.print (i32.const 62))(call $i32.hexprint(local.get $byte))(call $byte.print (i32.const 10))
 	  (if (local.get $byte)  ;; ignore leading null's
 		(call $str.catByte (local.get $strPtr)(local.get $byte)))
-	 (local.set $C (i32.shl (local.get $C)(i32.const 8)))  ;; move to next byte
-	 (if (local.get $C)
-	   (br $byteLoop)
-	  )
-	)
+		(local.set $C (i32.shl (local.get $C)(i32.const 8)))  ;; move to next byte
+	  (if (local.get $C)  ;; More?
+	   (br $byteLoop)))
   )
   (func $str.catChar.test (param $testNum i32)(result i32)
 	(local $strPtr i32)
 	(local.set $strPtr (call $str.mk))
 	(call $str.catChar (local.get $strPtr) (global.get $UTF8-1))
-	;;(call $i32.hexprint (call $str.getByte (local.get $strPtr)(i32.const 0)))
-	(if
-	  (i32.ne 
-		(global.get $UTF8-1)
-		(call $str.getByte
-		  (local.get $strPtr)
-		  (i32.const 0)))
-	  (return (i32.const 0)))
-	(local.set $strPtr (call $str.mk))
 	(call $str.catChar (local.get $strPtr) (global.get $UTF8-2))
-	;; (if
-	  ;; (i32.eqz
-		;; (i32.and
-	      ;; (i32.eq
-		    ;; (i32.and (i32.const 0xff)(global.get $UTF8-2))
-		    ;; (call $str.getByte (local.get $strPtr (i32.const 1))))))
-	  ;; (return (i32.const 0)))
-	(return (i32.const 1))
-	(local.set $strPtr (call $str.mk))
 	(call $str.catChar (local.get $strPtr) (global.get $UTF8-3))
-	
+	(call $str.catChar (local.get $strPtr) (global.get $UTF8-4))
+	(call $C.print (i32.const 62))
+	  (call $str.print (local.get $strPtr))
+	  (call $str.print (local.get $strPtr))
+	(call $C.print (i32.const 60))
 	(i32.const 1)
   )
   (func $str.catByte (param $strPtr i32)(param $C i32)
 	(local $maxLen i32) (local $byteLen i32)
 	(local.set $byteLen (call $str.getByteLen (local.get $strPtr)))
 	(local.set $maxLen (call $str.getMaxLen (local.get $strPtr)))
+	;;(call $C.print (i32.const 91))(call $i32.hexprint (local.get $C))(call $C.print (i32.const 93))
 	(if (i32.ge_u (local.get $byteLen) (local.get $maxLen))
 	  (then (call $str.extend (local.get $strPtr))))
 	(i32.store8
@@ -710,7 +695,6 @@
 		(return (i32.const 0)))  ;; should not have matched!
 	(i32.const 1) ;; success
   )
-  
   (func $str.Csplit (param $toSplit i32)(param $splitC i32)(result i32)
 	;; pass string, char, return list of strings split on char
 	;; Not UTF-8 safe (split character needs to be a single byte long
@@ -850,20 +834,6 @@
     ;;(local.set $listPtr (call $readFile))
 	;;(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
 	(call $byte.print (i32.const 10))
-	(call $str.print (call $str.mkdata (global.get $gpCHAR)))
-	;;(call $byte.print (i32.const 10))
-	;;(call $i32.hexprint(global.get $UTF8-1))
-	(call $C.print(global.get $UTF8-1))
-	(call $byte.print (i32.const 10))(call $byte.print (i32.const 10))
-	(call $C.print(global.get $UTF8-2))
-	(call $C.print(global.get $UTF8-3))
-	(call $C.print(global.get $UTF8-4))
-	;;(call $i32.hexprint(global.get $UTF8-4))
-	;; (call $C.print (i32.const 0xC2))
-	;; (call $C.print (i32.const 0xA2))
-	;; (call $C.print (i32.const 10))
-	;;(call $C.print (global.get $UTF8-3))
-	;;(call $C3.print (i32.const 0xB9A4E0))
 	(call $byte.print (i32.const 10))
 	;;(call $i32strlist.print (local.get $listPtr))
 	;;(call $i32strlist.print (call $wam2wat (local.get $listPtr)))
