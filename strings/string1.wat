@@ -889,9 +889,64 @@
 		  (i32.add (local.get $rePos)(i32.const 2))
 		  (local.get $text)
 		  (local.get $textPos))))
-	;; 	TWO MOR IF'S ARE NEEDED
-	;; 1) CHECK FOR ENOD OF TEXT && END OF REGEXPR
-	;; 2) CHECK REST OF MATCH
+	;; Check for end of text & end of Regexpr
+	(if
+	  (i32.and
+		(i32.eq
+		  (global.get $DOLLARSIGN)
+		  (call $str.getByte
+			(local.get $re)
+			(local.get $rePos))
+		)
+		(i32.ge_u
+		  (local.get $rePos)
+		  (call
+			$str.getCurLen
+			(local.get $re))
+		)
+	  )
+	  (return
+		(i32.ge_u
+		  (local.get $textPos)
+		  (call
+			$str.getCurLen
+			  (local.get $text)))))
+	;; Check rest of match
+	(if
+	  (i32.and   ;; &&
+		(i32.lt_u ;; *text !='\0'
+		  (local.get $textPos)
+		  (call
+			$str.getCurLen
+			(local.get $text)
+		  )
+		)
+		(i32.or ;; ||
+		  (i32.eq  ;; re[0]=='.'
+			  (call
+				$str.getByte
+				(local.get $re)
+				(local.get $rePos)
+			  (global.get $FULLSTOP)
+			  )
+		  )
+		  (i32.eq  ;; re[0]==*text
+			(call $str.getByte (local.get $re)  (local.get $rePos))
+			(call $str.getByte (local.get $text)(local.get $textPos))
+		  )
+		)
+	  )
+	  (return
+	    (call 
+	      $matchHere
+		  (local.get $re)
+		  (i32.add
+			(local.get $rePos)
+			(i32.const 1))
+		  (local.get $text)
+		  (i32.add
+			(local.get $textPos)
+			(i32.const 1)))))
 	(i32.const 0)
   )
   (func $matchStar (param $byte i32)
@@ -923,8 +978,10 @@
   (global $testing i32 (i32.const 42))
   (global $zero i32 (i32.const 48))
   (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024	Dollar sign
+  (global $DOLLARSIGN i32 (i32.const 0x24))  		;; U+0024	Dollar sign
   (global $ASTERISK i32 (i32.const 0x2A))		;; *
-  (global $CIRCUMFLEX i32 (i32.const 0x5E))			;; ^
+  (global $FULLSTOP i32 (i32.const 0x2E))		;; .
+  (global $CIRCUMFLEX i32 (i32.const 0x5E))		;; ^
   (global $UTF8-2 i32 (i32.const 0xC2A2))		;; U+00A2	Cent sign
   (global $UTF8-3 i32 (i32.const 0xE0A4B9))		;; U+0939	Devanagari Letter Ha
   (global $UTF8-4 i32 (i32.const 0xF0908D88))	;; U+10348	Gothic Letter Hwair
