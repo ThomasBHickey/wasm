@@ -313,7 +313,7 @@
 	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
 		(then
 		  (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))
-		  (call $i32.print)   
+		  (call $i32list.print)   
 	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
 	      (br $iLoop))))
 	;;(call $C.print (i32.const 93)) ;; right bracket
@@ -571,10 +571,9 @@
 	(call $str.catChar (local.get $strPtr) (global.get $UTF8-2))
 	(call $str.catChar (local.get $strPtr) (global.get $UTF8-3))
 	(call $str.catChar (local.get $strPtr) (global.get $UTF8-4))
-	(call $C.print (i32.const 62))
-	  (call $str.print (local.get $strPtr))
-	  (call $str.print (local.get $strPtr))
-	(call $C.print (i32.const 60))
+	;; (call $C.print (i32.const 62))
+	  ;; (call $str.print (local.get $strPtr))
+	;; (call $C.print (i32.const 60))
 	(i32.const 1)
   )
   (func $str.catByte (param $strPtr i32)(param $C i32)
@@ -831,12 +830,74 @@
   (func $main (export "_start")
 	(local $listPtr i32)
     (call $test)
-    ;;(local.set $listPtr (call $readFile))
-	;;(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
+    (local.set $listPtr (call $readFile))
+	(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
 	(call $byte.print (i32.const 10))
 	(call $byte.print (i32.const 10))
 	;;(call $i32strlist.print (local.get $listPtr))
-	;;(call $i32strlist.print (call $wam2wat (local.get $listPtr)))
+	(call $i32strlist.print (call $wam2wat (local.get $listPtr)))
+  )
+  (func $match (param $re i32) (param $text i32) (result i32)
+	(local $textPos i32)
+    (if
+	  (i32.eq
+		(call $str.getByte (local.get $re)(i32.const 0))
+		(global.get $CIRCUMFLEX))
+	  (return
+	    (call $matchHere 
+		  (local.get $re)(i32.const 1)
+		  (local.get $text)(i32.const 0))
+		  ))
+	(local.set $textPos (i32.const 0))
+	(loop $textLoop
+	  (if 
+		(call $matchHere
+		  (local.get $re) (i32.const 0)
+		  (local.get $text)(local.get $textPos))
+		(return (i32.const 1)))
+	  (local.set $textPos
+		(i32.add
+		  (local.get $textPos)
+		  (i32.const 1)))
+	  (if
+		(i32.lt_u
+		  (local.get $textPos)
+		  (call $str.getCurLen
+			(local.get $text)))
+		(br $textLoop)))
+	(i32.const 0)  ;; failed to match
+  )
+  (func $matchHere (param $re i32)(param $rePos i32)
+					(param $text i32)(param $textPos i32)
+					(result i32)
+	(if
+	  (i32.ge_u
+		(call $str.getCurLen (local.get $re))
+		(local.get $rePos))
+	  (return (i32.const 1)))  ;; end of $re
+	(if
+	  (i32.eq
+		(global.get $ASTERISK)
+		(call $str.getByte (local.get $re)
+		  (i32.add
+			(i32.const 1)
+			(local.get $rePos))))
+	  (return
+		(call $matchStar
+		  (call $str.getByte (local.get $re)(local.get $rePos))
+		  (local.get $re)
+		  (i32.add (local.get $rePos)(i32.const 2))
+		  (local.get $text)
+		  (local.get $textPos))))
+	;; 	TWO MOR IF'S ARE NEEDED
+	;; 1) CHECK FOR ENOD OF TEXT && END OF REGEXPR
+	;; 2) CHECK REST OF MATCH
+	(i32.const 0)
+  )
+  (func $matchStar (param $byte i32)
+	(param $re i32)(param $rePos i32)
+	(param $text i32)(param $textPos i32) (result i32)
+	(i32.const 0)
   )
   (func $wam2wat (param $wamLines i32)(result i32)
     (local $lineNum i32)(local $numLines i32)(local $curLine i32)
@@ -862,6 +923,8 @@
   (global $testing i32 (i32.const 42))
   (global $zero i32 (i32.const 48))
   (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024	Dollar sign
+  (global $ASTERISK i32 (i32.const 0x2A))		;; *
+  (global $CIRCUMFLEX i32 (i32.const 0x5E))			;; ^
   (global $UTF8-2 i32 (i32.const 0xC2A2))		;; U+00A2	Cent sign
   (global $UTF8-3 i32 (i32.const 0xE0A4B9))		;; U+0939	Devanagari Letter Ha
   (global $UTF8-4 i32 (i32.const 0xF0908D88))	;; U+10348	Gothic Letter Hwair
