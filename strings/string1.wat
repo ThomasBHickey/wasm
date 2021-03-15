@@ -165,6 +165,15 @@
 	(call $byte.print (i32.const 116)) ;; t
 	(call $byte.print (i32.const  32)) ;; space
   )
+  (func $Test.show (param $testNum i32)(param $testResult i32)
+	(if (local.get $testResult)
+	  (then
+	    (call $Test.showFailed
+		  (local.get $testNum)
+		  (local.get $testResult)))
+	  (else
+		(call $Test.showOK (local.get $testNum))))
+  )
   (func $Test.showOK (param $testnum i32)
     (call $Test.printTest)
 	(call $i32.print (local.get $testnum))
@@ -173,7 +182,7 @@
 	(call $byte.print (i32.const 75)) ;; K
 	(call $byte.print (i32.const 10)) ;; linefeed
   )
-  (func $Test.showFailed (param $testnum i32)
+  (func $Test.showFailed (param $testnum i32)(param $testResult i32)
     (call $Test.printTest)
 	(call $i32.print (local.get $testnum))
 	(call $byte.print (i32.const 32)) ;; space
@@ -183,6 +192,8 @@
 	(call $byte.print (i32.const 33)) ;; !
 	(call $byte.print (i32.const 33)) ;; !
 	(call $byte.print (i32.const 33)) ;; !
+	(call $byte.print (i32.const 32)) ;; space
+	(call $i32.print (local.get $testResult))
 	(call $byte.print (i32.const 10)) ;; linefeed
 	)
 
@@ -216,8 +227,8 @@
 		  (return (i32.const 0))))
 	(if (i32.ne (i32.const 1)(call $i32list.getMaxLen (local.get $lstPtr)))
 		(then
-		  (return (i32.const 0))))  ;; failed, should have been 1
-	(i32.const 1) ;; OK
+		  (return (i32.const 1))))  ;; failed, should have been 1
+	(i32.const 0) ;; OK
   )
   (func $i32list.getCurLen(param $lstPtr i32)(result i32)
 	(i32.load (local.get $lstPtr))
@@ -244,12 +255,12 @@
 	(call $i32list.setMaxLen (local.get $lstPtr)(i32.const 38))
 	(call $i32list.setDataOff (local.get $lstPtr)(i32.const 39))
 	(if (i32.ne (call $i32list.getCurLen (local.get $lstPtr))(i32.const 37))
-		(then (return (i32.const 0))))
+		(then (return (i32.const 1))))
 	(if (i32.ne (call $i32list.getMaxLen (local.get $lstPtr))(i32.const 38))
-		(then (return (i32.const 0))))
+		(then (return (i32.const 1))))
 	(if (i32.ne (call $i32list.getDataOff (local.get $lstPtr))(i32.const 39))
-		(then (return (i32.const 0))))
-	(i32.const 1)
+		(then (return (i32.const 1))))
+	(i32.const 0)
   )
   (func $i32list.extend (param $lstPtr i32)
     ;; double the space available
@@ -299,10 +310,10 @@
 	(call $i32list.cat (local.get $listPtr) (i32.const 42))
 	(call $i32list.cat (local.get $listPtr) (i32.const 43))
 	(if (i32.ne (i32.const 42)(call $i32list.get@ (local.get $listPtr)(i32.const 0)))
-		(return (i32.const 0)))
+		(return (i32.const 1)))
 	(if (i32.ne (i32.const 43)(call $i32list.get@ (local.get $listPtr)(i32.const 1)))
-		(return (i32.const 0)))
-	(i32.const 1)
+		(return (i32.const 1)))
+	(i32.const 0)
   )
   (func $i32list.print (param $lstPtr i32)
 	(local $curLength i32)
@@ -352,7 +363,7 @@
 	(call $str.setDataOff (local.get $strPtr)(i32.add(local.get $strPtr)(i32.const 12)))
 	(local.get $strPtr)
   )
-  (func $str.getCurLen (param $strPtr i32)(result i32)
+  (func $str.getCurLenstr.getCurLen (param $strPtr i32)(result i32)
 	(i32.div_u (i32.const 1) (i32.const 0))  ;; ERROR!! Not implemented yet
   )
   (func $str.getByteLen (param $strPtr i32)(result i32)
@@ -393,7 +404,10 @@
 	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
 	(call $str.catOntoStr (local.get $AAA)(local.get $ZZZ))
 	;; $AAA string now has $ZZZ concatenated onto it!
-	(call $str.compare  (local.get $AAA) (call $str.mkdata (global.get $gAAAZZZ)))
+	(i32.eqz
+	  (call $str.compare
+		(local.get $AAA) 
+		(call $str.mkdata (global.get $gAAAZZZ))))
   )
   (func $str.cat2Strings (param $s1Ptr i32)(param $s2Ptr i32)(result i32)
 	(local $bpos i32)(local $s1-2Ptr i32)(local $byteLen1 i32)(local $byteLen2 i32)
@@ -424,7 +438,9 @@
 	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
 	(local.set $AAAZZZ (call $str.cat2Strings(local.get $AAA)(local.get $ZZZ)))
 	;; New string!
-	(call $str.compare (local.get $AAAZZZ) (call $str.mkdata (global.get $gAAAZZZ)))
+	(i32.eqz 
+	  (call $str.compare (local.get $AAAZZZ)
+	  (call $str.mkdata (global.get $gAAAZZZ))))
   )
   ;; NOT UTF-8 FRIENDLY!!
   (func $str.Rev (param $strPtr i32)(result i32)
@@ -451,7 +467,10 @@
 	(local.set $abc (call $str.mkdata (global.get $gABCDEF)))
 	(local.set $abc.rev (call $str.Rev (local.get $abc)))
 	(local.set $cba (call $str.mkdata (global.get $gFEDCBA)))
-	(call $str.compare (local.get $abc.rev)(local.get $cba))
+	(i32.eqz
+	  (call $str.compare
+		(local.get $abc.rev)
+		(local.get $cba)))
   )
   (func $str.getByte (param $strPtr i32) (param $bytePos i32)(result i32)
     ;; how to show an error beyond returning null?
@@ -471,11 +490,11 @@
 		(i32.sub (call $str.getByteLen (local.get $ts))(i32.const 1)))
 	(if (i32.ne (call $str.getByte (local.get $ts)(i32.const 0))
 				(i32.const 65)) ;; 'A'
-		(return (i32.const 0)))
+		(return (i32.const 1)))
 	(if (i32.ne (call $str.getByte (local.get $ts)(local.get $lastCharPos))
 				(i32.const 70)) ;; 'F'
-		(return (i32.const 0)))
-	(i32.const 1)  ;; success
+		(return (i32.const 1)))
+	(i32.const 0)  ;; success
   )
   (func $str.mkdata (param $dataOffset i32) (result i32)
     ;; Make an ASCII string from null-terminated chunk of memory
@@ -509,9 +528,10 @@
 	(call $str.catByte(local.get $zzz) (i32.const 90))
 	(call $str.catByte(local.get $zzz) (i32.const 90))
 	(call $str.catByte(local.get $zzz) (i32.const 90))
-	(i32.and
+	(i32.eqz
+	  (i32.and
 		(call $str.compare (local.get $aaa)(local.get $first))
-		(call $str.compare (local.get $zzz)(local.get $last)))
+		(call $str.compare (local.get $zzz)(local.get $last))))
   )
   (func $str.print (param $strPtr i32)
 	(local $curLength i32)
@@ -575,7 +595,7 @@
 	;; (call $C.print (i32.const 62))
 	  ;; (call $str.print (local.get $strPtr))
 	;; (call $C.print (i32.const 60))
-	(i32.const 1)
+	(i32.const 0)
   )
   (func $str.catByte (param $strPtr i32)(param $C i32)
 	(local $maxLen i32) (local $byteLen i32)
@@ -610,9 +630,9 @@
 		  (local.get $sp)
 		  (local.get $memsp)))
 	  (then
-		(return (i32.const 0))))  ;; Failure
+		(return (i32.const 1))))  ;; Failure
 	;; Test UTF-8 compliance a bit
-	(return (i32.const 1))
+	(return (i32.const 0))
   )
   (func $str.LcatChar (param $strPtr i32)(param $Lchar i32)
 	;; Add a character to beginning of a string
@@ -657,9 +677,10 @@
 	(local $strAAAZZZ i32)(local $strZZZ i32)
 	(local.set $strAAAZZZ (call $str.mkdata (global.get $gAAAZZZ)))
 	(local.set $strZZZ (call $str.mkdata (global.get $gZZZ)))
-	(call $str.compare
+	(i32.eqz
+	  (call $str.compare
 		(local.get $strZZZ)
-		(call $str.stripLeading (local.get $strAAAZZZ) (i32.const 65)))
+		(call $str.stripLeading (local.get $strAAAZZZ) (i32.const 65))))
   )
   (func $str.compare (param $s1ptr i32)(param $s2ptr i32)(result i32)
 	(local $s2len i32)(local $cpos i32)
@@ -688,12 +709,12 @@
 	(call $str.catByte (local.get $spAAA2)(i32.const 65))
 	(local.set $spZZZ (call $str.mkdata (global.get $gZZZ)))
 	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA)))
-		(return (i32.const 0)))  ;; same string, should have matched
+		(return (i32.const 1)))  ;; same string, should have matched
 	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA2)))
-		(return (i32.const 0)))  ;; same contents, should have matched
+		(return (i32.const 2)))  ;; same contents, should have matched
 	(if (call $str.compare (local.get $spAAA)(local.get $spZZZ))
-		(return (i32.const 0)))  ;; should not have matched!
-	(i32.const 1) ;; success
+		(return (i32.const 3)))  ;; should not have matched!
+	(i32.const 0) ;; success
   )
   (func $str.Csplit (param $toSplit i32)(param $splitC i32)(result i32)
 	;; pass string, char, return list of strings split on char
@@ -728,18 +749,18 @@
 	(local.set $AbCDbE (call $str.mkdata (global.get $gAbCDbE)))
 	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 98)))  ;; 'b'
 	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 3))
-	  (return (i32.const 0)))
+	  (return (i32.const 1)))
 	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 45)))  ;; 'E'
 	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 1))
-	  (return (i32.const 0)))
+	  (return (i32.const 2)))
 	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 122)))  ;; 'z'
 	(local.set $strptr0 (call $i32list.get@ (local.get $listPtr)(i32.const 0)))
 	(if (i32.eqz 
 		  (call $str.compare
 			(call $i32list.get@ (local.get $listPtr)(i32.const 0))
 			(local.get $AbCDbE)))
-	  (return (i32.const 0)))
-	(i32.const 1) ;; success
+	  (return (i32.const 3)))
+	(i32.const 0) ;; success
   )
   (func $str.startsAt (param $str i32)(param $pat i32)(param $startPos i32)(result i32)
 	(local $patLen i32)(local $patPos i32)(local $cPos i32)
@@ -782,14 +803,14 @@
 	(local.set $ZZZ		(call $str.mkdata (global.get $gZZZ)))
 	(local.set $aaa		(call $str.mkdata (global.get $gaaa)))
 	(if (i32.ne (i32.const 0) (call $str.find (local.get $AAAZZZ)(local.get $AAA)))
-		(return (i32.const 0)))
+		(return (i32.const 1)))
 	(if (i32.ne (i32.const 3) (call $str.find (local.get $AAAZZZ)(local.get $ZZZ)))
-		(return (i32.const 0)))
+		(return (i32.const 2)))
 	(if (i32.ne (i32.const -1) (call $str.find (local.get $AAAZZZ)(local.get $aaa)))
-		(return (i32.const 0)))
+		(return (i32.const 3)))
 	(if (i32.ne (i32.const -1) (call $str.find (local.get $AAA)(local.get $AAAZZZ)))
-		(return (i32.const 0)))
-	(i32.const 1)
+		(return (i32.const 4)))
+	(i32.const 0)
   )
   (func $readFile (result i32)
 	;; Reads a file in and returns a list of string pointers to the lines in it
@@ -820,9 +841,14 @@
 	(local.set $testNum (i32.const 0))
 	(loop $tLoop  ;; assumes there is a least one test
 	  (local.get $testNum)
-	  (if (call_indirect (type $testSig) (local.get $testNum))
-		(then (call $Test.showOK (local.get $testNum)))
-		(else (call $Test.showFailed (local.get $testNum))))
+	  (call $Test.show
+		(local.get $testNum)
+		(call_indirect
+		  (type $testSig)
+		  (local.get $testNum)))
+	  ;; (if (call_indirect (type $testSig) (local.get $testNum))
+		;; (then (call $Test.showOK (local.get $testNum)))
+		;; (else (call $Test.showFailed (local.get $testNum))))
 	  (local.set $testNum (i32.add (local.get $testNum)(i32.const 1)))
 	  (if (i32.lt_u (local.get $testNum)(global.get $numTests))
 	    (then (br $tLoop)))
@@ -865,7 +891,7 @@
 	  (if
 		(i32.lt_u
 		  (local.get $textPos)
-		  (call $str.getCurLen
+		  (call $str.getByteLen
 			(local.get $text)))
 		(br $textLoop)))
 	(i32.const 0)  ;; failed to match
@@ -880,9 +906,9 @@
 		  ;; (call $str.mkdata (global.get $gAbCDbE))
 		)
 	  )
-	  (return (i32.const 0))
+	  (return (i32.const 1))  ;; failed test 1
 	)
-    (i32.const 1)
+    (i32.const 0)  ;; passed
   )
   (func $matchHere (param $re i32)(param $rePos i32)
 					(param $text i32)(param $textPos i32)
@@ -893,7 +919,7 @@
 	(call $i32.print(local.get $textPos))(call $byte.print (i32.const 10))
 	(if
 	  (i32.ge_u
-		(call $str.getCurLen (local.get $re))
+		(call $str.getByteLen (local.get $re))
 		(local.get $rePos))
 	  (return (i32.const 1)))  ;; end of $re
 	(if
@@ -922,7 +948,7 @@
 		(i32.ge_u
 		  (local.get $rePos)
 		  (call
-			$str.getCurLen
+			$str.getByteLen
 			(local.get $re))
 		)
 	  )
@@ -930,7 +956,7 @@
 		(i32.ge_u
 		  (local.get $textPos)
 		  (call
-			$str.getCurLen
+			$str.getByteLen
 			  (local.get $text)))))
 	;; Check rest of match
 	(if
@@ -938,7 +964,7 @@
 		(i32.lt_u ;; *text !='\0'
 		  (local.get $textPos)
 		  (call
-			$str.getCurLen
+			$str.getByteLen
 			(local.get $text)
 		  )
 		)
