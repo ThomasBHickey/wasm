@@ -12,7 +12,7 @@
   (export "memory" (memory 0))
 
   (type $testSig (func (param i32)(result i32)))
-  (table 14 funcref)
+  (table 15 funcref)
   (elem (i32.const 0)
     $i32list.mk.test	;;0
 	$i32list.sets.test	;;1
@@ -28,8 +28,9 @@
 	$str.Csplit.test	;;11
 	$str.find.test		;;12
 	$str.catChar.test	;;13
+	$match.test			;;14
   )
-  (global $numTests i32 (i32.const 14)) ;; Better match!
+  (global $numTests i32 (i32.const 15)) ;; Better match!
 
   (global $readIOVsOff0 i32 (i32.const 100))
   (global $readIOVsOff4 i32 (i32.const 104))
@@ -839,6 +840,8 @@
   )
   (func $match (param $re i32) (param $text i32) (result i32)
 	(local $textPos i32)
+	(call $str.print (local.get $re))
+	(call $str.print (local.get $text))
     (if
 	  (i32.eq
 		(call $str.getByte (local.get $re)(i32.const 0))
@@ -867,9 +870,27 @@
 		(br $textLoop)))
 	(i32.const 0)  ;; failed to match
   )
+  (func $match.test (param $testNum i32)(result i32)
+	(if
+	  (i32.eqz
+		(call $match
+		  (call $str.mkdata (global.get $g^A))
+		  (call $str.mkdata (global.get $gABCDEF))
+		  ;; (call $str.mkdata (global.get $gCD))
+		  ;; (call $str.mkdata (global.get $gAbCDbE))
+		)
+	  )
+	  (return (i32.const 0))
+	)
+    (i32.const 1)
+  )
   (func $matchHere (param $re i32)(param $rePos i32)
 					(param $text i32)(param $textPos i32)
 					(result i32)
+	(call $str.print (local.get $re))
+	(call $i32.print(local.get $rePos))(call $byte.print (i32.const 10))
+	(call $str.print (local.get $text))
+	(call $i32.print(local.get $textPos))(call $byte.print (i32.const 10))
 	(if
 	  (i32.ge_u
 		(call $str.getCurLen (local.get $re))
@@ -952,6 +973,36 @@
   (func $matchStar (param $byte i32)
 	(param $re i32)(param $rePos i32)
 	(param $text i32)(param $textPos i32) (result i32)
+	(loop $starLoop
+	  (if
+		(call $matchHere 
+		  (local.get $re)  (local.get $rePos)
+		  (local.get $text)(local.get $textPos))
+		(return (i32.const 1))
+	  )
+	  (br_if $starLoop
+		(i32.and						;; &&
+		  (i32.le_u						;; *text !='\0'
+			(local.get $textPos)
+			(call
+			  $str.getByteLen
+				(local.get $text)))  
+		  (i32.or						;; ||
+			(i32.eq
+			  (call						;; *text++==c
+				$str.getByte
+				  (local.get $text)
+				  (local.get $textPos))
+			  (local.get $byte)
+			)
+			(i32.eq
+				(local.get $byte)		;; c=='.'
+				(global.get $FULLSTOP)
+			)
+		  )
+		)
+	  )
+	)
 	(i32.const 0)
   )
   (func $wam2wat (param $wamLines i32)(result i32)
@@ -978,7 +1029,7 @@
   (global $testing i32 (i32.const 42))
   (global $zero i32 (i32.const 48))
   (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024	Dollar sign
-  (global $DOLLARSIGN i32 (i32.const 0x24))  		;; U+0024	Dollar sign
+  (global $DOLLARSIGN i32 (i32.const 0x24))  	;; U+0024	Dollar sign
   (global $ASTERISK i32 (i32.const 0x2A))		;; *
   (global $FULLSTOP i32 (i32.const 0x2E))		;; .
   (global $CIRCUMFLEX i32 (i32.const 0x5E))		;; ^
@@ -997,5 +1048,7 @@
   (data (i32.const 3140) ">ccc\0A\00")		(global $gccc i32 (i32.const 3140))
   (data (i32.const 3150) ">ddd\0A\00")		(global $gddd i32 (i32.const 3150))
   (data (i32.const 3160) "(CHAR ")			(global $gpCHAR i32 (i32.const 3160))
+  (data (i32.const 3180) "CD\00")			(global $gCD i32 (i32.const 3180))
+  (data (i32.const 3190) "^A\00")			(global $g^A i32 (i32.const 3190))
   (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
 )
