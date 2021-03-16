@@ -901,13 +901,18 @@
 	  (i32.eqz
 		(call $match
 		  (call $str.mkdata (global.get $g^A))
-		  (call $str.mkdata (global.get $gABCDEF))
-		  ;; (call $str.mkdata (global.get $gCD))
-		  ;; (call $str.mkdata (global.get $gAbCDbE))
-		)
-	  )
-	  (return (i32.const 1))  ;; failed test 1
-	)
+		  (call $str.mkdata (global.get $gABCDEF))))
+	  (return (i32.const 1)))  ;; failed test 1
+	(if (call $match  ;; should not match!
+		  (call $str.mkdata (global.get $g^B))
+		  (call $str.mkdata (global.get $gABCDEF)))
+	  (return (i32.const 2)))  ;; failed test 2
+	(if
+	  (i32.eqz
+		(call $match
+		  (call $str.mkdata (global.get $g^A$))
+		  (call $str.mkdata (global.get $gA))))
+	  (return (i32.const 3))) ;; failed test 3
     (i32.const 0)  ;; passed
   )
   (func $matchHere (param $re i32)(param $rePos i32)
@@ -1076,5 +1081,9 @@
   (data (i32.const 3160) "(CHAR ")			(global $gpCHAR i32 (i32.const 3160))
   (data (i32.const 3180) "CD\00")			(global $gCD i32 (i32.const 3180))
   (data (i32.const 3190) "^A\00")			(global $g^A i32 (i32.const 3190))
+  (data (i32.const 3200) "^B\00")			(global $g^B i32 (i32.const 3200))
+  (data (i32.const 3210) "^A$\00")			(global $g^A$ i32 (i32.const 3210))
+  (data (i32.const 3220) "A\00")			(global $gA	i32 (i32.const 3220))
+  (data (i32.const 3230) "^ABCDEF$\00")		(global $g^ABCDEF$ i32 (i32.const 3230))
   (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
 )
