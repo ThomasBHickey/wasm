@@ -63,6 +63,14 @@
 		(global.get $zero)))
 	;;(call $byte.print (i32.const 32))  ;; space
   )
+  (func $i32.printwsp (param $N i32)  ;; with space
+    (call $i32.print (local.get $N))
+	(call $byte.print (i32.const 32))  ;; space
+  )
+  (func $i32.printwlf (param $N i32)  ;; with line feed
+    (call $i32.print (local.get $N))
+	(call $byte.print (i32.const 10))  ;; space
+  )
   (func $i32.hexprint (param $N i32)
 	(call $byte.print (global.get $zero))
 	(call $byte.print (i32.const 120)) ;; 'x'
@@ -548,6 +556,9 @@
 		 (call $byte.print)   
 	     (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
 	     (br $cLoop))))
+  )
+  (func $str.printwlf (param $strPtr i32)
+	(call $str.print (local.get $strPtr))
  	(call $byte.print (i32.const 10))  ;; linefeed
   )
   (func $str.extend(param $strPtr i32)
@@ -866,9 +877,10 @@
   )
   (func $match (param $re i32) (param $text i32) (result i32)
 	(local $textPos i32)
-	(call $str.print (local.get $re))
-	(call $str.print (local.get $text))
-    (if
+	(call $str.printwlf (call $str.mkdata (global.get $g$match)))
+	(call $str.printwlf (local.get $re))
+	(call $str.printwlf (local.get $text))
+    (if				;;if (re[0]=='^') return matchhere(re+1, text)
 	  (i32.eq
 		(call $str.getByte (local.get $re)(i32.const 0))
 		(global.get $CIRCUMFLEX))
@@ -891,8 +903,7 @@
 	  (if
 		(i32.lt_u
 		  (local.get $textPos)
-		  (call $str.getByteLen
-			(local.get $text)))
+		  (call $str.getByteLen (local.get $text)))
 		(br $textLoop)))
 	(i32.const 0)  ;; failed to match
   )
@@ -918,14 +929,16 @@
   (func $matchHere (param $re i32)(param $rePos i32)
 					(param $text i32)(param $textPos i32)
 					(result i32)
+	(call $str.printwlf (call $str.mkdata (global.get $g$matchHere)))
+	(call $str.print (call $str.mkdata (global.get $gre:)))
 	(call $str.print (local.get $re))
-	(call $i32.print(local.get $rePos))(call $byte.print (i32.const 10))
-	(call $str.print (local.get $text))
-	(call $i32.print(local.get $textPos))(call $byte.print (i32.const 10))
-	(if
+	(call $i32.printwlf (local.get $rePos))
+	(call $str.printwlf (local.get $text))
+	(call $i32.printwlf(local.get $textPos))
+	(if			;; if (re[0] == '\0' return 1  (at end of re)
 	  (i32.ge_u
-		(call $str.getByteLen (local.get $re))
-		(local.get $rePos))
+		(local.get $rePos)
+		(call $str.getByteLen (local.get $re))) ;; len(re) >= 
 	  (return (i32.const 1)))  ;; end of $re
 	(if
 	  (i32.eq
@@ -941,7 +954,10 @@
 		  (i32.add (local.get $rePos)(i32.const 2))
 		  (local.get $text)
 		  (local.get $textPos))))
-	;; Check for end of text & end of Regexpr
+	;; Check for end of text & end of Regexp
+	;; if (re[0]=='$' && re[1]=='\0')
+	;;    return *text == '\0';
+	(call $str.printwlf (call $str.mkdata (global.get $gEndoftext?)))
 	(if
 	  (i32.and
 		(i32.eq
@@ -951,7 +967,7 @@
 			(local.get $rePos))
 		)
 		(i32.ge_u
-		  (local.get $rePos)
+		  (i32.add (i32.const 1)(local.get $rePos))
 		  (call
 			$str.getByteLen
 			(local.get $re))
@@ -1004,6 +1020,7 @@
   (func $matchStar (param $byte i32)
 	(param $re i32)(param $rePos i32)
 	(param $text i32)(param $textPos i32) (result i32)
+	(call $str.print (call $str.mkdata (global.get $g$matchStar)))
 	(loop $starLoop
 	  (if
 		(call $matchHere 
@@ -1078,12 +1095,17 @@
   (data (i32.const 3130) ">bbb\0A\00")		(global $gbbb i32 (i32.const 3130))
   (data (i32.const 3140) ">ccc\0A\00")		(global $gccc i32 (i32.const 3140))
   (data (i32.const 3150) ">ddd\0A\00")		(global $gddd i32 (i32.const 3150))
-  (data (i32.const 3160) "(CHAR ")			(global $gpCHAR i32 (i32.const 3160))
+  (data (i32.const 3160) "(CHAR \00")			(global $gpCHAR i32 (i32.const 3160))
   (data (i32.const 3180) "CD\00")			(global $gCD i32 (i32.const 3180))
   (data (i32.const 3190) "^A\00")			(global $g^A i32 (i32.const 3190))
   (data (i32.const 3200) "^B\00")			(global $g^B i32 (i32.const 3200))
   (data (i32.const 3210) "^A$\00")			(global $g^A$ i32 (i32.const 3210))
   (data (i32.const 3220) "A\00")			(global $gA	i32 (i32.const 3220))
   (data (i32.const 3230) "^ABCDEF$\00")		(global $g^ABCDEF$ i32 (i32.const 3230))
+  (data (i32.const 3240) "$match\00")			(global $g$match i32 (i32.const 3240))
+  (data (i32.const 3250) "$matchHere\00")		(global $g$matchHere i32 (i32.const 3250))
+  (data (i32.const 3270) "$matchStar\00")		(global $g$matchStar i32 (i32.const 3270))
+  (data (i32.const 3290) "re: \00")					(global $gre: i32 (i32.const 3290))
+  (data (i32.const 3300) "End of text?\00")	(global $gEndoftext? i32 (i32.const 3300))
   (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
 )
