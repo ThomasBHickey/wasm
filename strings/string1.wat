@@ -349,7 +349,7 @@
 	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
 		(then
 		  (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))
-		  (call $str.print)   
+		  (call $str.printwlf)   
 	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
 	      (br $iLoop))))
 	;;(call $C.print (i32.const 93)) ;; right bracket
@@ -868,16 +868,8 @@
 	    (then (br $tLoop)))
 	)
   )
-  (func $main (export "_start")
-	(local $listPtr i32)
-    (call $test)
-    (local.set $listPtr (call $readFile))
-	(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
-	(call $byte.print (i32.const 10))
-	(call $byte.print (i32.const 10))
-	;;(call $i32strlist.print (local.get $listPtr))
-	(call $i32strlist.print (call $wam2wat (local.get $listPtr)))
-  )
+  ;; match from https://www.drdobbs.com/184410904
+  ;; Regular Expressions by Kernighan & Pike
   (func $match (param $re i32) (param $text i32) (result i32)
 	(local $textPos i32)
 	(call $str.printwlf (call $str.mkdata (global.get $g$match)))
@@ -1093,7 +1085,7 @@
 		(then
 		  (local.set $curLine
 		    (call $i32list.get@ (local.get $wamLines)(local.get $lineNum)))
-		    (call $str.print (local.get $curLine))
+		    (call $str.printwlf (local.get $curLine))
 		  (local.set $patPos (call $str.find (local.get $curLine)(local.get $CHAR)))
 		  (if (i32.ge_s (local.get $patPos)(i32.const 0))
 			(then (call $i32.print (local.get $patPos))(call $byte.print (i32.const 58)) ;; ':'
@@ -1102,6 +1094,16 @@
 	      (local.set $lineNum (i32.add (i32.const 1)(local.get $lineNum)))
 	      (br $lineLoop))))
 	(local.get $wamLines)
+  )
+  (func $main (export "_start")
+	(local $listPtr i32)
+    (call $test)
+    (local.set $listPtr (call $readFile))
+	(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
+	(call $byte.print (i32.const 10))
+	(call $byte.print (i32.const 10))
+	;;(call $i32strlist.print (local.get $listPtr))
+	(call $i32strlist.print (call $wam2wat (local.get $listPtr)))
   )
   (global $testing i32 (i32.const 42))
   (global $zero i32 (i32.const 48))
