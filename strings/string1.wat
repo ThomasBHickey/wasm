@@ -547,7 +547,6 @@
 	(local $cpos i32)  ;; steps through character positions
 	(local.set $curLength (call $str.getByteLen(local.get $strPtr)))
 	(local.set $cpos (i32.const 0))
-	;;(call $C.print (i32.const 34)) ;; double quote
 	(local.set $dataOffset (i32.load (i32.add (i32.const 8)(local.get $strPtr))))
 	(loop $cLoop
 	  (if (i32.lt_u (local.get $cpos)(local.get $curLength))
@@ -560,6 +559,10 @@
   (func $str.printwlf (param $strPtr i32)
 	(call $str.print (local.get $strPtr))
  	(call $byte.print (i32.const 10))  ;; linefeed
+  )
+  (func $str.printwsp (param $strPtr i32)
+	(call $str.print (local.get $strPtr))
+ 	(call $byte.print (i32.const 32))  ;; space
   )
   (func $str.extend(param $strPtr i32)
 	;; double the space available for characters
@@ -924,6 +927,24 @@
 		  (call $str.mkdata (global.get $g^A$))
 		  (call $str.mkdata (global.get $gA))))
 	  (return (i32.const 3))) ;; failed test 3
+	(if
+	  (i32.eqz
+		(call $match
+		  (call $str.mkdata (global.get $g.*))
+		  (call $str.mkdata (global.get $gABCDEF))))
+	  (return (i32.const 4)))	;; Failure, should have matched
+	(if
+	  (i32.eqz
+		(call $match
+		  (call $str.mkdata (global.get $gCD))
+		  (call $str.mkdata (global.get $gABCDEF))))
+	  (return (i32.const 5)))  ;; Failure should have  matched
+	(if
+	  (i32.eqz
+		(call $match
+		  (call $str.mkdata (global.get $g.*F))
+		  (call $str.mkdata (global.get $gABCDEF))))
+	  (return (i32.const 6)))  ;; Failed, should have matched
     (i32.const 0)  ;; passed
   )
   (func $matchHere (param $re i32)(param $rePos i32)
@@ -931,16 +952,16 @@
 					(result i32)
 	(call $str.printwlf (call $str.mkdata (global.get $g$matchHere)))
 	(call $str.print (call $str.mkdata (global.get $gre:)))
-	(call $str.print (local.get $re))
+	(call $str.printwsp (local.get $re))
 	(call $i32.printwlf (local.get $rePos))
-	(call $str.printwlf (local.get $text))
+	(call $str.printwsp (local.get $text))
 	(call $i32.printwlf(local.get $textPos))
 	(if			;; if (re[0] == '\0' return 1  (at end of re)
 	  (i32.ge_u
 		(local.get $rePos)
 		(call $str.getByteLen (local.get $re))) ;; len(re) >= 
 	  (return (i32.const 1)))  ;; end of $re
-	(if
+	(if			;; if (re[1]=='*' return matchstart(re[0], re+2, text)
 	  (i32.eq
 		(global.get $ASTERISK)
 		(call $str.getByte (local.get $re)
@@ -1017,12 +1038,19 @@
 			(i32.const 1)))))
 	(i32.const 0)
   )
+  ;; int matchstar(int c, char *re, char *text)
   (func $matchStar (param $byte i32)
 	(param $re i32)(param $rePos i32)
 	(param $text i32)(param $textPos i32) (result i32)
-	(call $str.print (call $str.mkdata (global.get $g$matchStar)))
+	(call $str.printwlf (call $str.mkdata (global.get $g$matchStar)))
+	(call $str.printwsp (local.get $re))
+	(call $i32.printwlf (local.get $rePos))
+	(call $str.printwsp (local.get $text))
+	(call $i32.printwlf (local.get $textPos))
+	
 	(loop $starLoop
-	  (if
+	  (call $str.printwlf (call $str.mkdata (global.get $g$starLoop)))
+	  (if    					;; if (matchere(re, text)) return 1;
 		(call $matchHere 
 		  (local.get $re)  (local.get $rePos)
 		  (local.get $text)(local.get $textPos))
@@ -1047,8 +1075,9 @@
 				(local.get $byte)		;; c=='.'
 				(global.get $FULLSTOP)
 			)
-		  )
+		  ) 
 		)
+		(local.set $textPos (i32.add (local.get $textPos)(i32.const 1)))
 	  )
 	)
 	(i32.const 0)
@@ -1107,5 +1136,8 @@
   (data (i32.const 3270) "$matchStar\00")		(global $g$matchStar i32 (i32.const 3270))
   (data (i32.const 3290) "re: \00")					(global $gre: i32 (i32.const 3290))
   (data (i32.const 3300) "End of text?\00")	(global $gEndoftext? i32 (i32.const 3300))
+  (data (i32.const 3320) ".*\00")			(global $g.* i32 (i32.const 3320))
+  (data (i32.const 3325) ".*F\00")			(global $g.*F i32 (i32.const 3325))
+  (data (i32.const 3330) "$starLoop\00")	(global $g$starLoop i32 (i32.const 3330))
   (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
 )
