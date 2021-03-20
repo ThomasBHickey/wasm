@@ -865,16 +865,15 @@
 		;; (else (call $Test.showFailed (local.get $testNum))))
 	  (local.set $testNum (i32.add (local.get $testNum)(i32.const 1)))
 	  (if (i32.lt_u (local.get $testNum)(global.get $numTests))
-	    (then (br $tLoop)))
-	)
+	    (then (br $tLoop))))
   )
   ;; match from https://www.drdobbs.com/184410904
   ;; Regular Expressions by Kernighan & Pike
   (func $match (param $re i32) (param $text i32) (result i32)
 	(local $textPos i32)
-	(call $str.printwlf (call $str.mkdata (global.get $g$match)))
-	(call $str.printwlf (local.get $re))
-	(call $str.printwlf (local.get $text))
+	;;(call $str.printwlf (call $str.mkdata (global.get $g$match)))
+	;;(call $str.printwlf (local.get $re))
+	;;(call $str.printwlf (local.get $text))
     (if				;;if (re[0]=='^') return matchhere(re+1, text)
 	  (i32.eq
 		(call $str.getByte (local.get $re)(i32.const 0))
@@ -942,12 +941,12 @@
   (func $matchHere (param $re i32)(param $rePos i32)
 					(param $text i32)(param $textPos i32)
 					(result i32)
-	(call $str.printwlf (call $str.mkdata (global.get $g$matchHere)))
-	(call $str.print (call $str.mkdata (global.get $gre:)))
-	(call $str.printwsp (local.get $re))
-	(call $i32.printwlf (local.get $rePos))
-	(call $str.printwsp (local.get $text))
-	(call $i32.printwlf(local.get $textPos))
+	;;(call $str.printwlf (call $str.mkdata (global.get $g$matchHere)))
+	;;(call $str.print (call $str.mkdata (global.get $gre:)))
+	;;(call $str.printwsp (local.get $re))
+	;;(call $i32.printwlf (local.get $rePos))
+	;;(call $str.printwsp (local.get $text))
+	;;(call $i32.printwlf(local.get $textPos))
 	(if			;; if (re[0] == '\0' return 1  (at end of re)
 	  (i32.ge_u
 		(local.get $rePos)
@@ -970,22 +969,19 @@
 	;; Check for end of text & end of Regexp
 	;; if (re[0]=='$' && re[1]=='\0')
 	;;    return *text == '\0';
-	(call $str.printwlf (call $str.mkdata (global.get $gEndoftext?)))
+	;;(call $str.printwlf (call $str.mkdata (global.get $gEndoftext?)))
 	(if
 	  (i32.and
 		(i32.eq
 		  (global.get $DOLLARSIGN)
 		  (call $str.getByte
 			(local.get $re)
-			(local.get $rePos))
-		)
+			(local.get $rePos)))
 		(i32.ge_u
 		  (i32.add (i32.const 1)(local.get $rePos))
 		  (call
 			$str.getByteLen
-			(local.get $re))
-		)
-	  )
+			(local.get $re))))
 	  (return
 		(i32.ge_u
 		  (local.get $textPos)
@@ -999,9 +995,7 @@
 		  (local.get $textPos)
 		  (call
 			$str.getByteLen
-			(local.get $text)
-		  )
-		)
+			(local.get $text)))
 		(i32.or ;; ||
 		  (i32.eq  ;; re[0]=='.'
 			  (call
@@ -1009,14 +1003,11 @@
 				(local.get $re)
 				(local.get $rePos)
 			  (global.get $FULLSTOP)
-			  )
-		  )
+			  ))
 		  (i32.eq  ;; re[0]==*text
 			(call $str.getByte (local.get $re)  (local.get $rePos))
 			(call $str.getByte (local.get $text)(local.get $textPos))
-		  )
-		)
-	  )
+		  )))
 	  (return
 	    (call 
 	      $matchHere
@@ -1034,20 +1025,18 @@
   (func $matchStar (param $byte i32)
 	(param $re i32)(param $rePos i32)
 	(param $text i32)(param $textPos i32) (result i32)
-	(call $str.printwlf (call $str.mkdata (global.get $g$matchStar)))
-	(call $str.printwsp (local.get $re))
-	(call $i32.printwlf (local.get $rePos))
-	(call $str.printwsp (local.get $text))
-	(call $i32.printwlf (local.get $textPos))
-	
+	;;(call $str.printwlf (call $str.mkdata (global.get $g$matchStar)))
+	;;(call $str.printwsp (local.get $re))
+	;;(call $i32.printwlf (local.get $rePos))
+	;;(call $str.printwsp (local.get $text))
+	;;(call $i32.printwlf (local.get $textPos))
 	(loop $starLoop
-	  (call $str.printwlf (call $str.mkdata (global.get $g$starLoop)))
+	  ;;(call $str.printwlf (call $str.mkdata (global.get $g$starLoop)))
 	  (if    					;; if (matchere(re, text)) return 1;
 		(call $matchHere 
 		  (local.get $re)  (local.get $rePos)
 		  (local.get $text)(local.get $textPos))
-		(return (i32.const 1))
-	  )
+		(return (i32.const 1)))
 	  (br_if $starLoop
 		(i32.and						;; &&
 		  (i32.le_u						;; *text !='\0'
@@ -1061,17 +1050,11 @@
 				$str.getByte
 				  (local.get $text)
 				  (local.get $textPos))
-			  (local.get $byte)
-			)
+			  (local.get $byte))
 			(i32.eq
 				(local.get $byte)		;; c=='.'
-				(global.get $FULLSTOP)
-			)
-		  ) 
-		)
-		(local.set $textPos (i32.add (local.get $textPos)(i32.const 1)))
-	  )
-	)
+				(global.get $FULLSTOP))))
+		(local.set $textPos (i32.add (local.get $textPos)(i32.const 1)))))
 	(i32.const 0)
   )
   (func $wam2wat (param $wamLines i32)(result i32)
