@@ -888,8 +888,7 @@
 	(call $str.setDataOff (local.get $strPtr)(global.get $readBuffOff))
 	(call $str.setByteLen (local.get $strPtr)(i32.load (global.get $readIOVsOff4)))
 	(call $str.setMaxLen (local.get $strPtr)(i32.load (global.get $readIOVsOff4)))
-	(local.set $listPtr (call $str.Csplit (local.get $strPtr)(i32.const 10))) ;; 10=linefeed
-	(local.get $listPtr)
+	(local.get $strPtr)
   )
   ;;(func $test (export "_test")
   (func $test
@@ -1106,32 +1105,56 @@
 	(local.set $toks (call $i32list.mk))
 	(local.get $toks)
   )
-  (func $wam2wat (param $wamLines i32)(result i32)
-    (local $lineNum i32)(local $numLines i32)(local $curLine i32)
-	(local $patPos i32)(local $CHAR i32)
-	(local.set $CHAR (call $str.mkdata (global.get $gpCHAR)))
-	(local.set $numLines (call $i32list.getCurLen (local.get $wamLines)))
-	(local.set $lineNum (i32.const 0))
-	(loop $lineLoop
-	  (if (i32.lt_s (local.get $lineNum)(local.get $numLines))
-		(then
-		  (local.set $curLine
-		    (call $i32list.get@ (local.get $wamLines)(local.get $lineNum)))
-		    (call $str.printwlf (local.get $curLine))
-			(call $tokenize (local.get $curLine))
-		  ;; (local.set $patPos (call $str.find (local.get $curLine)(local.get $CHAR)))
-		  ;; (if (i32.ge_s (local.get $patPos)(i32.const 0))
-			;; (then (call $i32.print (local.get $patPos))(call $byte.print (i32.const 58)) ;; ':'
-				;; (call $i32.print (local.get $lineNum))
-				;; (call $byte.print (i32.const 10))))
-	      (local.set $lineNum (i32.add (i32.const 1)(local.get $lineNum)))
-	      (br $lineLoop))))
-	(local.get $wamLines)
+  ;; (func $wam2wat (param $wamLines i32)(result i32)
+    ;; (local $lineNum i32)(local $numLines i32)(local $curLine i32)
+	;; (local $patPos i32)(local $CHAR i32)
+	;; (local.set $CHAR (call $str.mkdata (global.get $gpCHAR)))
+	;; (local.set $numLines (call $i32list.getCurLen (local.get $wamLines)))
+	;; (local.set $lineNum (i32.const 0))
+	;; (loop $lineLoop
+	  ;; (if (i32.lt_s (local.get $lineNum)(local.get $numLines))
+		;; (then
+		  ;; (local.set $curLine
+		    ;; (call $i32list.get@ (local.get $wamLines)(local.get $lineNum)))
+		    ;; (call $str.printwlf (local.get $curLine))
+			;; (call $tokenize (local.get $curLine))
+		  ;; ;; (local.set $patPos (call $str.find (local.get $curLine)(local.get $CHAR)))
+		  ;; ;; (if (i32.ge_s (local.get $patPos)(i32.const 0))
+			;; ;; (then (call $i32.print (local.get $patPos))(call $byte.print (i32.const 58)) ;; ':'
+				;; ;; (call $i32.print (local.get $lineNum))
+				;; ;; (call $byte.print (i32.const 10))))
+	      ;; (local.set $lineNum (i32.add (i32.const 1)(local.get $lineNum)))
+	      ;; (br $lineLoop))))
+	;; (local.get $wamLines)
+  ;; )
+  (func $wam2wat (param $strPtr i32)(result i32)
+	;; Accepts file as a string, returns a list of lines
+	(local $toks i32)
+	(local $token i32)
+	(local.set $toks (call $wamTokenize (local.get $strPtr)))
+	(loop $tokLoop
+	  (if (call $i32list.getCurLen (local.get $toks))
+	    (then
+			(local.set $token (call $i32list.pop (local.get $toks)))
+			(call $C.print (i32.const 84));; T
+			(call $C.print (i32.const 32))
+			(call $str.print (local.get $token))
+			(call $C.print (i32.const 10))
+		)
+	  )
+	)
+	(local.get $toks) ;; something to return for now
+  )
+  (func $wamTokenize (param $strPtr i32)(result i32)
+    (local $tokList i32)
+	(local.set $tokList (call $i32list.mk))
+	(call $i32list.push (local.get $tokList) (call $str.mkdata (global.get $gAAA)))
+	(local.get $tokList)
   )
   (func $main (export "_start")
 	(local $listPtr i32)
     (call $test)
-    (local.set $listPtr (call $readFile))
+    (local.set $listPtr (call $str.Csplit (call $readFile) (i32.const 10)))
 	(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
 	(call $byte.print (i32.const 10))
 	(call $byte.print (i32.const 10))
