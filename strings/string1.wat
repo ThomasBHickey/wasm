@@ -12,7 +12,7 @@
   (export "memory" (memory 0))
 
   (type $testSig (func (param i32)(result i32)))
-  (table 15 funcref)
+  (table 16 funcref)
   (elem (i32.const 0)
     $i32list.mk.test	;;0
 	$i32list.sets.test	;;1
@@ -29,8 +29,9 @@
 	$str.find.test		;;12
 	$str.catChar.test	;;13
 	$match.test			;;14
+	$i32list.push.test;;15
   )
-  (global $numTests i32 (i32.const 15)) ;; Better match!
+  (global $numTests i32 (i32.const 16)) ;; Better match!
 
   (global $readIOVsOff0 i32 (i32.const 100))
   (global $readIOVsOff4 i32 (i32.const 104))
@@ -52,6 +53,9 @@
 				(i32.const 4))(i32.const 4)))
 	(global.get $nextFreeMem) ;; to return
 	(global.set $nextFreeMem (i32.add (global.get $nextFreeMem)(local.get $size4)))
+  )
+  (func $error (result i32)
+	(i32.div_u (i32.const 1)(i32.const 0))
   )
   ;; Still doesn't recognize negatives
   (func $i32.print (param $N i32)
@@ -312,6 +316,46 @@
 	(call $i32list.setCurLen (local.get $lstPtr)
 		(i32.add (local.get $curLen)(i32.const 1)))
   )
+  (func $i32list.push (param $lstPtr i32)(param $val i32)
+	(call $i32list.cat (local.get $lstPtr) (local.get $val))
+  )
+  (func $i32list.pop (param $lstPtr i32)(result i32)
+    (local $curLen i32)
+	(local $popped i32)
+	(local.set $curLen (call $i32list.getCurLen(local.get $lstPtr)))
+	(if (i32.eqz (local.get $curLen))
+	  (return (call $error)))
+	(local.set $popped
+	  (call $i32list.get@
+	    (local.get $lstPtr)
+		(i32.sub (local.get $curLen)(i32.const 1))))
+	(call $i32list.setCurLen
+	  (local.get $lstPtr)
+	  (i32.sub
+		(local.get $curLen)
+		(i32.const 1)))
+	(local.get $popped)
+  )
+  (func $i32list.push.test (param $testNum i32)(result i32)
+    (local $lstPtr i32)(local $temp i32)
+	(local.set $lstPtr (call $i32list.mk))
+	(call $i32list.push (local.get $lstPtr) (i32.const 3))
+	(if (i32.ne
+	  (i32.const 1)
+	  (call $i32list.getCurLen (local.get $lstPtr)))
+	  (return (i32.const 1)))
+	(local.set $temp (call $i32list.pop (local.get $lstPtr)))
+	(if (i32.ne
+	  (i32.const 3)
+	  (local.get $temp))
+	  (return (i32.const 2)))
+	(if (i32.ne
+	  (i32.const 0)
+	  (call $i32list.getCurLen (local.get $lstPtr)))
+	  (return (i32.const 3)))
+	(i32.const 0) ;; passed
+  )
+	
   (func $i32list.cat.test (param $testNum i32)(result i32)
     (local $listPtr i32)
 	(local.set $listPtr (call $i32list.mk))
@@ -320,7 +364,7 @@
 	(if (i32.ne (i32.const 42)(call $i32list.get@ (local.get $listPtr)(i32.const 0)))
 		(return (i32.const 1)))
 	(if (i32.ne (i32.const 43)(call $i32list.get@ (local.get $listPtr)(i32.const 1)))
-		(return (i32.const 1)))
+		(return (i32.const 2)))
 	(i32.const 0)
   )
   (func $i32list.print (param $lstPtr i32)
@@ -372,7 +416,7 @@
 	(local.get $strPtr)
   )
   (func $str.getCurLenstr.getCurLen (param $strPtr i32)(result i32)
-	(i32.div_u (i32.const 1) (i32.const 0))  ;; ERROR!! Not implemented yet
+	(call $error)  ;; ERROR!! Not implemented yet
   )
   (func $str.getByteLen (param $strPtr i32)(result i32)
 	(i32.load (local.get $strPtr))
@@ -1057,6 +1101,11 @@
 		(local.set $textPos (i32.add (local.get $textPos)(i32.const 1)))))
 	(i32.const 0)
   )
+  (func $tokenize (param $curLine i32)(result i32)
+	(local $toks i32)
+	(local.set $toks (call $i32list.mk))
+	(local.get $toks)
+  )
   (func $wam2wat (param $wamLines i32)(result i32)
     (local $lineNum i32)(local $numLines i32)(local $curLine i32)
 	(local $patPos i32)(local $CHAR i32)
@@ -1069,11 +1118,12 @@
 		  (local.set $curLine
 		    (call $i32list.get@ (local.get $wamLines)(local.get $lineNum)))
 		    (call $str.printwlf (local.get $curLine))
-		  (local.set $patPos (call $str.find (local.get $curLine)(local.get $CHAR)))
-		  (if (i32.ge_s (local.get $patPos)(i32.const 0))
-			(then (call $i32.print (local.get $patPos))(call $byte.print (i32.const 58)) ;; ':'
-				(call $i32.print (local.get $lineNum))
-				(call $byte.print (i32.const 10))))
+			(call $tokenize (local.get $curLine))
+		  ;; (local.set $patPos (call $str.find (local.get $curLine)(local.get $CHAR)))
+		  ;; (if (i32.ge_s (local.get $patPos)(i32.const 0))
+			;; (then (call $i32.print (local.get $patPos))(call $byte.print (i32.const 58)) ;; ':'
+				;; (call $i32.print (local.get $lineNum))
+				;; (call $byte.print (i32.const 10))))
 	      (local.set $lineNum (i32.add (i32.const 1)(local.get $lineNum)))
 	      (br $lineLoop))))
 	(local.get $wamLines)
