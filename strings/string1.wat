@@ -12,26 +12,27 @@
   (export "memory" (memory 0))
 
   (type $testSig (func (param i32)(result i32)))
-  (table 16 funcref)
+  (table 17 funcref)
   (elem (i32.const 0)
-    $i32list.mk.test	;;0
-	$i32list.sets.test	;;1
-	$str.catByte.test	;;2
-	$str.catOntoStr.test;;3
-	$str.cat2Strings.test ;;4
-	$str.Rev.test		;;5
-	$str.mkdata.test	;;6
-	$str.getByte.test	;;7
-	$i32list.cat.test	;;8
-	$str.stripLeading.test ;; 9
-	$str.compare.test	;;10
-	$str.Csplit.test	;;11
-	$str.find.test		;;12
-	$str.catChar.test	;;13
-	$match.test			;;14
-	$i32list.push.test;;15
+    $i32list.mk.test		;;0
+	$i32list.sets.test		;;1
+	$str.catByte.test		;;2
+	$str.catStr.test		;;3
+	$str.cat2Strings.test	;;4
+	$str.Rev.test			;;5
+	$str.mkdata.test		;;6
+	$str.getByte.test		;;7
+	$i32list.cat.test		;;8
+	$str.stripLeading.test	;; 9
+	$str.compare.test		;;10
+	$str.Csplit.test		;;11
+	$str.find.test			;;12
+	$str.catChar.test		;;13
+	$match.test				;;14
+	$i32list.push.test		;;15
+	$str.mkslice.test		;;16
   )
-  (global $numTests i32 (i32.const 16)) ;; Better match!
+  (global $numTests i32 (i32.const 17)) ;; Better match!
 
   (global $readIOVsOff0 i32 (i32.const 100))
   (global $readIOVsOff4 i32 (i32.const 104))
@@ -415,9 +416,6 @@
 	(call $str.setDataOff (local.get $strPtr)(i32.add(local.get $strPtr)(i32.const 12)))
 	(local.get $strPtr)
   )
-  (func $str.getCurLenstr.getCurLen (param $strPtr i32)(result i32)
-	(call $error)  ;; ERROR!! Not implemented yet
-  )
   (func $str.getByteLen (param $strPtr i32)(result i32)
 	(i32.load (local.get $strPtr))
   )
@@ -436,7 +434,7 @@
   (func $str.setDataOff (param $strPtr i32)(param $newDataOff i32)
     (i32.store (i32.add(local.get $strPtr)(i32.const 8))(local.get $newDataOff))
   )
-  (func $str.catOntoStr (param $s1Ptr i32)(param $s2Ptr i32)
+  (func $str.catStr (param $s1Ptr i32)(param $s2Ptr i32)
 	;; Modify s1 by concatenating another string to it
 	(local $s2pos i32)
 	(local $s2ByteLen i32)
@@ -450,11 +448,11 @@
 			(local.set $s2pos (i32.add (local.get $s2pos)(i32.const 1)))
 			(br $bloop))))		
   )
-  (func $str.catOntoStr.test (param $testNum i32)(result i32)
+  (func $str.catStr.test (param $testNum i32)(result i32)
     (local $AAA i32)(local $ZZZ i32)
 	(local.set $AAA (call $str.mkdata (global.get $gAAA)))
 	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
-	(call $str.catOntoStr (local.get $AAA)(local.get $ZZZ))
+	(call $str.catStr (local.get $AAA)(local.get $ZZZ))
 	;; $AAA string now has $ZZZ concatenated onto it!
 	(i32.eqz
 	  (call $str.compare
@@ -567,6 +565,60 @@
 	(call $str.setDataOff (local.get $strPtr)(local.get $dataOffset))
 	(local.get $strPtr)
   )
+  (func $str.mkslice (param $strptr i32)(param $offset i32)(param $length i32)(result i32)
+	;; Not UTF-8 safe
+	(local $slice i32) 	  ;; to be returned
+	(local $bpos i32)	  ;; byte pointer to copy data
+	(local $lastbpos i32) ;; don't go past this offset
+	(local.set $slice (call $str.mk))
+	(local.set $bpos (local.get $offset))
+	(local.set $lastbpos (i32.add (local.get $offset)(local.get $length)))
+	;; (call $i32.printwlf (local.get $lastbpos))
+	(loop $bLoop
+	  (if (i32.lt_u (local.get $bpos)(local.get $lastbpos))
+		(then
+		  ;; (call $i32.printwsp (local.get $bpos))
+		  ;; (call $C.print (call $str.getByte (local.get $strptr)(local.get $bpos)))
+		  (call $str.catByte
+			(local.get $slice)
+			(call $str.getByte
+			  (local.get $strptr)
+			  (local.get $bpos)
+			))
+		  (local.set $bpos (i32.add (i32.const 1)(local.get $bpos)))
+		  (br $bLoop)
+		)))
+	;; (call $C.print (i32.const 123))
+	;; (call $str.printwlf (local.get $slice))
+	(local.get $slice)
+  )
+  (func $str.mkslice.test (param $testNum i32)(result i32)
+	(local $AAAZZZ i32)(local $AAA i32)(local $ZZZ i32)
+	(local $slice i32)
+	(local.set $AAAZZZ (call $str.mkdata (global.get $gAAAZZZ)))
+	(local.set $AAA (call $str.mkdata (global.get $gAAA)))
+	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
+	(local.set $slice
+	  (call $str.mkslice
+		(local.get $AAAZZZ)
+		(i32.const 0)
+		(i32.const 3)))
+	(if (i32.eqz
+		  (call $str.compare (local.get $AAA)(local.get $slice)))
+	  (then
+		(call $i32.printwlf (call $str.getByteLen (local.get $slice)))
+		(call $str.printwlf (local.get $slice))
+		(return (i32.const 1))))
+	(local.set $slice
+	  (call $str.mkslice
+		(local.get $AAAZZZ)
+		(i32.const 3)
+		(i32.const 3)))
+	(if (i32.eqz
+		  (call $str.compare (local.get $ZZZ)(local.get $slice)))
+	  (return (i32.const 2)))
+	(return (i32.const 0))
+  )
   (func $str.mkdata.test (param $testNum i32)(result i32)
 	;; see if first or last data stings have gotten stomped on
 	(local $aaa i32)(local $zzz i32)(local $first i32)(local $last i32)
@@ -650,9 +702,9 @@
 	(call $str.catChar (local.get $strPtr) (global.get $UTF8-2))
 	(call $str.catChar (local.get $strPtr) (global.get $UTF8-3))
 	(call $str.catChar (local.get $strPtr) (global.get $UTF8-4))
-	;; (call $C.print (i32.const 62))
-	  ;; (call $str.print (local.get $strPtr))
-	;; (call $C.print (i32.const 60))
+	;;(call $str.printwlf(local.get $strPtr))
+	(if (i32.ne (call $str.getByteLen (local.get $strPtr))(i32.const 10))
+	  (return (i32.const 1)))
 	(i32.const 0)
   )
   (func $str.catByte (param $strPtr i32)(param $C i32)
@@ -1100,37 +1152,17 @@
 		(local.set $textPos (i32.add (local.get $textPos)(i32.const 1)))))
 	(i32.const 0)
   )
-  (func $tokenize (param $curLine i32)(result i32)
-	(local $toks i32)
-	(local.set $toks (call $i32list.mk))
-	(local.get $toks)
-  )
-  ;; (func $wam2wat (param $wamLines i32)(result i32)
-    ;; (local $lineNum i32)(local $numLines i32)(local $curLine i32)
-	;; (local $patPos i32)(local $CHAR i32)
-	;; (local.set $CHAR (call $str.mkdata (global.get $gpCHAR)))
-	;; (local.set $numLines (call $i32list.getCurLen (local.get $wamLines)))
-	;; (local.set $lineNum (i32.const 0))
-	;; (loop $lineLoop
-	  ;; (if (i32.lt_s (local.get $lineNum)(local.get $numLines))
-		;; (then
-		  ;; (local.set $curLine
-		    ;; (call $i32list.get@ (local.get $wamLines)(local.get $lineNum)))
-		    ;; (call $str.printwlf (local.get $curLine))
-			;; (call $tokenize (local.get $curLine))
-		  ;; ;; (local.set $patPos (call $str.find (local.get $curLine)(local.get $CHAR)))
-		  ;; ;; (if (i32.ge_s (local.get $patPos)(i32.const 0))
-			;; ;; (then (call $i32.print (local.get $patPos))(call $byte.print (i32.const 58)) ;; ':'
-				;; ;; (call $i32.print (local.get $lineNum))
-				;; ;; (call $byte.print (i32.const 10))))
-	      ;; (local.set $lineNum (i32.add (i32.const 1)(local.get $lineNum)))
-	      ;; (br $lineLoop))))
-	;; (local.get $wamLines)
-  ;; )
+  
+  ;;(func $w2w.node.mk )
+
   (func $wam2wat (param $strPtr i32)(result i32)
-	;; Accepts file as a string, returns a list of lines
+	;; Accepts WAM file as a string, returns a list of tokens
 	(local $toks i32)
 	(local $token i32)
+	;; (if (i32.eqz (call $str.getByteLen (local.get $strPtr)))
+	  ;; (then   ;; nothing to parse?
+		;; (i32.const 0)
+		;; (return)))
 	(local.set $toks (call $wamTokenize (local.get $strPtr)))
 	(loop $tokLoop
 	  (if (call $i32list.getCurLen (local.get $toks))
@@ -1141,30 +1173,64 @@
 			(call $str.print (local.get $token))
 			(call $C.print (i32.const 10))
 		)
+		(br $tokLoop)
 	  )
 	)
 	(local.get $toks) ;; something to return for now
   )
   (func $wamTokenize (param $strPtr i32)(result i32)
     (local $tokList i32)
+	(local $slice i32)
+	(local $bPos i32)
+	(local $buffLen i32)
+	(local $byte i32)
+	(local.set $buffLen (call $str.getByteLen (local.get $strPtr)))
 	(local.set $tokList (call $i32list.mk))
-	(call $i32list.push (local.get $tokList) (call $str.mkdata (global.get $gAAA)))
+	(local.set $bPos (i32.const -1))  ;; gets incr before use
+	(loop $bLoop
+	  (local.set $bPos (i32.add (local.get $bPos)(i32.const 1)))
+	  (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
+	    (then
+		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
+		  (call $C.print (i32.const 66))   ;; B
+	      (call $C.print (local.get $byte))
+		  (if (i32.eq (local.get $byte) (global.get $LPAREN))
+			(then
+			  (local.set $slice
+				(call $str.mkslice
+				  (local.get $strPtr)
+				  (local.get $bPos)
+				  (i32.const 1)))
+			  (call $i32list.push (local.get $tokList)(local.get $slice))))
+		  (if (i32.eq (local.get $byte) (global.get $RPAREN))
+			(then
+			  (local.set $slice
+				(call $str.mkslice
+				  (local.get $strPtr)
+				  (local.get $bPos)
+				  (i32.const 1)))
+			  (call $i32list.push (local.get $tokList)(local.get $slice))))
+		  (br $bLoop)
+		)
+	  )
+	)
+	;;(call $i32list.push (local.get $tokList) (call $str.mkdata (global.get $gAAA)))
 	(local.get $tokList)
   )
   (func $main (export "_start")
-	(local $listPtr i32)
+	(local $buffer i32)
     (call $test)
-    (local.set $listPtr (call $str.Csplit (call $readFile) (i32.const 10)))
-	(call $i32.print (call $i32list.getCurLen (local.get $listPtr)))
+	(local.set $buffer (call $readFile))
+	(call $i32.print (call $str.getByteLen (local.get $buffer)))
 	(call $byte.print (i32.const 10))
-	(call $byte.print (i32.const 10))
-	;;(call $i32strlist.print (local.get $listPtr))
-	(call $i32strlist.print (call $wam2wat (local.get $listPtr)))
+	(call $i32strlist.print (call $wam2wat (local.get $buffer)))
   )
   (global $testing i32 (i32.const 42))
   (global $zero i32 (i32.const 48))
   (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024	Dollar sign
   (global $DOLLARSIGN i32 (i32.const 0x24))  	;; U+0024	Dollar sign
+  (global $LPAREN i32 (i32.const 0x28))				;; U+0028   Left Parenthesis
+  (global $RPAREN i32 (i32.const 0x29))				;; U+0029   Right Parenthesis
   (global $ASTERISK i32 (i32.const 0x2A))		;; *
   (global $FULLSTOP i32 (i32.const 0x2E))		;; .
   (global $CIRCUMFLEX i32 (i32.const 0x5E))		;; ^
