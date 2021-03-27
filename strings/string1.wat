@@ -1178,6 +1178,12 @@
 	(local $bPos i32)
 	(local $buffLen i32)
 	(local $byte i32)
+	(local $inWhite i32)
+	(local $inString i32)
+	(local $inLineComment i32)
+	(local.set $inWhite (i32.const 0))
+	(local.set $inString (i32.const 0))
+	(local.set $inLineComment (i32.const 0))
 	(local.set $buffLen (call $str.getByteLen (local.get $strPtr)))
 	(local.set $tokList (call $i32list.mk))
 	(local.set $bPos (i32.const -1))  ;; gets incr before use
@@ -1188,6 +1194,11 @@
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
 		  ;; (call $C.print (i32.const 66))   ;; B
 	      ;; (call $C.print (local.get $byte))
+		  (if (i32.eq (local.get $byte) (global.get $LF))
+			(then
+			  (local.set $slice
+				(call $str.mkdata (global.get $gLF)))
+			  (call $i32list.push (local.get $tokList)(local.get $slice))))
 		  (if (i32.eq (local.get $byte) (global.get $LPAREN))
 			(then
 			  (local.set $slice
@@ -1222,10 +1233,12 @@
   )
   (global $testing i32 (i32.const 42))
   (global $zero i32 (i32.const 48))
+  (global $LF	  i32 (i32.const 0x0A))			;; U+000A   Line Feed
+  (global $CR	  i32 (i32.const 0x0D))			;; U+000D   Carriage Return
   (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024	Dollar sign
   (global $DOLLARSIGN i32 (i32.const 0x24))  	;; U+0024	Dollar sign
-  (global $LPAREN i32 (i32.const 0x28))				;; U+0028   Left Parenthesis
-  (global $RPAREN i32 (i32.const 0x29))				;; U+0029   Right Parenthesis
+  (global $LPAREN i32 (i32.const 0x28))			;; U+0028   Left Parenthesis
+  (global $RPAREN i32 (i32.const 0x29))			;; U+0029   Right Parenthesis
   (global $ASTERISK i32 (i32.const 0x2A))		;; *
   (global $FULLSTOP i32 (i32.const 0x2E))		;; .
   (global $CIRCUMFLEX i32 (i32.const 0x5E))		;; ^
@@ -1260,5 +1273,6 @@
   (data (i32.const 3330) "$starLoop\00")	(global $g$starLoop i32 (i32.const 3330))
   (data (i32.const 3345) "Bytes Read\00")	(global $gBytesRead i32 (i32.const 3345))
   (data (i32.const 3360) "Tokens:\00")		(global $gTokens: i32 (i32.const 3360))
+  (data (i32.const 3370) "LF\00")			(global $gLF i32 (i32.const 3370))
   (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
 )
