@@ -51,7 +51,7 @@
 	  (i32.sub
 		(global.get $nextFreeMem)
 		(global.get $firstFreeMem)))
-	(call $str.print (call $str.mkdata (global.get $gMemUsed)))
+	(call $strdata.print (global.get $gMemUsed))
 	(call $i32.printwsp (local.get $bytesUsed))
 	(call $C.print (i32.const 40))  ;; (
 	(call $i32.print
@@ -559,9 +559,9 @@
 	(i32.const 0)  ;; success
   )
   (func $str.mkdata (param $dataOffset i32) (result i32)
-    ;; Make an ASCII string from null-terminated chunk of memory
+    ;; Make a string from null-terminated chunk of memory
 	;; null terminator is not counted as part of string
-	;; Not UTF-8 enabled!
+	;; Should work with UTF-8?
 	(local $length i32) (local $curByte i32)(local $strPtr i32)
 	(local.set $length (i32.const 0))
 	(loop $cLoop
@@ -663,6 +663,15 @@
 		 (call $byte.print)   
 	     (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
 	     (br $cLoop))))
+  )
+  (func $strdata.print (param $global i32)
+    (call $str.print (call $str.mkdata (local.get $global)))
+  )
+  (func $strdata.printwlf (param $global i32)
+    (call $str.printwlf (call $str.mkdata (local.get $global)))
+  )
+  (func $strdata.printwsp (param $global i32)
+    (call $str.printwsp (call $str.mkdata (local.get $global)))
   )
   (func $str.printwlf (param $strPtr i32)
 	(call $str.print (local.get $strPtr))
@@ -1242,11 +1251,13 @@
 	(local $buffer i32)
     (call $test)
 	(local.set $buffer (call $readFile))
-	(call $str.printwsp (call $str.mkdata (global.get $gBytesRead)))
+	(call $strdata.printwsp (global.get $gBytesRead))
 	(call $i32.printwlf (call $str.getByteLen (local.get $buffer)))
-	(call $str.printwlf (call $str.mkdata (global.get $gTokens:)))
+	(call $strdata.printwlf (global.get $gTokens:))
 	(call $i32strlist.print (call $wam2wat (local.get $buffer)))
 	(call $showMemUsed)
+	(call $strdata.printwsp (global.get $gZZZ))
+	(call $strdata.printwlf (global.get $gZZZ))
   )
   (global $testing i32 (i32.const 42))
   (global $zero i32 (i32.const 48))
@@ -1280,10 +1291,10 @@
   (data (i32.const 3210) "^A$\00")			(global $g^A$ i32 (i32.const 3210))
   (data (i32.const 3220) "A\00")			(global $gA	i32 (i32.const 3220))
   (data (i32.const 3230) "^ABCDEF$\00")		(global $g^ABCDEF$ i32 (i32.const 3230))
-  (data (i32.const 3240) "$match\00")			(global $g$match i32 (i32.const 3240))
-  (data (i32.const 3250) "$matchHere\00")		(global $g$matchHere i32 (i32.const 3250))
-  (data (i32.const 3270) "$matchStar\00")		(global $g$matchStar i32 (i32.const 3270))
-  (data (i32.const 3290) "re: \00")					(global $gre: i32 (i32.const 3290))
+  (data (i32.const 3240) "$match\00")		(global $g$match i32 (i32.const 3240))
+  (data (i32.const 3250) "$matchHere\00")	(global $g$matchHere i32 (i32.const 3250))
+  (data (i32.const 3270) "$matchStar\00")	(global $g$matchStar i32 (i32.const 3270))
+  (data (i32.const 3290) "re: \00")			(global $gre: i32 (i32.const 3290))
   (data (i32.const 3300) "End of text?\00")	(global $gEndoftext? i32 (i32.const 3300))
   (data (i32.const 3320) ".*\00")			(global $g.* i32 (i32.const 3320))
   (data (i32.const 3325) ".*F\00")			(global $g.*F i32 (i32.const 3325))
@@ -1292,5 +1303,5 @@
   (data (i32.const 3360) "Tokens:\00")		(global $gTokens: i32 (i32.const 3360))
   (data (i32.const 3370) "LF\00")			(global $gLF i32 (i32.const 3370))
   (data (i32.const 3375) "Mem used: \00")	(global $gMemUsed i32 (i32.const 3375))
-  (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
+  (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
 )
