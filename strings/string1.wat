@@ -52,7 +52,13 @@
 		(global.get $nextFreeMem)
 		(global.get $firstFreeMem)))
 	(call $str.print (call $str.mkdata (global.get $gMemUsed)))
-	(call $i32.printwlf (local.get $bytesUsed))
+	(call $i32.printwsp (local.get $bytesUsed))
+	(call $C.print (i32.const 40))  ;; (
+	(call $i32.print
+	  (i32.shr_u (local.get $bytesUsed) (i32.const 10)))
+	(call $C.print (i32.const 75)) ;; K
+	(call $C.print (i32.const 41)) ;; )
+	(call $C.print (i32.const 10)) ;; LF
   )
   (func $getMem (param $size i32)(result i32)
 	;; Simple memory allocation done in 4-byte chunks
