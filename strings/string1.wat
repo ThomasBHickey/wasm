@@ -43,7 +43,17 @@
   (global $writeBuffOff i32 (i32.const 2400))
   (global $writeBufLen i32 (i32.const 512))
   (global $nextFreeMem (mut i32) (i32.const 4096))
+  (global $firstFreeMem i32 (i32.const 4096))
   
+  (func $showMemUsed 
+    (local $bytesUsed i32)
+	(local.set $bytesUsed
+	  (i32.sub
+		(global.get $nextFreeMem)
+		(global.get $firstFreeMem)))
+	(call $str.print (call $str.mkdata (global.get $gMemUsed)))
+	(call $i32.printwlf (local.get $bytesUsed))
+  )
   (func $getMem (param $size i32)(result i32)
 	;; Simple memory allocation done in 4-byte chunks
 	;; Should this get cleared first?
@@ -1230,6 +1240,7 @@
 	(call $i32.printwlf (call $str.getByteLen (local.get $buffer)))
 	(call $str.printwlf (call $str.mkdata (global.get $gTokens:)))
 	(call $i32strlist.print (call $wam2wat (local.get $buffer)))
+	(call $showMemUsed)
   )
   (global $testing i32 (i32.const 42))
   (global $zero i32 (i32.const 48))
@@ -1274,5 +1285,6 @@
   (data (i32.const 3345) "Bytes Read\00")	(global $gBytesRead i32 (i32.const 3345))
   (data (i32.const 3360) "Tokens:\00")		(global $gTokens: i32 (i32.const 3360))
   (data (i32.const 3370) "LF\00")			(global $gLF i32 (i32.const 3370))
+  (data (i32.const 3375) "Mem used: \00")	(global $gMemUsed i32 (i32.const 3375))
   (data (i32.const 4000) "ZZZ\00")		(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
 )

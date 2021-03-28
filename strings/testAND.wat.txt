@@ -1,0 +1,11 @@
+(module
+  (memory 1)
+  (export "memory" (memory 0))
+  
+  (func $test (result i32)
+	;;(if i32 (i32.const 7)
+	;;(if i32 (i32.const 8) (i32.const 1) (i32.const 0))
+	;;(i32.const 0))
+	(i32.const 7)
+  )
+)
