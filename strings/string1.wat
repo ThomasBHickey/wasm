@@ -1175,6 +1175,29 @@
   )
   
   ;;(func $w2w.node.mk )
+  (func $str2i32.mk (result i64)
+	;; sets up two parallel lists
+	;; first one is typically a list of string pointers
+	;; second one the i32 the strings are mapped to
+	(local $strlst i32)
+	(local $reslst i32)
+	(local.set $strlst (call $i32list.mk))
+	(local.set $reslst (call $i32list.mk))
+	(i64.or (i64.shl (local.get $strlst)(i32.const 32))(local.get $reslst))
+  )
+  (func $str2i32.getCurLen (param $s2i i64) (result i32)
+    (local $lstptr i32)
+	(local.set $lstptr (i64.and (local.get $s2i)(i64.const 0xffffffff)))
+	(call $i32list.getCurLen (local.get $lstptr))
+  )
+  (func $str2i32 (param $str2i32ptr i64) (result i32)
+    (local $numMaps i32)
+	(local $mapPos i32)
+	(local.set $numMaps (call $str2i32.getCurLen (local.get $str2i32ptr)))
+	(local.set $mapPos (i32.const 0))
+	;; loop!
+	(i32.const 0) ;; TEMP!
+  )
 
   (func $wam2wat (param $strPtr i32)(result i32)
 	;; Accepts WAM file as a string, returns a list of tokens
@@ -1200,6 +1223,7 @@
   (func $wamTokenize (param $strPtr i32)(result i32)
     (local $tokList i32)
 	(local $slice i32)
+	(local $tokenStart i32)
 	(local $bPos i32)
 	(local $buffLen i32)
 	(local $byte i32)
@@ -1211,6 +1235,7 @@
 	(local.set $inLineComment (i32.const 0))
 	(local.set $buffLen (call $str.getByteLen (local.get $strPtr)))
 	(local.set $tokList (call $i32list.mk))
+	(local.set $tokenStart (i32.const 0))
 	(local.set $bPos (i32.const -1))  ;; gets incr before use
 	(loop $bLoop
 	  (local.set $bPos (i32.add (local.get $bPos)(i32.const 1)))
@@ -1240,7 +1265,17 @@
 				  (local.get $bPos)
 				  (i32.const 1)))
 			  (call $i32list.push (local.get $tokList)(local.get $slice))))
-		  (br $bLoop)
+		  (if (i32.eq (global.get $gSEMI) (local.get $byte))
+			(if (i32.eqz  ;; i.e. Not
+				(i32.and
+				  (local.get $inLineComment)
+				  (i32.eq
+					(global.get $gSEMI)
+					(call $str.getLastByte (local.get $token)))))
+;;			  (call $addToken (local.get $tokenState))))
+			  (br $bLoop)
+			)
+		  )
 		)
 	  )
 	)
@@ -1303,5 +1338,6 @@
   (data (i32.const 3360) "Tokens:\00")		(global $gTokens: i32 (i32.const 3360))
   (data (i32.const 3370) "LF\00")			(global $gLF i32 (i32.const 3370))
   (data (i32.const 3375) "Mem used: \00")	(global $gMemUsed i32 (i32.const 3375))
+  (data (i32.const 3390) ";\00")			(global $gSEMI i32 (i32.const 3390))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
 )
