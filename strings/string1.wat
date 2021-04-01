@@ -161,34 +161,6 @@
 	  (if (local.get $bp)
 		(br $ploop)))
   )	
-  (func $C2.print (param $C i32)
-	(i32.store (global.get $writeIOVsOff0)(global.get $writeBuffOff))
-	(i32.store (global.get $writeIOVsOff4)(i32.const 2))
-	(i32.store
-		(global.get $writeBuffOff)
-		(local.get $C))
-	(call $fd_write
-		(i32.const 1) ;; stdout
-		(global.get $writeIOVsOff0)
-		(i32.const 1) ;; # iovs
-		(i32.const 0) ;; length?
-	)
-	drop
-  )
-  (func $C3.print (param $C i32)
-	(i32.store (global.get $writeIOVsOff0)(global.get $writeBuffOff))
-	(i32.store (global.get $writeIOVsOff4)(i32.const 3))
-	(i32.store
-		(global.get $writeBuffOff)
-		(local.get $C))
-	(call $fd_write
-		(i32.const 1) ;; stdout
-		(global.get $writeIOVsOff0)
-		(i32.const 1) ;; # iovs
-		(i32.const 0) ;; length?
-	)
-	drop
-  )
   (func $Test.printTest
     (call $byte.print (i32.const  84)) ;; T
 	(call $byte.print (i32.const 101)) ;; e
@@ -309,14 +281,17 @@
 				 (i32.mul (local.get $curLen)(i32.const 4)))
   ) 
   (func $i32list.set@ (param $lstPtr i32)(param $pos i32)(param $val i32)
-    (local $dataOff i32)(local $dataOffOff i32)
+	;; Needs bounds tests
+    (local $dataOff i32)
+	(local $dataOffOff i32)
 	(local.set $dataOff (call $i32list.getDataOff (local.get $lstPtr)))
 	(local.set $dataOffOff
 		(i32.add (local.get $dataOff)
-		  (i32.mul (call $i32list.getCurLen (local.get $lstPtr))(i32.const 4))))
+		  (i32.mul (local.get $pos)(i32.const 4))))
     (i32.store (local.get $dataOffOff) (local.get $val))
   )
   (func $i32list.get@ (param $lstPtr i32)(param $pos i32)(result i32)
+	;; Needs bounds test
 	(i32.load
 		(i32.add (call $i32list.getDataOff (local.get $lstPtr))
 				 (i32.mul (i32.const 4) (local.get $pos))))
@@ -1164,11 +1139,6 @@
   (func $matchStar (param $byte i32)
 	(param $re i32)(param $rePos i32)
 	(param $text i32)(param $textPos i32) (result i32)
-	;;(call $str.printwlf (call $str.mkdata (global.get $g$matchStar)))
-	;;(call $str.printwsp (local.get $re))
-	;;(call $i32.printwlf (local.get $rePos))
-	;;(call $str.printwsp (local.get $text))
-	;;(call $i32.printwlf (local.get $textPos))
 	(loop $starLoop
 	  (if    					;; if (matchere(re, text)) return 1;
 		(call $matchHere 
@@ -1199,6 +1169,8 @@
 	;; sets up two parallel lists
 	;; first list is a list of string pointers
 	;; second list the i32 each of the strings are mapped to
+	;; Pointers to the two lists are returned packed
+	;; into an i64
 	(local $strlst i64)
 	(local $i32list i64)
 	(local.set $strlst  (i64.extend_u/i32 (call $i32list.mk)))
@@ -1225,16 +1197,70 @@
 	(call $i32list.getCurLen
 	  (call $strMap.getMapped (local.get $strMap)))
   )
-  (func $strMap.add (param $strMap i64)(param $strPtr i32)(param $mapto i32)
+  (func $strMap.print (param $strMap i64)
 	(local $i32list i32)
 	(local $strlist i32)
+	(local $mapPos i32)
 	(local $numMaps i32)
-	(if (call $strMap.get (local.get $strMap)(local.get $strPtr))
-	  (return))  ;; already in the strMap
 	(local.set $strlist
 	  (call $strMap.getStrlist (local.get $strMap)))
 	(local.set $i32list
 	  (call $strMap.getMapped (local.get $strMap)))
+	(local.set $numMaps (call $i32list.getCurLen (local.get $i32list)))
+	(local.set $mapPos (i32.const 0))
+	(loop $mLoop
+	  (if (i32.lt_u (local.get $mapPos)(local.get $numMaps))
+		(then
+		  (call $i32.printwsp (local.get $mapPos))
+		  (call $str.printwsp
+			(call $i32list.get@
+				(local.get $strlist)
+				(local.get $mapPos)))
+		  (call $i32.printwlf
+			(call $i32list.get@
+			  (local.get $i32list)
+			  (local.get $mapPos)))
+		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
+		  (br $mLoop)
+		)
+	  )
+	)
+  )
+  (func $strMap.set (param $strMap i64)(param $strPtr i32)(param $mapto i32)
+	(local $i32list i32)
+	(local $strlist i32)
+	(local $numMaps i32)
+	(local $mapPos i32)
+	(local $testStr i32)
+	(local.set $strlist
+	  (call $strMap.getStrlist (local.get $strMap)))
+	(local.set $i32list
+	  (call $strMap.getMapped (local.get $strMap)))
+	(local.set $numMaps (call $i32list.getCurLen (local.get $i32list)))
+	(local.set $mapPos (i32.const 0))
+	(loop $mLoop  ;; reset value if key is already in keymap
+	  (if (i32.lt_u (local.get $mapPos)(local.get $numMaps))
+		(then
+		  (local.set $testStr
+		    (call $i32list.get@
+			  (local.get $strlist)
+			  (local.get $mapPos)))
+		  (if
+			(call $str.compare
+			  (local.get $strPtr)
+			  (local.get $testStr))
+			(then
+			  (call $i32list.set@
+				(local.get $i32list)
+				(local.get $mapPos)
+				(local.get $mapto))
+			  return)
+		  )
+		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
+		  (br $mLoop)
+		)
+	  )
+	)
 	(call $i32list.push (local.get $strlist)(local.get $strPtr))
 	(call $i32list.push (local.get $i32list)(local.get $mapto))
   )
@@ -1282,7 +1308,7 @@
 	(if
 	  (call $strMap.get (local.get $strMap) (local.get $AAA))
 	  (return (i32.const 1)))  ;; failure should be empty
-	(call $strMap.add
+	(call $strMap.set
 		(local.get $strMap)
 		(local.get $AAA)
 		(i32.const 42))
@@ -1291,21 +1317,30 @@
 		(call $strMap.get (local.get $strMap) (local.get $AAA))
 		(i32.const 42))
 	  (return (i32.const 2)))  ;; should have been 42
-	(call $strMap.add
+	(call $strMap.set
 	  (local.get $strMap)
 	  (local.get $ZZZ)
 	  (i32.const 43))
-	(if
+	(if					;; reset $ZZZ from 43 to 44
 	  (i32.ne
 		(call $strMap.get (local.get $strMap) (local.get $ZZZ))
 		(i32.const 43))
 	  (return (i32.const 3)))
+	(call $strMap.set
+	  (local.get $strMap)
+	  (local.get $ZZZ)
+	  (i32.const 44))
+	(if
+	  (i32.ne
+		(call $strMap.get (local.get $strMap) (local.get $ZZZ))
+		(i32.const 44))
+	  (return (i32.const 4)))
 	;; try $AAA again
 	(if
 	  (i32.ne
 		(call $strMap.get (local.get $strMap) (local.get $AAA))
 		(i32.const 42))
-	  (return (i32.const 4)))
+	  (return (i32.const 5)))
 	(i32.const 0) ;; success
   )
   (func $wam2wat (param $strPtr i32)(result i32)
@@ -1352,8 +1387,8 @@
 	  (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
 	    (then
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
-		  ;; (call $C.print (i32.const 66))   ;; B
-	      ;; (call $C.print (local.get $byte))
+		  (call $C.print (i32.const 66))   ;; B
+	      (call $C.print (local.get $byte))
 		  (if (i32.eq (local.get $byte) (global.get $LF))
 			(then
 			  (local.set $slice
@@ -1401,8 +1436,8 @@
 	(call $strdata.printwlf (global.get $gTokens:))
 	(call $i32strlist.print (call $wam2wat (local.get $buffer)))
 	(call $showMemUsed)
-	(call $strdata.printwsp (global.get $gZZZ))
-	(call $strdata.printwlf (global.get $gZZZ))
+	;;(call $strdata.printwsp (global.get $gZZZ))
+	;;(call $strdata.printwlf (global.get $gZZZ))
   )
   (global $testing i32 (i32.const 42))
   (global $zero i32 (i32.const 48))
@@ -1449,5 +1484,7 @@
   (data (i32.const 3370) "LF\00")			(global $gLF i32 (i32.const 3370))
   (data (i32.const 3375) "Mem used: \00")	(global $gMemUsed i32 (i32.const 3375))
   (data (i32.const 3390) ";\00")			(global $gSEMI i32 (i32.const 3390))
+  (data (i32.const 3395) "Found")			(global $gFound i32 (i32.const 3395))
+  (data (i32.const 3405) "strMap")			(global $gstrMap i32 (i32.const 3405))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
 )
