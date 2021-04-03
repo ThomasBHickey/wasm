@@ -11,7 +11,10 @@
   (memory 1)
   (export "memory" (memory 0))
 
+  ;; test function signatures
   (type $testSig (func (param i32)(result i32)))
+  ;; comparison functions used by mapping routines
+  (type $compSig (func (param i32)(param i32)(result i32)))
   (table 19 funcref)  ;; must match
   (elem (i32.const 0)
     $i32list.mk.test		;;0
@@ -35,7 +38,10 @@
 	$strMap.test			;;18
   )
   (global $numTests i32 (i32.const 19)) ;; 3 places to match!
-
+  (global $firstTestOffset i32 (i32.const 0))
+  (global $lastTestOffset i32 (i32.const 18))
+  (global $strMapCompOffset i32 (i32.const 0))
+  (global $intMapCompOffset i32 (i32.const 0))
   (global $readIOVsOff0 i32 (i32.const 100))
   (global $readIOVsOff4 i32 (i32.const 104))
   (global $readBuffOff i32 (i32.const 200))
@@ -1222,9 +1228,7 @@
 			  (local.get $mapPos)))
 		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
 		  (br $mLoop)
-		)
-	  )
-	)
+		)))
   )
   (func $strMap.set (param $strMap i64)(param $strPtr i32)(param $mapto i32)
 	(local $i32list i32)
@@ -1254,13 +1258,9 @@
 				(local.get $i32list)
 				(local.get $mapPos)
 				(local.get $mapto))
-			  return)
-		  )
+			  return))
 		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
-		  (br $mLoop)
-		)
-	  )
-	)
+		  (br $mLoop))))
 	(call $i32list.push (local.get $strlist)(local.get $strPtr))
 	(call $i32list.push (local.get $i32list)(local.get $mapto))
   )
@@ -1293,10 +1293,8 @@
 				(local.get $mapPos))))
 		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
 		  (br $mLoop)
-		)
-	  )
-	)
-	(i32.const 0)  ;; didn't find any match
+		)))
+	(i32.const 0x80000000)  ;; didn't find any match (-2147483648)
   )
   (func $strMap.test (param $testNum i32)(result i32)
 	(local $strMap i64)
@@ -1306,7 +1304,8 @@
 	(local.set $AAA (call $str.mkdata (global.get $gAAA)))
 	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
 	(if
-	  (call $strMap.get (local.get $strMap) (local.get $AAA))
+	  (i32.ne (i32.const 0x80000000)
+		(call $strMap.get (local.get $strMap) (local.get $AAA)))
 	  (return (i32.const 1)))  ;; failure should be empty
 	(call $strMap.set
 		(local.get $strMap)
@@ -1359,9 +1358,7 @@
 			(call $i32list.get@ (local.get $toks) (local.get $tokPos)))
 		  (local.set $tokPos(i32.add (local.get $tokPos)(i32.const 1)))
 		  (br $tokLoop)
-		)
-	  )
-	)
+		)))
 	(local.get $toks) ;; something to return for now
   )
   (func $wamTokenize (param $strPtr i32)(result i32)
@@ -1372,9 +1369,12 @@
 	(local $bPos i32)
 	(local $buffLen i32)
 	(local $byte i32)
+	(local $curState i64)
 	(local $inWhite i32)
 	(local $inString i32)
 	(local $inLineComment i32)
+	(local.set $curState (call $strMap.mk))
+	;;(call $strMap.set (local.get $curState) (i32.const 0))
 	(local.set $inWhite (i32.const 0))
 	(local.set $inString (i32.const 0))
 	(local.set $inLineComment (i32.const 0))
@@ -1387,7 +1387,7 @@
 	  (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
 	    (then
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
-		  (call $C.print (i32.const 66))   ;; B
+		  (call $C.print (i32.const 66))			;; B
 	      (call $C.print (local.get $byte))
 		  (if (i32.eq (local.get $byte) (global.get $LF))
 			(then
@@ -1418,12 +1418,7 @@
 					(global.get $gSEMI)
 					(call $str.getLastByte (local.get $token)))))
 ;;			  (call $addToken (local.get $tokenState))))
-			  (br $bLoop)
-			)
-		  )
-		)
-	  )
-	)
+			  (br $bLoop))))))
 	;;(call $i32list.push (local.get $tokList) (call $str.mkdata (global.get $gAAA)))
 	(local.get $tokList)
   )
@@ -1453,7 +1448,7 @@
   (global $UTF8-2 i32 (i32.const 0xC2A2))		;; U+00A2	Cent sign
   (global $UTF8-3 i32 (i32.const 0xE0A4B9))		;; U+0939	Devanagari Letter Ha
   (global $UTF8-4 i32 (i32.const 0xF0908D88))	;; U+10348	Gothic Letter Hwair
-  (data (i32.const 3000) "AAA\00")		(global $gAAA i32	(i32.const 3000)) ;;FIRST
+  (data (i32.const 3000) "AAA\00")		(global $gAAA i32	(i32.const 3000)) ;;KEEP FIRST
   (data (i32.const 3020) "at \00")		(global $gat i32		(i32.const 3020))
   (data (i32.const 3030) "realloc\00")	(global $grealloc i32	(i32.const 3030))
   (data (i32.const 3040) "ABCDEF\00")	(global $gABCDEF i32	(i32.const 3040))
@@ -1486,5 +1481,5 @@
   (data (i32.const 3390) ";\00")			(global $gSEMI i32 (i32.const 3390))
   (data (i32.const 3395) "Found")			(global $gFound i32 (i32.const 3395))
   (data (i32.const 3405) "strMap")			(global $gstrMap i32 (i32.const 3405))
-  (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;LAST
+  (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
