@@ -15,7 +15,7 @@
   (type $testSig (func (param i32)(result i32)))
   ;; comparison functions used by mapping routines
   (type $compSig (func (param i32)(param i32)(result i32)))
-  (table 19 funcref)  ;; must match
+  (table 22 funcref)  ;; must be larger than length of elem
   (elem (i32.const 0)
     $i32list.mk.test		;;0
 	$i32list.sets.test		;;1
@@ -38,20 +38,19 @@
 	$strMap.test			;;18
   )
   (global $numTests i32 (i32.const 19)) ;; 3 places to match!
-  (global $firstTestOffset i32 (i32.const 0))
-  (global $lastTestOffset i32 (i32.const 18))
+  (global $firstTestOffset 	i32 (i32.const 0))
   (global $strMapCompOffset i32 (i32.const 0))
   (global $intMapCompOffset i32 (i32.const 0))
-  (global $readIOVsOff0 i32 (i32.const 100))
-  (global $readIOVsOff4 i32 (i32.const 104))
-  (global $readBuffOff i32 (i32.const 200))
-  (global $readBuffLen i32 (i32.const 2000))
-  (global $writeIOVsOff0 i32 (i32.const 2300))
-  (global $writeIOVsOff4 i32 (i32.const 2304))
-  (global $writeBuffOff i32 (i32.const 2400))
-  (global $writeBufLen i32 (i32.const 512))
-  (global $nextFreeMem (mut i32) (i32.const 4096))
-  (global $firstFreeMem i32 (i32.const 4096))
+  (global $readIOVsOff0 	i32 (i32.const 100))
+  (global $readIOVsOff4 	i32 (i32.const 104))
+  (global $readBuffOff 		i32 (i32.const 200))
+  (global $readBuffLen 		i32 (i32.const 2000))
+  (global $writeIOVsOff0 	i32 (i32.const 2300))
+  (global $writeIOVsOff4 	i32 (i32.const 2304))
+  (global $writeBuffOff 	i32 (i32.const 2400))
+  (global $writeBufLen 		i32 (i32.const 512))
+  (global $nextFreeMem (mut i32)(i32.const 4096))
+  (global $firstFreeMem 	i32 (i32.const 4096))
   
   (func $showMemUsed 
     (local $bytesUsed i32)
@@ -205,6 +204,28 @@
 	(call $i32.print (local.get $testResult))
 	(call $byte.print (i32.const 10)) ;; linefeed
 	)
+;;(func $test (export "_test"))
+  (func $test
+	;; Run tests: wasmtime strings/string1.wat --invoke _test
+	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
+	(local $testOff i32)
+	(local $lastTestOff i32)
+	(local.set $testOff (global.get $firstTestOffset))
+	(local.set $lastTestOff
+	  (i32.sub
+		(i32.add (local.get $testOff)(global.get $numTests))
+		(i32.const 1)))
+	(loop $testLoop  ;; assumes there is a least one test
+	  (local.get $testOff)
+	  (call $Test.show
+		(local.get $testOff)
+		(call_indirect
+		  (type $testSig)
+		  (local.get $testOff)))
+	  (local.set $testOff (i32.add (local.get $testOff)(i32.const 1)))
+	  (if (i32.le_u (local.get $testOff)(local.get $lastTestOff))
+	    (then (br $testLoop))))
+  )
 
   ;; i32Lists
   ;; an i32list pointer points at
@@ -967,26 +988,6 @@
 	(call $str.setMaxLen (local.get $strPtr)(i32.load (global.get $readIOVsOff4)))
 	(local.get $strPtr)
   )
-  ;;(func $test (export "_test")
-  (func $test
-	;; Run tests: wasmtime strings/string1.wat --invoke _test
-	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
-	(local $testNum i32)
-	(local.set $testNum (i32.const 0))
-	(loop $tLoop  ;; assumes there is a least one test
-	  (local.get $testNum)
-	  (call $Test.show
-		(local.get $testNum)
-		(call_indirect
-		  (type $testSig)
-		  (local.get $testNum)))
-	  ;; (if (call_indirect (type $testSig) (local.get $testNum))
-		;; (then (call $Test.showOK (local.get $testNum)))
-		;; (else (call $Test.showFailed (local.get $testNum))))
-	  (local.set $testNum (i32.add (local.get $testNum)(i32.const 1)))
-	  (if (i32.lt_u (local.get $testNum)(global.get $numTests))
-	    (then (br $tLoop))))
-  )
   ;; match from https://www.drdobbs.com/184410904
   ;; Regular Expressions by Kernighan & Pike
   (func $match (param $re i32) (param $text i32) (result i32)
@@ -1187,7 +1188,7 @@
 		(i64.const 32))
 	  (local.get $i32list))
   )
-  (func $strMap.getStrlist (param $strMap i64)(result i32)
+  (func $strMap.getKeys (param $strMap i64)(result i32)
     (i32.wrap_i64
 	  (i64.shr_u 
 		(local.get $strMap)
@@ -1209,7 +1210,7 @@
 	(local $mapPos i32)
 	(local $numMaps i32)
 	(local.set $strlist
-	  (call $strMap.getStrlist (local.get $strMap)))
+	  (call $strMap.getKeys (local.get $strMap)))
 	(local.set $i32list
 	  (call $strMap.getMapped (local.get $strMap)))
 	(local.set $numMaps (call $i32list.getCurLen (local.get $i32list)))
@@ -1237,7 +1238,7 @@
 	(local $mapPos i32)
 	(local $testStr i32)
 	(local.set $strlist
-	  (call $strMap.getStrlist (local.get $strMap)))
+	  (call $strMap.getKeys (local.get $strMap)))
 	(local.set $i32list
 	  (call $strMap.getMapped (local.get $strMap)))
 	(local.set $numMaps (call $i32list.getCurLen (local.get $i32list)))
@@ -1270,10 +1271,8 @@
 	(local $i32list i32)
 	(local $strlist i32)
 	(local $testStr i32)
-	(local.set $strlist
-	  (call $strMap.getStrlist (local.get $strMap)))
-	(local.set $i32list
-	  (call $strMap.getMapped (local.get $strMap)))
+	(local.set $strlist (call $strMap.getKeys (local.get $strMap)))
+	(local.set $i32list (call $strMap.getMapped (local.get $strMap)))
 	(local.set $numMaps (call $i32list.getCurLen (local.get $i32list)))
 	(local.set $mapPos (i32.const 0))
 	(loop $mLoop
