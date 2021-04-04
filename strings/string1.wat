@@ -15,9 +15,13 @@
   (type $testSig (func (param i32)(result i32)))
   ;; comparison functions used by mapping routines
   (type $compSig (func (param i32)(param i32)(result i32)))
-  (table 22 funcref)  ;; must be larger than length of elem
+  (table 23 funcref)  ;; must be as large than length of elem
   (elem (i32.const 0)
-    $i32list.mk.test		;;0
+    $str.compare			;;0
+	$str.print				;;1
+	$i32.compare			;;2
+	$i32.print				;;3
+    $i32list.mk.test		;;0 (+4)
 	$i32list.sets.test		;;1
 	$str.catByte.test		;;2
 	$str.catStr.test		;;3
@@ -38,7 +42,7 @@
 	$strMap.test			;;18
   )
   (global $numTests i32 (i32.const 19)) ;; 3 places to match!
-  (global $firstTestOffset 	i32 (i32.const 0))
+  (global $firstTestOffset 	i32 (i32.const 4))
   (global $strMapCompOffset i32 (i32.const 0))
   (global $intMapCompOffset i32 (i32.const 0))
   (global $readIOVsOff0 	i32 (i32.const 100))
@@ -1188,6 +1192,22 @@
 		(i64.const 32))
 	  (local.get $i32list))
   )
+  (func $strMap2.mk (result i64)
+	;; sets up two parallel lists
+	;; first list is a list of string pointers
+	;; second list the i32 each of the strings are mapped to
+	;; Pointers to the two lists are returned packed
+	;; into an i64
+	(local $strlst i64)
+	(local $i32list i64)
+	(local.set $strlst  (i64.extend_u/i32 (call $i32list.mk)))
+	(local.set $i32list (i64.extend_u/i32 (call $i32list.mk)))
+	(i64.or
+	  (i64.shl
+		(local.get $strlst)
+		(i64.const 32))
+	  (local.get $i32list))
+  )
   (func $strMap.getKeys (param $strMap i64)(result i32)
     (i32.wrap_i64
 	  (i64.shr_u 
@@ -1294,6 +1314,9 @@
 		  (br $mLoop)
 		)))
 	(i32.const 0x80000000)  ;; didn't find any match (-2147483648)
+  )
+  (func $i32.compare (param $i1 i32)(param $i2 i32)(result i32)
+	(i32.eq (local.get $i1)(local.get $i2))
   )
   (func $strMap.test (param $testNum i32)(result i32)
 	(local $strMap i64)
