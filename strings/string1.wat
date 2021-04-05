@@ -13,15 +13,17 @@
 
   ;; test function signatures
   (type $testSig (func (param i32)(result i32)))
+  
   ;; comparison functions used by mapping routines
-  (type $compSig (func (param i32)(param i32)(result i32)))
-  (table 23 funcref)  ;; must be as large than length of elem
+  (type $keyCompSig (func (param i32)(param i32)(result i32)))
+
+  (table 24 funcref)  ;; must be as large than length of elem
   (elem (i32.const 0)
     $str.compare			;;0
 	$str.print				;;1
 	$i32.compare			;;2
 	$i32.print				;;3
-    $i32list.mk.test		;;0 (+4)
+
 	$i32list.sets.test		;;1
 	$str.catByte.test		;;2
 	$str.catStr.test		;;3
@@ -30,7 +32,7 @@
 	$str.mkdata.test		;;6
 	$str.getByte.test		;;7
 	$i32list.cat.test		;;8
-	$str.stripLeading.test	;; 9
+	$str.stripLeading.test	;;9
 	$str.compare.test		;;10
 	$str.Csplit.test		;;11
 	$str.find.test			;;12
@@ -40,8 +42,10 @@
 	$str.mkslice.test		;;16
 	$str.getLastByte.test	;;17
 	$strMap.test			;;18
+    $i32list.mk.test		;;19
+	$map.test				;;20
   )
-  (global $numTests i32 (i32.const 19)) ;; 3 places to match!
+  (global $numTests i32 (i32.const 20)) ;; 3 places to match!
   (global $firstTestOffset 	i32 (i32.const 4))
   (global $strCompareOffset i32 (i32.const 0))
   (global $i32CompareOffset i32 (i32.const 2))
@@ -178,13 +182,20 @@
 	(call $byte.print (i32.const  32)) ;; space
   )
   (func $Test.show (param $testNum i32)(param $testResult i32)
+	(local $adjTestNum i32)
+	(local.set $adjTestNum
+	  (i32.add
+		(i32.const 1)
+		(i32.sub
+		  (local.get $testNum)
+		  (global.get $firstTestOffset))))
 	(if (local.get $testResult)
 	  (then
 	    (call $Test.showFailed
-		  (local.get $testNum)
+		  (local.get $adjTestNum)
 		  (local.get $testResult)))
 	  (else
-		(call $Test.showOK (local.get $testNum))))
+		(call $Test.showOK (local.get $adjTestNum))))
   )
   (func $Test.showOK (param $testnum i32)
     (call $Test.printTest)
@@ -1194,16 +1205,16 @@
   )
   (func $map.mk (param $compareOff i32)(result i32)
 	;; returns a list of:
-	;;   pointer to list of keys
-	;;   pointer to list of the values
-	;;   function offset to the key comparison routine
+	;;   pointer to list of keys ($mapListOff)
+	;;   pointer to list of the values ($valListOff)
+	;;   function offset to the key comparison routine ($keyCompareOff)
 	(local $mapList i32)
 	(local.set $mapList
 	  (call $i32list.mk))
 	(call $i32list.push	;; keys
 	  (local.get $mapList)
 	  (call $i32list.mk))
-	(call $i32list.push	;; mapped to
+	(call $i32list.push	;; vals to
 	  (local.get $mapList)
 	  (call $i32list.mk))
 	(call $i32list.push
@@ -1211,6 +1222,9 @@
 	  (local.get $compareOff))
 	(local.get $mapList)
   )
+  (global $mapListOff i32 (i32.const 0))
+  (global $valListOff i32 (i32.const 1))
+  (global $keyCompareOff i32 (i32.const 2))
   (func $strMap2.mk (result i32)
 	(call $map.mk
 	  (global.get $strCompareOffset))
@@ -1218,6 +1232,91 @@
   (func $i32Map2.mk (result i32)
 	(call $map.mk
 	  (global.get $i32CompareOffset))
+  )
+  (func $map.set (param $map i32)(param $key i32)(param $val i32)
+	(local $keyList i32)
+	(local $valList i32)
+	(local $keyCompareOff i32)
+	(local $mapLen i32)
+	(local $mapPos i32)
+	(local $testKey i32)
+	(local.set $keyList
+	  (call $i32list.get@ (local.get $map) (global.get $mapListOff)))
+	(local.set $valList
+	  (call $i32list.get@ (local.get $map) (global.get $valListOff)))
+	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
+	(local.set $mapPos (i32.const 0))
+	(loop $mLoop  ;; reset value if key is already in keymap
+	  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
+		(then
+		  (local.set $testKey
+		    (call $i32list.get@
+			  (local.get $keyList)
+			  (local.get $mapPos)))
+		  (local.get $keyCompareOff)
+		  (call_indirect
+			(type $keyCompSig)
+			(local.get $testKey)
+			(local.get $key))
+		  (if
+			(then
+			  (call $i32list.set@
+				(local.get $valList)
+				(local.get $mapPos)
+				(local.get $val))
+			  return))
+		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
+		  (br $mLoop))))
+	(call $i32list.push (local.get $keyList)(local.get $key))
+	(call $i32list.push (local.get $valList)(local.get $val))
+  )
+  (func $map.get (param $map i32)(param $key i32)(result i32)
+	(local $keyList i32)
+	(local $valList i32)
+	(local $keyCompareOff i32)
+	(local $mapLen i32)
+	(local $mapPos i32)
+	(local $testKey i32)
+	(local.set $keyList
+	  (call $i32list.get@ (local.get $map) (global.get $mapListOff)))
+	(local.set $valList
+	  (call $i32list.get@ (local.get $map) (global.get $valListOff)))
+	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
+	(local.set $mapPos (i32.const 0))
+	(loop $mLoop  ;; look for $key in $keyList
+	  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
+		(then
+		  (local.set $testKey
+		    (call $i32list.get@
+			  (local.get $keyList)
+			  (local.get $mapPos)))
+		  (local.get $keyCompareOff)
+		  (call_indirect
+			(type $keyCompSig)
+			(local.get $testKey)
+			(local.get $key))
+		  (if
+			(then
+			  (return (call $i32list.get@
+				(local.get $valList)
+				(local.get $mapPos)))))
+		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
+		  (br $mLoop))))
+	(i32.const 0x80000000)  ;; didn't find any match (-2147483648)	
+  )
+  (func $map.test (param $testNum i32)(result i32)
+	(local $imap i32)
+	(local $smap i32)
+	(local.set $imap (call $map.mk (global.get $i32CompareOffset)))
+	;; map 3 -> 42
+	(call $map.set (local.get $imap)(i32.const 3)(i32.const 42))
+	(if
+	  (i32.ne
+		(call $map.get (local.get $imap)(i32.const 3))
+		(i32.const 42))
+	  (return (i32.const 1)))
+	(local.set $smap (call $map.mk (global.get $strCompareOffset)))
+    (i32.const 0) ;; Success
   )
   (func $strMap.getKeys (param $strMap i64)(result i32)
     (i32.wrap_i64
