@@ -43,8 +43,8 @@
   )
   (global $numTests i32 (i32.const 19)) ;; 3 places to match!
   (global $firstTestOffset 	i32 (i32.const 4))
-  (global $strMapCompOffset i32 (i32.const 0))
-  (global $intMapCompOffset i32 (i32.const 0))
+  (global $strCompareOffset i32 (i32.const 0))
+  (global $i32CompareOffset i32 (i32.const 2))
   (global $readIOVsOff0 	i32 (i32.const 100))
   (global $readIOVsOff4 	i32 (i32.const 104))
   (global $readBuffOff 		i32 (i32.const 200))
@@ -1192,21 +1192,32 @@
 		(i64.const 32))
 	  (local.get $i32list))
   )
-  (func $strMap2.mk (result i64)
-	;; sets up two parallel lists
-	;; first list is a list of string pointers
-	;; second list the i32 each of the strings are mapped to
-	;; Pointers to the two lists are returned packed
-	;; into an i64
-	(local $strlst i64)
-	(local $i32list i64)
-	(local.set $strlst  (i64.extend_u/i32 (call $i32list.mk)))
-	(local.set $i32list (i64.extend_u/i32 (call $i32list.mk)))
-	(i64.or
-	  (i64.shl
-		(local.get $strlst)
-		(i64.const 32))
-	  (local.get $i32list))
+  (func $map.mk (param $compareOff i32)(result i32)
+	;; returns a list of:
+	;;   pointer to list of keys
+	;;   pointer to list of the values
+	;;   function offset to the key comparison routine
+	(local $mapList i32)
+	(local.set $mapList
+	  (call $i32list.mk))
+	(call $i32list.push	;; keys
+	  (local.get $mapList)
+	  (call $i32list.mk))
+	(call $i32list.push	;; mapped to
+	  (local.get $mapList)
+	  (call $i32list.mk))
+	(call $i32list.push
+	  (local.get $mapList)
+	  (local.get $compareOff))
+	(local.get $mapList)
+  )
+  (func $strMap2.mk (result i32)
+	(call $map.mk
+	  (global.get $strCompareOffset))
+  )
+  (func $i32Map2.mk (result i32)
+	(call $map.mk
+	  (global.get $i32CompareOffset))
   )
   (func $strMap.getKeys (param $strMap i64)(result i32)
     (i32.wrap_i64
