@@ -863,7 +863,7 @@
 	(local.set $s1ptr (local.get 0))
 	(local.set $s2ptr (local.get 1))
 	(call $str.print(local.get $s1ptr))
-	(call $strdata.print(global.get $g=?))
+	(call $strdata.print(global.get $gstrComparing))
 	(call $str.printwlf(local.get $s2ptr))
 	(local.set $s2len (call $str.getByteLen (local.get $s2ptr)))
 	(if (i32.ne (call $str.getByteLen (local.get $s1ptr))(local.get $s2len))
@@ -1262,6 +1262,10 @@
 	  (call $i32list.get@ (local.get $map) (global.get $mapListOff)))
 	(local.set $valList
 	  (call $i32list.get@ (local.get $map) (global.get $valListOff)))
+	(local.set $keyCompareOff
+	  (call $i32list.get@ (local.get $map) (global.get $keyCompareOff)))
+	(call $strdata.printwsp(global.get $gcompareOffset))
+	(call $i32.printwlf (local.get $keyCompareOff))
 	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
 	(local.set $mapPos (i32.const 0))
 	(loop $mLoop  ;; reset value if key is already in keymap
@@ -1517,6 +1521,10 @@
 	(i32.const 0x80000000)  ;; didn't find any match (-2147483648)
   )
   (func $i32.compare (param $i1 i32)(param $i2 i32)(result i32)
+	(call $strdata.printwsp(global.get $gi32Comparing))
+	(call $i32.printwsp (local.get $i1))
+	(call $i32.printwsp (local.get $i2))
+	(call $i32.printwlf (i32.eq (local.get $i1)(local.get $i2)))
 	(i32.eq (local.get $i1)(local.get $i2))
   )
   (func $strMap.test (param $testNum i32)(result i32)
@@ -1708,5 +1716,8 @@
   (data (i32.const 3415) "=?\00")				(global $g=? i32 (i32.const 3415))
   (data (i32.const 3420) "Setting map\00")		(global $gSettingMap i32 (i32.const 3420))
   (data (i32.const 3435) "Resetting\00")	(global $gResetting i32 (i32.const 3435))
+  (data (i32.const 3450) "i32Comparing\00")		(global $gi32Comparing i32 (i32.const 3450))
+  (data (i32.const 3470) "strComparing\00")		(global $gstrComparing i32 (i32.const 3470))
+  (data (i32.const 3490) "compareOffset\00")	(global $gcompareOffset i32 (i32.const 3490))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
