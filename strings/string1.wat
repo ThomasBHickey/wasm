@@ -1411,6 +1411,42 @@
 	
 	;; create a map with strings as the keys
 	(local.set $smap (call $strMap2.mk))
+	;; set $smap 'AAA' -> 42 and test it
+	(call $map.set
+	  (local.get $smap)
+	  (call $str.mkdata (global.get $gAAA))
+	  (i32.const 42))
+	(if
+	  (i32.ne
+		(call $map.get
+		  (local.get $smap)
+		  (call $str.mkdata (global.get $gAAA)))
+		(i32.const 42))
+	  (return (i32.const 5)))	;; error #5
+	;; Add another key/value pair and look for it
+	(call $map.set
+	  (local.get $smap)
+	  (call $str.mkdata (global.get $gZZZ))
+	  (i32.const 43))
+	(if
+	  (i32.ne
+		(call $map.get
+		  (local.get $smap)
+		  (call $str.mkdata (global.get $gZZZ)))
+		(i32.const 43))
+	  (return (i32.const 6)))	;; error #5
+	;; Replace value for ZZZ and retrieve it
+	(call $map.set
+	  (local.get $smap)
+	  (call $str.mkdata (global.get $gZZZ))
+	  (i32.const 44))
+	(if
+	  (i32.ne
+		(call $map.get
+		  (local.get $smap)
+		  (call $str.mkdata (global.get $gZZZ)))
+		(i32.const 44))
+	  (return (i32.const 6)))	;; error #5
     (i32.const 0) ;; Success
   )
   (func $strMap.getKeys (param $strMap i64)(result i32)
@@ -1680,18 +1716,18 @@
   (global $UTF8-2 i32 (i32.const 0xC2A2))		;; U+00A2	Cent sign
   (global $UTF8-3 i32 (i32.const 0xE0A4B9))		;; U+0939	Devanagari Letter Ha
   (global $UTF8-4 i32 (i32.const 0xF0908D88))	;; U+10348	Gothic Letter Hwair
-  (data (i32.const 3000) "AAA\00")		(global $gAAA i32	(i32.const 3000)) ;;KEEP FIRST
-  (data (i32.const 3020) "at \00")		(global $gat i32		(i32.const 3020))
-  (data (i32.const 3030) "realloc\00")	(global $grealloc i32	(i32.const 3030))
-  (data (i32.const 3040) "ABCDEF\00")	(global $gABCDEF i32	(i32.const 3040))
-  (data (i32.const 3080) "FEDCBA\00")	(global $gFEDCBA i32	(i32.const 3080))
-  (data (i32.const 3100) "AAAZZZ\00")	(global $gAAAZZZ i32	(i32.const 3100))
+  (data (i32.const 3000) "AAA\00")			(global $gAAA i32	(i32.const 3000)) ;;KEEP FIRST
+  (data (i32.const 3020) "at \00")			(global $gat i32		(i32.const 3020))
+  (data (i32.const 3030) "realloc\00")		(global $grealloc i32	(i32.const 3030))
+  (data (i32.const 3040) "ABCDEF\00")		(global $gABCDEF i32	(i32.const 3040))
+  (data (i32.const 3080) "FEDCBA\00")		(global $gFEDCBA i32	(i32.const 3080))
+  (data (i32.const 3100) "AAAZZZ\00")		(global $gAAAZZZ i32	(i32.const 3100))
   (data (i32.const 3110) "AbCDbE\00")		(global $gAbCDbE i32 (i32.const 3110))
   (data (i32.const 3120) ">aaa\0A\00")		(global $gaaa i32 (i32.const 3120))
   (data (i32.const 3130) ">bbb\0A\00")		(global $gbbb i32 (i32.const 3130))
   (data (i32.const 3140) ">ccc\0A\00")		(global $gccc i32 (i32.const 3140))
   (data (i32.const 3150) ">ddd\0A\00")		(global $gddd i32 (i32.const 3150))
-  (data (i32.const 3160) "(CHAR \00")			(global $gpCHAR i32 (i32.const 3160))
+  (data (i32.const 3160) "(CHAR \00")		(global $gpCHAR i32 (i32.const 3160))
   (data (i32.const 3180) "CD\00")			(global $gCD i32 (i32.const 3180))
   (data (i32.const 3190) "^A\00")			(global $g^A i32 (i32.const 3190))
   (data (i32.const 3200) "^B\00")			(global $g^B i32 (i32.const 3200))
@@ -1711,13 +1747,13 @@
   (data (i32.const 3370) "LF\00")			(global $gLF i32 (i32.const 3370))
   (data (i32.const 3375) "Mem used: \00")	(global $gMemUsed i32 (i32.const 3375))
   (data (i32.const 3390) ";\00")			(global $gSEMI i32 (i32.const 3390))
-  (data (i32.const 3395) "Found\00")			(global $gFound i32 (i32.const 3395))
-  (data (i32.const 3405) "strMap\00")			(global $gstrMap i32 (i32.const 3405))
-  (data (i32.const 3415) "=?\00")				(global $g=? i32 (i32.const 3415))
-  (data (i32.const 3420) "Setting map\00")		(global $gSettingMap i32 (i32.const 3420))
+  (data (i32.const 3395) "Found\00")		(global $gFound i32 (i32.const 3395))
+  (data (i32.const 3405) "strMap\00")		(global $gstrMap i32 (i32.const 3405))
+  (data (i32.const 3415) "=?\00")			(global $g=? i32 (i32.const 3415))
+  (data (i32.const 3420) "Setting map\00")	(global $gSettingMap i32 (i32.const 3420))
   (data (i32.const 3435) "Resetting\00")	(global $gResetting i32 (i32.const 3435))
-  (data (i32.const 3450) "i32Comparing\00")		(global $gi32Comparing i32 (i32.const 3450))
-  (data (i32.const 3470) "strComparing\00")		(global $gstrComparing i32 (i32.const 3470))
-  (data (i32.const 3490) "compareOffset\00")	(global $gcompareOffset i32 (i32.const 3490))
+  (data (i32.const 3450) "i32Comparing\00")	(global $gi32Comparing i32 (i32.const 3450))
+  (data (i32.const 3470) "strComparing\00")	(global $gstrComparing i32 (i32.const 3470))
+  (data (i32.const 3490) "compareOffset\00")(global $gcompareOffset i32 (i32.const 3490))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
