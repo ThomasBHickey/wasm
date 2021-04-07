@@ -1197,22 +1197,6 @@
 		(local.set $textPos (i32.add (local.get $textPos)(i32.const 1)))))
 	(i32.const 0)
   )
-  ;; (func $strMap.mk (result i64)
-	;; ;; sets up two parallel lists
-	;; ;; first list is a list of string pointers
-	;; ;; second list the i32 each of the strings are mapped to
-	;; ;; Pointers to the two lists are returned packed
-	;; ;; into an i64
-	;; (local $strlst i64)
-	;; (local $i32list i64)
-	;; (local.set $strlst  (i64.extend_u/i32 (call $i32list.mk)))
-	;; (local.set $i32list (i64.extend_u/i32 (call $i32list.mk)))
-	;; (i64.or
-	  ;; (i64.shl
-		;; (local.get $strlst)
-		;; (i64.const 32))
-	  ;; (local.get $i32list))
-  ;; )
   (func $map.mk (param $compareOff i32)(param $keyPrintOff i32)(result i32)
 	;; returns a pointer to a list of:
 	;;   pointer to list of keys ($mapListOff)
@@ -1450,113 +1434,6 @@
 	  (return (i32.const 6)))	;; error #5
     (i32.const 0) ;; Success
   )
-  ;; (func $strMap.getKeys (param $strMap i64)(result i32)
-    ;; (i32.wrap_i64
-	  ;; (i64.shr_u 
-		;; (local.get $strMap)
-		;; (i64.const 32)))
-  ;; )
-  ;; (func $strMap.getMapped (param $strMap i64)(result i32)
-	;; (i32.wrap_i64
-	  ;; (i64.and
-		;; (i64.const 0xffffffff)
-		;; (local.get $strMap)))
-  ;; )
-  ;; (func $strMap.getCurLen (param $strMap i64) (result i32)
-	;; (call $i32list.getCurLen
-	  ;; (call $strMap.getMapped (local.get $strMap)))
-  ;; )
-  ;; (func $strMap.print (param $strMap i64)
-	;; (local $i32list i32)
-	;; (local $strlist i32)
-	;; (local $mapPos i32)
-	;; (local $numMaps i32)
-	;; (local.set $strlist
-	  ;; (call $strMap.getKeys (local.get $strMap)))
-	;; (local.set $i32list
-	  ;; (call $strMap.getMapped (local.get $strMap)))
-	;; (local.set $numMaps (call $i32list.getCurLen (local.get $i32list)))
-	;; (local.set $mapPos (i32.const 0))
-	;; (loop $mLoop
-	  ;; (if (i32.lt_u (local.get $mapPos)(local.get $numMaps))
-		;; (then
-		  ;; (call $i32.printwsp (local.get $mapPos))
-		  ;; (call $str.printwsp
-			;; (call $i32list.get@
-				;; (local.get $strlist)
-				;; (local.get $mapPos)))
-		  ;; (call $i32.printwlf
-			;; (call $i32list.get@
-			  ;; (local.get $i32list)
-			  ;; (local.get $mapPos)))
-		  ;; (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
-		  ;; (br $mLoop)
-		;; )))
-  ;; )
-  ;; (func $strMap.set (param $strMap i64)(param $strPtr i32)(param $mapto i32)
-	;; (local $i32list i32)
-	;; (local $strlist i32)
-	;; (local $numMaps i32)
-	;; (local $mapPos i32)
-	;; (local $testStr i32)
-	;; (local.set $strlist
-	  ;; (call $strMap.getKeys (local.get $strMap)))
-	;; (local.set $i32list
-	  ;; (call $strMap.getMapped (local.get $strMap)))
-	;; (local.set $numMaps (call $i32list.getCurLen (local.get $i32list)))
-	;; (local.set $mapPos (i32.const 0))
-	;; (loop $mLoop  ;; reset value if key is already in keymap
-	  ;; (if (i32.lt_u (local.get $mapPos)(local.get $numMaps))
-		;; (then
-		  ;; (local.set $testStr
-		    ;; (call $i32list.get@
-			  ;; (local.get $strlist)
-			  ;; (local.get $mapPos)))
-		  ;; (if
-			;; (call $str.compare
-			  ;; (local.get $strPtr)
-			  ;; (local.get $testStr))
-			;; (then
-			  ;; (call $i32list.set@
-				;; (local.get $i32list)
-				;; (local.get $mapPos)
-				;; (local.get $mapto))
-			  ;; return))
-		  ;; (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
-		  ;; (br $mLoop))))
-	;; (call $i32list.push (local.get $strlist)(local.get $strPtr))
-	;; (call $i32list.push (local.get $i32list)(local.get $mapto))
-  ;; )
-  ;; (func $strMap.get (param $strMap i64)(param $strWanted i32) (result i32)
-    ;; (local $numMaps i32)
-	;; (local $mapPos i32)
-	;; (local $i32list i32)
-	;; (local $strlist i32)
-	;; (local $testStr i32)
-	;; (local.set $strlist (call $strMap.getKeys (local.get $strMap)))
-	;; (local.set $i32list (call $strMap.getMapped (local.get $strMap)))
-	;; (local.set $numMaps (call $i32list.getCurLen (local.get $i32list)))
-	;; (local.set $mapPos (i32.const 0))
-	;; (loop $mLoop
-	  ;; (if (i32.lt_u (local.get $mapPos)(local.get $numMaps))
-		;; (then
-		  ;; (local.set $testStr
-		    ;; (call $i32list.get@
-			  ;; (local.get $strlist)
-			  ;; (local.get $mapPos)))
-		  ;; (if
-			;; (call $str.compare
-			  ;; (local.get $strWanted)
-			  ;; (local.get $testStr))
-			;; (return
-			  ;; (call $i32list.get@
-				;; (local.get $i32list)
-				;; (local.get $mapPos))))
-		  ;; (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
-		  ;; (br $mLoop)
-		;; )))
-	;; (i32.const 0x80000000)  ;; didn't find any match (-2147483648)
-  ;; )
   (func $i32.compare (param $i1 i32)(param $i2 i32)(result i32)
 	;; (call $strdata.printwsp(global.get $gi32Comparing))
 	;; (call $i32.printwsp (local.get $i1))
@@ -1564,52 +1441,6 @@
 	;; (call $i32.printwlf (i32.eq (local.get $i1)(local.get $i2)))
 	(i32.eq (local.get $i1)(local.get $i2))
   )
-  ;; (func $strMap.test (param $testNum i32)(result i32)
-	;; (local $strMap i64)
-	;; (local $AAA i32)
-	;; (local $ZZZ i32)
-	;; (local.set $strMap (call $strMap.mk))
-	;; (local.set $AAA (call $str.mkdata (global.get $gAAA)))
-	;; (local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
-	;; (if
-	  ;; (i32.ne (i32.const 0x80000000)
-		;; (call $strMap.get (local.get $strMap) (local.get $AAA)))
-	  ;; (return (i32.const 1)))  ;; failure should be empty
-	;; (call $strMap.set
-		;; (local.get $strMap)
-		;; (local.get $AAA)
-		;; (i32.const 42))
-	;; (if
-	  ;; (i32.ne
-		;; (call $strMap.get (local.get $strMap) (local.get $AAA))
-		;; (i32.const 42))
-	  ;; (return (i32.const 2)))  ;; should have been 42
-	;; (call $strMap.set
-	  ;; (local.get $strMap)
-	  ;; (local.get $ZZZ)
-	  ;; (i32.const 43))
-	;; (if					;; reset $ZZZ from 43 to 44
-	  ;; (i32.ne
-		;; (call $strMap.get (local.get $strMap) (local.get $ZZZ))
-		;; (i32.const 43))
-	  ;; (return (i32.const 3)))
-	;; (call $strMap.set
-	  ;; (local.get $strMap)
-	  ;; (local.get $ZZZ)
-	  ;; (i32.const 44))
-	;; (if
-	  ;; (i32.ne
-		;; (call $strMap.get (local.get $strMap) (local.get $ZZZ))
-		;; (i32.const 44))
-	  ;; (return (i32.const 4)))
-	;; ;; try $AAA again
-	;; (if
-	  ;; (i32.ne
-		;; (call $strMap.get (local.get $strMap) (local.get $AAA))
-		;; (i32.const 42))
-	  ;; (return (i32.const 5)))
-	;; (i32.const 0) ;; success
-  ;; )
   (func $wam2wat (param $strPtr i32)(result i32)
 	;; Accepts WAM file as a string, returns a list of tokens
 	(local $toks i32)
