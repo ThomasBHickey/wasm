@@ -27,5 +27,5 @@ function to print a character to the console, then an i32, and from there
 some useful string routines.  No Rust or Javascript involved from my point
 of view.
 
-So far, strings/string1.wat has a few string and list and key/value functions.
+So far, strings/string1.wat has a few string, list and key/value functions.
 No attempt to reclaim storage yet.
