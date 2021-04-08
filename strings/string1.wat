@@ -14,16 +14,16 @@
   ;; test function signatures
   (type $testSig (func (param i32)(result i32)))
   
-  ;; comparison functions used by mapping routines
+  ;; comparison func signatures used by map
   (type $keyCompSig (func (param i32)(param i32)(result i32)))
-  (type $keyPrintSig (func (param i32)))
+  (type $keyToStringSig (func (param i32)(result i32)))
 
-  (table 24 funcref)  ;; must be as large than length of elem
+  (table 23 funcref)  ;; must be >= to length of elem
   (elem (i32.const 0)
     $str.compare			;;0
-	$str.print				;;1
+	$str.str				;;1
 	$i32.compare			;;2
-	$i32.print				;;3
+	$i32.str				;;3
 
 	$i32list.sets.test		;;1 + 3
 	$str.catByte.test		;;2
@@ -44,14 +44,13 @@
 	$str.getLastByte.test	;;17
 	$map.test				;;18
     $i32list.mk.test		;;19
-
   )
   (global $numTests i32 (i32.const 19)) ;; should match # tests in table
   (global $firstTestOffset 	i32 (i32.const 4))
   (global $strCompareOffset i32 (i32.const 0))
-  (global $strPrintOffset	i32 (i32.const 1))
+  (global $strToStrOffset	i32 (i32.const 1))
   (global $i32CompareOffset i32 (i32.const 2))
-  (global $i32PrintOffset	i32 (i32.const 3))
+  (global $i32ToStrOffset	i32 (i32.const 3))
   (global $readIOVsOff0 	i32 (i32.const 100))
   (global $readIOVsOff4 	i32 (i32.const 104))
   (global $readBuffOff 		i32 (i32.const 200))
@@ -100,7 +99,24 @@
 	  (i32.add
 		(i32.rem_u (local.get $N)(i32.const 10))
 		(global.get $zero)))
-	;;(call $byte.print (i32.const 32))  ;; space
+  )
+  (func $i32.str (param $N i32)(result i32)
+  ;; return a string representing an i32
+  (local $strPtr i32)
+  (local.set $strPtr (call $str.mk))
+	(if (i32.ge_u (local.get $N)(i32.const 10))
+	  (then 
+		(call $str.catByte
+		  (local.get $strPtr)
+		  (i32.div_u
+			(local.get $N)
+			(i32.const 10)))))
+	(call $str.catByte
+	  (local.get $strPtr) 
+	  (i32.add
+		(i32.rem_u (local.get $N)(i32.const 10))
+		(global.get $zero)))
+	(local.get $strPtr)
   )
   (func $i32.printwsp (param $N i32)  ;; with space
     (call $i32.print (local.get $N))
@@ -433,6 +449,10 @@
 	      (br $iLoop))))
 	;;(call $C.print (i32.const 93)) ;; right bracket
 	(call $C.print (i32.const 10)) ;; new line
+  )
+  (func $str.str (param $strPtr i32)(result i32)
+	;; This is used by map routines to dump a key that is a string
+	(local.get $strPtr)
   )
   (func $str.mk (result i32)
 	;; returns a memory offset for a string pointer:
@@ -1228,12 +1248,12 @@
   (func $strMap.mk (result i32)
 	(call $map.mk
 	  (global.get $strCompareOffset)
-	  (global.get $strPrintOffset))
+	  (global.get $strToStrOffset))
   )
   (func $i32Map.mk (result i32)
 	(call $map.mk
 	  (global.get $i32CompareOffset)
-	  (global.get $i32PrintOffset))
+	  (global.get $i32ToStrOffset))
   )
   (func $map.set (param $map i32)(param $key i32)(param $val i32)
 	(local $keyList i32)
@@ -1326,7 +1346,7 @@
   (func $map.dump (param $map i32)
 	(local $mapLen i32)
 	(local $mapPos i32)
-	(local $printFuncOff i32)
+	(local $keyToStringOff i32)
 	(local $keyList i32)
 	(local $valList i32)
 	(local $key i32)
@@ -1337,7 +1357,7 @@
 	(local.set $valList
 	  (call $i32list.get@ (local.get $map) (global.get $valListOff)))
 
-	(local.set $printFuncOff
+	(local.set $keyToStringOff
 	  (call $i32list.get@ (local.get $map) (global.get $keyPrintOff)))
 	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
 	(local.set $mapPos (i32.const 0))
@@ -1353,9 +1373,10 @@
 			  (local.get $valList)
 			  (local.get $mapPos)))
 		  (call $i32.printwsp (local.get $mapPos))
-		  (local.get $key)
-		  (call_indirect (type $keyPrintSig)
-			(local.get $printFuncOff))
+		  (call $str.print
+			(local.get $key)
+			(call_indirect (type $keyToStringSig)
+			  (local.get $keyToStringOff)))
 		  (call $C.print (i32.const 32)) ;; space
 		  (call $i32.printwlf (local.get $val))
 		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
@@ -1393,7 +1414,7 @@
 		(call $map.get (local.get $imap)(i32.const 3))
 		(i32.const 45))
 	  (return (i32.const 4)))	;; error #4
-	
+	;;(call $map.dump (local.get $imap))
 	;; create a map with strings as the keys
 	(local.set $smap (call $strMap.mk))
 	;; set $smap 'AAA' -> 42 and test it
@@ -1432,6 +1453,7 @@
 		  (call $str.mkdata (global.get $gZZZ)))
 		(i32.const 44))
 	  (return (i32.const 6)))	;; error #5
+	;;(call $map.dump (local.get $smap))
     (i32.const 0) ;; Success
   )
   (func $i32.compare (param $i1 i32)(param $i2 i32)(result i32)
