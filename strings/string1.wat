@@ -32,7 +32,7 @@
 	$str.Rev.test			;;5
 	$str.mkdata.test		;;6
 	$str.getByte.test		;;7
-	$i32list.cat.test		;;8
+	$i32list.push.test		;;8
 	$str.stripLeading.test	;;9
 	$str.compare.test		;;10
 	$str.Csplit.test		;;11
@@ -357,7 +357,7 @@
 		(i32.add (call $i32list.getDataOff (local.get $lstPtr))
 				 (i32.mul (i32.const 4) (local.get $pos))))
   )
-  (func $i32list.cat (param $lstPtr i32)(param $val i32)
+  (func $i32list.push (param $lstPtr i32)(param $val i32)
 	(local $maxLen i32) (local $curLen i32)(local $dataOffset i32)
 	(local.set $curLen (call $i32list.getCurLen(local.get $lstPtr)))
 	(local.set $maxLen (call $i32list.getMaxLen(local.get $lstPtr)))
@@ -371,9 +371,9 @@
 	(call $i32list.setCurLen (local.get $lstPtr)
 		(i32.add (local.get $curLen)(i32.const 1)))
   )
-  (func $i32list.push (param $lstPtr i32)(param $val i32)
-	(call $i32list.cat (local.get $lstPtr) (local.get $val))
-  )
+  ;; (func $i32list.push (param $lstPtr i32)(param $val i32)
+	;; (call $i32list.cat (local.get $lstPtr) (local.get $val))
+  ;; )
   (func $i32list.pop (param $lstPtr i32)(result i32)
     (local $curLen i32)(local $lastPos i32)(local $popped i32)
 	(local.set $curLen (call $i32list.getCurLen(local.get $lstPtr)))
@@ -407,17 +407,17 @@
 	(i32.const 0) ;; passed
   )
 	
-  (func $i32list.cat.test (param $testNum i32)(result i32)
-    (local $listPtr i32)
-	(local.set $listPtr (call $i32list.mk))
-	(call $i32list.cat (local.get $listPtr) (i32.const 42))
-	(call $i32list.cat (local.get $listPtr) (i32.const 43))
-	(if (i32.ne (i32.const 42)(call $i32list.get@ (local.get $listPtr)(i32.const 0)))
-		(return (i32.const 1)))
-	(if (i32.ne (i32.const 43)(call $i32list.get@ (local.get $listPtr)(i32.const 1)))
-		(return (i32.const 2)))
-	(i32.const 0)
-  )
+  ;; (func $i32list.push.test (param $testNum i32)(result i32)
+    ;; (local $listPtr i32)
+	;; (local.set $listPtr (call $i32list.mk))
+	;; (call $i32list.push (local.get $listPtr) (i32.const 42))
+	;; (call $i32list.push (local.get $listPtr) (i32.const 43))
+	;; (if (i32.ne (i32.const 42)(call $i32list.get@ (local.get $listPtr)(i32.const 0)))
+		;; (return (i32.const 1)))
+	;; (if (i32.ne (i32.const 43)(call $i32list.get@ (local.get $listPtr)(i32.const 1)))
+		;; (return (i32.const 2)))
+	;; (i32.const 0)
+  ;; )
   (func $i32list.print (param $lstPtr i32)
 	(local $curLength i32)
 	(local $ipos i32)
@@ -934,14 +934,14 @@
 		  ;;(call $i32.print (local.get $byte))
 		  (if (i32.eq (local.get $splitC)(local.get $byte))
 			(then
-			  (call $i32list.cat (local.get $splitList)(local.get $strCum))
+			  (call $i32list.push (local.get $splitList)(local.get $strCum))
 			  (local.set $strCum (call $str.mk)))
 			(else
 			  (call $str.catByte (local.get $strCum)(local.get $byte))))
 		  (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
 		  (br $bloop))))
 	(if (call $str.getByteLen (local.get $strCum));; skip empty last $strCum
-	  (then (call $i32list.cat (local.get $splitList)(local.get $strCum))))
+	  (then (call $i32list.push (local.get $splitList)(local.get $strCum))))
 	(local.get $splitList)
   )
   (func $str.Csplit.test (param $testNum i32)(result i32)
@@ -1477,10 +1477,23 @@
 	    (then
 		  (local.set $token
 			(call $i32list.get@ (local.get $toks) (local.get $tokPos)))
+		  (call $C.print (i32.const 62))
+		  (call $str.printwlf (local.get $token))
 		  (local.set $tokPos(i32.add (local.get $tokPos)(i32.const 1)))
-		  (br $tokLoop)
-		)))
+		  (br $tokLoop))))
 	(local.get $toks) ;; something to return for now
+  )
+  (func $addToken (param $state i32)(param $token i32)
+	(local $tokstack i32)
+	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
+	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
+	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
+	(if
+	  (i32.eqz
+		(call $map.get (local.get $state)(global.get $gtptr)))
+	  (then return))
+	(local.set $tokstack (call $map.get (local.get $state)(global.get $gtokstack)))
+	(call $i32list.push (local.get $tokstack)(local.get $token))
   )
   (func $wamTokenize (param $strPtr i32)(result i32)
     (local $token i32)
@@ -1490,31 +1503,34 @@
 	(local $bPos i32)
 	(local $buffLen i32)
 	(local $byte i32)
-	(local $curState i32)
-	(local $inWhite i32)
-	(local $inString i32)
-	(local $inLineComment i32)
-	(local.set $curState (call $strMap.mk))
-	;;(call $strMap.set (local.get $curState) (i32.const 0))
-	(local.set $inWhite (i32.const 0))
-	(local.set $inString (i32.const 0))
-	(local.set $inLineComment (i32.const 0))
+	(local $state i32)
+	(local.set $state (call $i32Map.mk)) ;; memory offsets instead of strings for keys
+	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
+	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
+	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
+	(call $map.set (local.get $state)(global.get $gtptr)(i32.const 0))
+	(call $map.set (local.get $state)(global.get $gtokstack)(call $i32Map.mk))
 	(local.set $buffLen (call $str.getByteLen (local.get $strPtr)))
-	(local.set $tokList (call $i32list.mk))
+	(local.set $tokList (call $map.get (local.get $state)(global.get $gtokstack)))
 	(local.set $tokenStart (i32.const 0))
+	(local.set $token (call $str.mk))  ;; current token built up here
 	(local.set $bPos (i32.const -1))  ;; gets incr before use
 	(loop $bLoop
+	  ;;(call $byte.print (i32.const 76))  ;; L
 	  (local.set $bPos (i32.add (local.get $bPos)(i32.const 1)))
 	  (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
 	    (then
+		  ;;(call $byte.print(i32.const 112));; p
+		  ;;(call $i32.printwlf(local.get $bPos))
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
-		  (call $C.print (i32.const 66))			;; B
-	      (call $C.print (local.get $byte))
+		  ;;(call $C.print (i32.const 66))			;; B
+	      ;;(call $C.print (local.get $byte))
 		  (if (i32.eq (local.get $byte) (global.get $LF))
 			(then
 			  (local.set $slice
 				(call $str.mkdata (global.get $gLF)))
-			  (call $i32list.push (local.get $tokList)(local.get $slice))))
+			  (call $i32list.push (local.get $tokList)(local.get $slice))
+			  (br $bLoop)))
 		  (if (i32.eq (local.get $byte) (global.get $LPAREN))
 			(then
 			  (local.set $slice
@@ -1522,7 +1538,9 @@
 				  (local.get $strPtr)
 				  (local.get $bPos)
 				  (i32.const 1)))
-			  (call $i32list.push (local.get $tokList)(local.get $slice))))
+			  ;;(call $i32list.push (local.get $tokList)(local.get $slice))
+			  (call $addToken (local.get $state)(local.get $slice))
+			  (br $bLoop)))
 		  (if (i32.eq (local.get $byte) (global.get $RPAREN))
 			(then
 			  (local.set $slice
@@ -1530,18 +1548,23 @@
 				  (local.get $strPtr)
 				  (local.get $bPos)
 				  (i32.const 1)))
-			  (call $i32list.push (local.get $tokList)(local.get $slice))))
+			  ;;(call $i32list.push (local.get $tokList)(local.get $slice))
+			  (call $addToken (local.get $state)(local.get $slice))
+			  (br $bLoop)
+			)
+		  )
 		  (if (i32.eq (global.get $gSEMI) (local.get $byte))
 			(if (i32.eqz  ;; i.e. Not
 				(i32.and
-				  (local.get $inLineComment)
+				  ;;(local.get $inLineComment)
+				  (call $map.get (local.get $state)(global.get $ginsideLineCom))
 				  (i32.eq
 					(global.get $gSEMI)
 					(call $str.getLastByte (local.get $token)))))
 ;;			  (call $addToken (local.get $tokenState))))
 			  (br $bLoop))))))
 	;;(call $i32list.push (local.get $tokList) (call $str.mkdata (global.get $gAAA)))
-	(local.get $tokList)
+	(return (local.get $tokList))
   )
   (func $main (export "_start")
 	(local $buffer i32)
@@ -1609,5 +1632,10 @@
   (data (i32.const 3450) "i32Comparing\00")	(global $gi32Comparing i32 (i32.const 3450))
   (data (i32.const 3470) "strComparing\00")	(global $gstrComparing i32 (i32.const 3470))
   (data (i32.const 3490) "compareOffset\00")(global $gcompareOffset i32 (i32.const 3490))
+  (data (i32.const 3500) "insideString\00")	(global $ginsideString  i32 (i32.const 3500))
+  (data (i32.const 3515) "insideWhitesp\00")(global $ginsideWhiteSp i32 (i32.const 3515))
+  (data (i32.const 3530) "insideLineCom\00")(global $ginsideLineCom i32 (i32.const 3530))
+  (data (i32.const 3545) "tptr\00")			(global $gtptr i32 (i32.const 3545))
+  (data (i32.const 3555) "tokstack\00")		(global $gtokstack i32 (i32.const 3555))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
