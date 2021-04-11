@@ -1474,7 +1474,6 @@
 	(local.set $toks (call $map.get(local.get $state)(global.get $gtokstack)))
 	(local.set $numToks (call $i32list.getCurLen (local.get $toks)))
 	(local.set $tokPos (i32.const 0))
-	(call $i32.printwlf (local.get $numToks))
 	(loop $tokLoop
 	  (if (i32.lt_u (local.get $tokPos)(local.get $numToks))
 	    (then
@@ -1486,24 +1485,24 @@
 		  (br $tokLoop))))
 	(local.get $toks) ;; something to return for now
   )
-  (func $addToken (param $state i32)(param $token i32)
+  (func $addToken (param $state i32)(param $slice i32)
 	(local $tokstack i32)
 	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
-	(call $byte.print(i32.const 39))(call $str.print(local.get $token))  ;; quoted string
-	(call $byte.print(i32.const 39))(call $byte.print (i32.const 10))
+	;;(call $byte.print(i32.const 39))(call $str.print(local.get $slice))  ;; quoted string
+	;;(call $byte.print(i32.const 39))(call $byte.print (i32.const 10))
 	(if
 	  (i32.eqz
 		;;(call $map.get (local.get $state)(global.get $gtptr)))
-		(call $str.getByteLen(local.get $token)))
+		(call $str.getByteLen(local.get $slice)))
 	  (then return))
 	(local.set $tokstack (call $map.get (local.get $state)(global.get $gtokstack)))
-	(call $i32list.push (local.get $tokstack)(local.get $token))
+	;;(call $i32.printwlf(call $i32list.getCurLen (local.get $tokstack)))
+	(call $i32list.push (local.get $tokstack)(local.get $slice))
   )
   (func $wamTokenize (param $strPtr i32)(result i32)
     (local $token i32)
-	(local $tokList i32)
 	(local $slice i32)
 	(local $tokenStart i32)
 	(local $bPos i32)
@@ -1515,9 +1514,8 @@
 	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $gtptr)(i32.const 0))
-	(call $map.set (local.get $state)(global.get $gtokstack)(call $i32Map.mk))
+	(call $map.set (local.get $state)(global.get $gtokstack)(call $i32list.mk))
 	(local.set $buffLen (call $str.getByteLen (local.get $strPtr)))
-	(local.set $tokList (call $map.get (local.get $state)(global.get $gtokstack)))
 	(local.set $tokenStart (i32.const 0))
 	(local.set $token (call $str.mk))  ;; current token built up here
 	(local.set $bPos (i32.const -1))  ;; gets incr before use
@@ -1535,7 +1533,6 @@
 			(then
 			  (local.set $slice
 				(call $str.mkdata (global.get $gLF)))
-			  ;;(call $i32list.push (local.get $tokList)(local.get $slice))
 			  (call $addToken (local.get $state)(local.get $slice))
 			  (br $bLoop)))
 		  (if (i32.eq (local.get $byte) (global.get $LPAREN))
@@ -1545,7 +1542,6 @@
 				  (local.get $strPtr)
 				  (local.get $bPos)
 				  (i32.const 1)))
-			  ;;(call $i32list.push (local.get $tokList)(local.get $slice))
 			  (call $addToken (local.get $state)(local.get $slice))
 			  (br $bLoop)))
 		  (if (i32.eq (local.get $byte) (global.get $RPAREN))
@@ -1555,7 +1551,6 @@
 				  (local.get $strPtr)
 				  (local.get $bPos)
 				  (i32.const 1)))
-			  ;;(call $i32list.push (local.get $tokList)(local.get $slice))
 			  (call $addToken (local.get $state)(local.get $slice))
 			  (br $bLoop)
 			)
@@ -1570,8 +1565,6 @@
 					(call $str.getLastByte (local.get $token)))))
 ;;			  (call $addToken (local.get $tokenState))))
 			  (br $bLoop))))))
-	;;(call $i32list.push (local.get $tokList) (call $str.mkdata (global.get $gAAA)))
-	;;(return (local.get $tokList))
 	(return (local.get $state))
   )
   (func $main (export "_start")
