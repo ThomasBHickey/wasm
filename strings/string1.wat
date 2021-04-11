@@ -1465,19 +1465,22 @@
   )
   (func $wam2wat (param $strPtr i32)(result i32)
 	;; Accepts WAM file as a string, returns a list of tokens
+	(local $state i32)
 	(local $toks i32)
 	(local $token i32)
 	(local $numToks i32)
 	(local $tokPos i32)
-	(local.set $toks (call $wamTokenize (local.get $strPtr)))
+	(local.set $state (call $wamTokenize (local.get $strPtr)))
+	(local.set $toks (call $map.get(local.get $state)(global.get $gtokstack)))
 	(local.set $numToks (call $i32list.getCurLen (local.get $toks)))
 	(local.set $tokPos (i32.const 0))
+	(call $i32.printwlf (local.get $numToks))
 	(loop $tokLoop
 	  (if (i32.lt_u (local.get $tokPos)(local.get $numToks))
 	    (then
 		  (local.set $token
 			(call $i32list.get@ (local.get $toks) (local.get $tokPos)))
-		  (call $C.print (i32.const 62))
+		  (call $C.print (i32.const 62))  ;; >
 		  (call $str.printwlf (local.get $token))
 		  (local.set $tokPos(i32.add (local.get $tokPos)(i32.const 1)))
 		  (br $tokLoop))))
@@ -1488,9 +1491,12 @@
 	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
+	(call $byte.print(i32.const 39))(call $str.print(local.get $token))  ;; quoted string
+	(call $byte.print(i32.const 39))(call $byte.print (i32.const 10))
 	(if
 	  (i32.eqz
-		(call $map.get (local.get $state)(global.get $gtptr)))
+		;;(call $map.get (local.get $state)(global.get $gtptr)))
+		(call $str.getByteLen(local.get $token)))
 	  (then return))
 	(local.set $tokstack (call $map.get (local.get $state)(global.get $gtokstack)))
 	(call $i32list.push (local.get $tokstack)(local.get $token))
@@ -1529,7 +1535,8 @@
 			(then
 			  (local.set $slice
 				(call $str.mkdata (global.get $gLF)))
-			  (call $i32list.push (local.get $tokList)(local.get $slice))
+			  ;;(call $i32list.push (local.get $tokList)(local.get $slice))
+			  (call $addToken (local.get $state)(local.get $slice))
 			  (br $bLoop)))
 		  (if (i32.eq (local.get $byte) (global.get $LPAREN))
 			(then
@@ -1564,16 +1571,18 @@
 ;;			  (call $addToken (local.get $tokenState))))
 			  (br $bLoop))))))
 	;;(call $i32list.push (local.get $tokList) (call $str.mkdata (global.get $gAAA)))
-	(return (local.get $tokList))
+	;;(return (local.get $tokList))
+	(return (local.get $state))
   )
   (func $main (export "_start")
 	(local $buffer i32)
+	(local $wat i32)
     (call $test)
 	(local.set $buffer (call $readFile))
 	(call $strdata.printwsp (global.get $gBytesRead))
 	(call $i32.printwlf (call $str.getByteLen (local.get $buffer)))
-	(call $strdata.printwlf (global.get $gTokens:))
-	(call $i32strlist.print (call $wam2wat (local.get $buffer)))
+	;;(call $strdata.printwlf (global.get $gTokens:))
+	(local.set $wat (call $wam2wat (local.get $buffer)))
 	(call $showMemUsed)
 	;;(call $strdata.printwsp (global.get $gZZZ))
 	;;(call $strdata.printwlf (global.get $gZZZ))
