@@ -25,7 +25,7 @@
 	$i32.compare			;;2
 	$i32.str				;;3
 
-	$i32list.sets.test		;;1 + 3
+	$i32list.sets.test		;;1 + 3 = $firstTestOffset
 	$str.catByte.test		;;2
 	$str.catStr.test		;;3
 	$str.cat2Strings.test	;;4
@@ -89,6 +89,7 @@
 	(global.set $nextFreeMem (i32.add (global.get $nextFreeMem)(local.get $size4)))
   )
   (func $error (result i32)
+	;; throw a divide-by-zero exception!
 	(i32.div_u (i32.const 1)(i32.const 0))
   )
   ;; Still doesn't recognize negatives
@@ -1520,15 +1521,16 @@
 	(local.set $token (call $str.mk))  ;; current token built up here
 	(local.set $bPos (i32.const -1))  ;; gets incr before use
 	(loop $bLoop
-	  ;;(call $byte.print (i32.const 76))  ;; L
+	  (call $byte.print (i32.const 76))  ;; L
 	  (local.set $bPos (i32.add (local.get $bPos)(i32.const 1)))
 	  (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
 	    (then
 		  ;;(call $byte.print(i32.const 112));; p
 		  ;;(call $i32.printwlf(local.get $bPos))
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
-		  ;;(call $C.print (i32.const 66))			;; B
-	      ;;(call $C.print (local.get $byte))
+		  (call $byte.print (i32.const 66))			;; B
+	      (call $byte.print (local.get $byte))
+		  (call $byte.print (i32.const 98))			;; b
 		  (if (i32.eq (local.get $byte) (global.get $LF))
 			(then
 			  (local.set $slice
@@ -1555,16 +1557,31 @@
 			  (br $bLoop)
 			)
 		  )
-		  (if (i32.eq (global.get $gSEMI) (local.get $byte))
-			(if (i32.eqz  ;; i.e. Not
-				(i32.and
+		  ;;(call $byte.print (i32.const 91)) ;; '['
+		  (if (i32.eq (i32.const 59) (local.get $byte))  ;; 59=semicolon
+			(then
+		      (call $strdata.printwlf(global.get $g$match))
+			  (if
+				(i32.eqz  ;; i.e. Not
+				  (i32.and
 				  ;;(local.get $inLineComment)
-				  (call $map.get (local.get $state)(global.get $ginsideLineCom))
-				  (i32.eq
-					(global.get $gSEMI)
-					(call $str.getLastByte (local.get $token)))))
-;;			  (call $addToken (local.get $tokenState))))
-			  (br $bLoop))))))
+					(call $byte.print (i32.const 123))(call $byte.print (i32.const 10)) ;; '{'
+					(call $map.get (local.get $state)(global.get $ginsideLineCom))
+					(i32.eq
+					  (global.get $gSEMI)
+					  (call $str.getLastByte (local.get $token)))
+				  )
+				)
+				(then
+				  (local.set $slice
+					(call $str.mkdata (global.get $gSEMI)))
+				  (call $addToken (local.get $state)(local.get $slice))
+				)
+			  )
+			)
+		  )
+		  (br $bLoop)
+		  )))
 	(return (local.get $state))
   )
   (func $main (export "_start")
