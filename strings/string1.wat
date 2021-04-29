@@ -173,6 +173,10 @@
 	)
 	drop
   )
+  (func $byte.printwlf (param $B i32)
+	(call $byte.print (local.get $B))
+	(call $byte.print (i32.const 10))
+  )
   (func $C.print (param $C i32)
   ;; Print a utf-8 character
     (local $bp i32)
@@ -828,6 +832,18 @@
 		(return (i32.const 1))))  ;; Failure
 	;; Test UTF-8 compliance a bit
 	(return (i32.const 0))
+  )
+  (func $str.drop(param $strPtr i32)
+	(if (i32.eqz (call $str.getByteLen (local.get $strPtr)))
+	  (return))
+	(call $str.setByteLen
+	  (local.get $strPtr)
+	  (i32.sub
+		(call $str.getByteLen (local.get $strPtr))
+		(i32.const 1)))
+  )
+  (func $str.clear (param $strPtr i32)
+	(call $str.setByteLen (local.get $strPtr)(i32.const 0))
   )
   (func $str.LcatChar (param $strPtr i32)(param $Lchar i32)
 	;; Add a character to beginning of a string
@@ -1486,30 +1502,35 @@
 		  (br $tokLoop))))
 	(local.get $toks) ;; something to return for now
   )
-  (func $addToken (param $state i32)(param $slice i32)
+  (func $addToken (param $state i32)(param $token i32)
 	(local $tokstack i32)
+	(call $strdata.print(global.get $gaddToken:))
+	(call $str.print (local.get $token))
+	(call $byte.printwlf (i32.const 39)) ;; single quote
 	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
 	;;(call $byte.print(i32.const 39))(call $str.print(local.get $slice))  ;; quoted string
 	;;(call $byte.print(i32.const 39))(call $byte.print (i32.const 10))
 	(if
-	  (i32.eqz
-		;;(call $map.get (local.get $state)(global.get $gtptr)))
-		(call $str.getByteLen(local.get $slice)))
-	  (then return))
+	  (i32.eqz  ;; ignore empty slices
+		(call $str.getByteLen(local.get $token)))
+	  (return))
 	(local.set $tokstack (call $map.get (local.get $state)(global.get $gtokstack)))
 	;;(call $i32.printwlf(call $i32list.getCurLen (local.get $tokstack)))
-	(call $i32list.push (local.get $tokstack)(local.get $slice))
+	(call $i32list.push (local.get $tokstack)(local.get $token))
+	(call $str.clear (local.get $token))  ;; clear the token string
   )
   (func $wamTokenize (param $strPtr i32)(result i32)
     (local $token i32)
-	(local $slice i32)
+	;;(local $slice i32)
 	(local $tokenStart i32)
 	(local $bPos i32)
 	(local $buffLen i32)
 	(local $byte i32)
 	(local $state i32)
+	(local $semi i32)
+	(local.set $semi (i32.const 59))
 	(local.set $state (call $i32Map.mk)) ;; memory offsets instead of strings for keys
 	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
@@ -1533,55 +1554,56 @@
 		  (call $byte.print (i32.const 98))			;; b
 		  (if (i32.eq (local.get $byte) (global.get $LF))
 			(then
-			  (local.set $slice
-				(call $str.mkdata (global.get $gLF)))
-			  (call $addToken (local.get $state)(local.get $slice))
+			  ;;(local.set $slice
+				;;(call $str.mkdata (global.get $gLF)))
+			  (call $addToken (local.get $state)(local.get $token))
 			  (br $bLoop)))
 		  (if (i32.eq (local.get $byte) (global.get $LPAREN))
 			(then
-			  (local.set $slice
-				(call $str.mkslice
-				  (local.get $strPtr)
-				  (local.get $bPos)
-				  (i32.const 1)))
-			  (call $addToken (local.get $state)(local.get $slice))
+			  ;; (local.set $slice
+				;; (call $str.mkslice
+				  ;; (local.get $strPtr)
+				  ;; (local.get $bPos)
+				  ;; (i32.const 1)))
+			  (call $str.catByte (local.get $token)(local.get $byte))
+			  (call $addToken (local.get $state)(local.get $token))
 			  (br $bLoop)))
 		  (if (i32.eq (local.get $byte) (global.get $RPAREN))
 			(then
-			  (local.set $slice
-				(call $str.mkslice
-				  (local.get $strPtr)
-				  (local.get $bPos)
-				  (i32.const 1)))
-			  (call $addToken (local.get $state)(local.get $slice))
+			  (call $str.catByte (local.get $token)(local.get $byte))
+			  (call $addToken (local.get $state)(local.get $token))
 			  (br $bLoop)
 			)
 		  )
 		  ;;(call $byte.print (i32.const 91)) ;; '['
-		  (if (i32.eq (i32.const 59) (local.get $byte))  ;; 59=semicolon
+		  (if (i32.eq (local.get $semi) (local.get $byte))
 			(then
 		      (call $strdata.printwlf(global.get $g$match))
-			  (if
-				(i32.eqz  ;; i.e. Not
-				  (i32.and
-				  ;;(local.get $inLineComment)
-					(call $byte.print (i32.const 123))(call $byte.print (i32.const 10)) ;; '{'
+			  (if 				;; (!insideLineComment && token[tprtr-1]==SEMI
+				(i32.and 
+				  (i32.eqz
 					(call $map.get (local.get $state)(global.get $ginsideLineCom))
-					(i32.eq
-					  (global.get $gSEMI)
-					  (call $str.getLastByte (local.get $token)))
+				  )
+				  (i32.eq 
+					(call $str.getLastByte (local.get $token))
+					(local.get $semi)
 				  )
 				)
 				(then
-				  (local.set $slice
-					(call $str.mkdata (global.get $gSEMI)))
-				  (call $addToken (local.get $state)(local.get $slice))
+				  (call $str.drop(local.get $token));; drop the previous SEMI
+				  (call $addToken(local.get $state)(local.get $token))
+				  (call $str.catByte(local.get $token)(local.get $semi))   ;; push SEMI back on
+				  (call $str.catByte (local.get $token)(local.get $byte))
 				)
 			  )
 			)
+			(br $bLoop)
 		  )
+		  (call $str.catByte (local.get $token)(local.get $byte))
 		  (br $bLoop)
-		  )))
+		)
+	  )
+	)
 	(return (local.get $state))
   )
   (func $main (export "_start")
@@ -1656,5 +1678,6 @@
   (data (i32.const 3530) "insideLineCom\00")(global $ginsideLineCom i32 (i32.const 3530))
   (data (i32.const 3545) "tptr\00")			(global $gtptr i32 (i32.const 3545))
   (data (i32.const 3555) "tokstack\00")		(global $gtokstack i32 (i32.const 3555))
+  (data (i32.const 3570) " addToken '\00")	(global $gaddToken: i32 (i32.const 3570))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
