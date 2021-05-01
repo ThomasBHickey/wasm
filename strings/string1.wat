@@ -18,7 +18,7 @@
   (type $keyCompSig (func (param i32)(param i32)(result i32)))
   (type $keyToStringSig (func (param i32)(result i32)))
 
-  (table 23 funcref)  ;; must be >= to length of elem
+  (table 24 funcref)  ;; must be >= to length of elem
   (elem (i32.const 0)
     $str.compare			;;0
 	$str.str				;;1
@@ -44,8 +44,9 @@
 	$str.getLastByte.test	;;17
 	$map.test				;;18
     $i32list.mk.test		;;19
+	$str.drop.test			;;20
   )
-  (global $numTests i32 (i32.const 19)) ;; should match # tests in table
+  (global $numTests i32 (i32.const 20)) ;; should match # tests in table
   (global $firstTestOffset 	i32 (i32.const 4))
   (global $strCompareOffset i32 (i32.const 0))
   (global $strToStrOffset	i32 (i32.const 1))
@@ -842,6 +843,21 @@
 		(call $str.getByteLen (local.get $strPtr))
 		(i32.const 1)))
   )
+  (func $str.drop.test (param $testNum i32)(result i32)
+    (local $strptr i32)
+	(local.set $strptr (call $str.mk))
+	(call $str.catByte (local.get $strptr)(i32.const 65))
+	(call $str.catByte (local.get $strptr)(i32.const 66))
+	(if (i32.ne (call $str.getLastByte(local.get $strptr))(i32.const 66))
+	  (return (i32.const 1)))
+	(call $str.drop(local.get $strptr))
+	(if (i32.ne (call $str.getLastByte(local.get $strptr))(i32.const 65))
+	  (return (i32.const 2)))
+	(call $str.drop (local.get $strptr))
+	(if (i32.eqz (call $str.getByteLen (local.get $strptr)))
+	  (return (i32.const 0)))  ;; OK
+	(return (i32.const 3))	
+  )
   (func $str.clear (param $strPtr i32)
 	(call $str.setByteLen (local.get $strPtr)(i32.const 0))
   )
@@ -1515,7 +1531,9 @@
 	(if
 	  (i32.eqz  ;; ignore empty slices
 		(call $str.getByteLen(local.get $token)))
-	  (return))
+	  (then
+		(call $strdata.printwlf (global.get $gskipping))
+		(return)))
 	(local.set $tokstack (call $map.get (local.get $state)(global.get $gtokstack)))
 	;;(call $i32.printwlf(call $i32list.getCurLen (local.get $tokstack)))
 	(call $i32list.push (local.get $tokstack)(local.get $token))
@@ -1529,8 +1547,6 @@
 	(local $buffLen i32)
 	(local $byte i32)
 	(local $state i32)
-	(local $semi i32)
-	(local.set $semi (i32.const 59))
 	(local.set $state (call $i32Map.mk)) ;; memory offsets instead of strings for keys
 	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
@@ -1546,25 +1562,19 @@
 	  (local.set $bPos (i32.add (local.get $bPos)(i32.const 1)))
 	  (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
 	    (then
-		  ;;(call $byte.print(i32.const 112));; p
-		  ;;(call $i32.printwlf(local.get $bPos))
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
 		  (call $byte.print (i32.const 66))			;; B
 	      (call $byte.print (local.get $byte))
+		  ;;(call $i32.print (local.get $byte))
 		  (call $byte.print (i32.const 98))			;; b
 		  (if (i32.eq (local.get $byte) (global.get $LF))
 			(then
-			  ;;(local.set $slice
-				;;(call $str.mkdata (global.get $gLF)))
-			  (call $addToken (local.get $state)(local.get $token))
-			  (br $bLoop)))
+			  (call $strdata.printwlf (global.get $gLF))
+			  (if (call $map.get (local.get $state)(global.get $ginsideLineCom))
+				(call $addToken (local.get $state)(local.get $token))))
+			(br $bLoop))
 		  (if (i32.eq (local.get $byte) (global.get $LPAREN))
 			(then
-			  ;; (local.set $slice
-				;; (call $str.mkslice
-				  ;; (local.get $strPtr)
-				  ;; (local.get $bPos)
-				  ;; (i32.const 1)))
 			  (call $str.catByte (local.get $token)(local.get $byte))
 			  (call $addToken (local.get $state)(local.get $token))
 			  (br $bLoop)))
@@ -1572,13 +1582,15 @@
 			(then
 			  (call $str.catByte (local.get $token)(local.get $byte))
 			  (call $addToken (local.get $state)(local.get $token))
-			  (br $bLoop)
-			)
-		  )
-		  ;;(call $byte.print (i32.const 91)) ;; '['
-		  (if (i32.eq (local.get $semi) (local.get $byte))
+			  (br $bLoop)))
+		  (call $strdata.printwlf(global.get $ginsideLineCom))
+		  (call $i32.printwlf (local.get $byte))
+		  (if (i32.eq (local.get $byte) (global.get $SEMI))
+			(call $byte.print (i32.const 33)))
+		  (if (i32.eq (local.get $byte) (global.get $SEMI))
 			(then
 		      (call $strdata.printwlf(global.get $g$match))
+			  
 			  (if 				;; (!insideLineComment && token[tprtr-1]==SEMI
 				(i32.and 
 				  (i32.eqz
@@ -1586,18 +1598,21 @@
 				  )
 				  (i32.eq 
 					(call $str.getLastByte (local.get $token))
-					(local.get $semi)
+					(global.get $SEMI)
 				  )
 				)
 				(then
+				  ;;(call $str.printwlf (local.get $token))
 				  (call $str.drop(local.get $token));; drop the previous SEMI
+				  ;;(call $str.printwlf (local.get $token))
 				  (call $addToken(local.get $state)(local.get $token))
-				  (call $str.catByte(local.get $token)(local.get $semi))   ;; push SEMI back on
+				  (call $str.catByte(local.get $token)(global.get $SEMI))   ;; push SEMI back on
 				  (call $str.catByte (local.get $token)(local.get $byte))
 				)
 			  )
+			  (call $map.set (local.get $state)(global.get $ginsideLineCom) (i32.const 1))
+			  (br $bLoop)
 			)
-			(br $bLoop)
 		  )
 		  (call $str.catByte (local.get $token)(local.get $byte))
 		  (br $bLoop)
@@ -1631,6 +1646,7 @@
   (global $ASTERISK i32 (i32.const 0x2A))		;; *
   (global $FULLSTOP i32 (i32.const 0x2E))		;; .
   (global $CIRCUMFLEX i32 (i32.const 0x5E))		;; ^
+  (global $SEMI	i32 (i32.const 0x3B))			;; ;
   (global $UTF8-2 i32 (i32.const 0xC2A2))		;; U+00A2	Cent sign
   (global $UTF8-3 i32 (i32.const 0xE0A4B9))		;; U+0939	Devanagari Letter Ha
   (global $UTF8-4 i32 (i32.const 0xF0908D88))	;; U+10348	Gothic Letter Hwair
@@ -1679,5 +1695,6 @@
   (data (i32.const 3545) "tptr\00")			(global $gtptr i32 (i32.const 3545))
   (data (i32.const 3555) "tokstack\00")		(global $gtokstack i32 (i32.const 3555))
   (data (i32.const 3570) " addToken '\00")	(global $gaddToken: i32 (i32.const 3570))
+  (data (i32.const 3585) "skipping\00")		(global $gskipping i32 (i32.const 3585))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
