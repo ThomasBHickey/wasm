@@ -1522,7 +1522,7 @@
   )
   (func $addToken (param $state i32)(param $token i32)
 	(local $tokstack i32)
-	(local $tokcopy i32)
+	(local $tokcopy i32)  ;; holds copy of to-be-cleared token
 	(local.set $tokcopy (call $str.mk))
 	(call $strdata.print(global.get $gaddToken:))
 	(call $str.print (local.get $token))
@@ -1530,8 +1530,6 @@
 	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
-	;;(call $byte.print(i32.const 39))(call $str.print(local.get $slice))  ;; quoted string
-	;;(call $byte.print(i32.const 39))(call $byte.print (i32.const 10))
 	(if
 	  (i32.eqz  ;; ignore empty slices
 		(call $str.getByteLen(local.get $token)))
@@ -1539,8 +1537,7 @@
 		(call $strdata.printwlf (global.get $gskipping))
 		(return)))
 	(local.set $tokstack (call $map.get (local.get $state)(global.get $gtokstack)))
-	;;(call $i32.printwlf(call $i32list.getCurLen (local.get $tokstack)))
-	;; Need to copy token string before we clear it!
+	;; Copy token string before we clear it
 	(call $str.catStr (local.get $tokcopy)(local.get $token))
 	(call $i32list.push (local.get $tokstack)(local.get $tokcopy))
 	(call $str.clear (local.get $token))  ;; clear the token string
@@ -1564,18 +1561,12 @@
 	(local.set $token (call $str.mk))  ;; current token built up here
 	(local.set $bPos (i32.const -1))  ;; gets incr before use
 	(loop $bLoop
-	  ;;(call $byte.print (i32.const 76))  ;; L
 	  (local.set $bPos (i32.add (local.get $bPos)(i32.const 1)))
 	  (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
 	    (then
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
-		  ;;(call $byte.print (i32.const 66))			;; B
-	      ;;(call $byte.print (local.get $byte))
-		  ;;(call $i32.print (local.get $byte))
-		  ;;(call $byte.print (i32.const 98))			;; b
 		  (if (i32.eq (local.get $byte) (global.get $LF))
 			(then
-			  ;;(call $strdata.printwlf (global.get $gLF))
 			  (if (call $map.get (local.get $state)(global.get $ginsideLineCom))
 				(call $addToken (local.get $state)(local.get $token)))
 			  (br $bLoop)))
@@ -1591,7 +1582,6 @@
 			  (br $bLoop)))
 		  (if (i32.eq (local.get $byte) (global.get $SEMI))
 			(then
-		      ;;(call $strdata.printwlf(global.get $g$match))  
 			  (if 				;; (!insideLineComment && token[tprtr-1]==SEMI
 				(i32.and 
 				  (i32.eqz
@@ -1600,23 +1590,14 @@
 					(call $str.getLastByte (local.get $token))
 					(global.get $SEMI)))
 				(then
-				  ;;(call $str.printwlf (local.get $token))
 				  (call $str.drop(local.get $token));; drop the previous SEMI
-				  ;;(call $str.printwlf (local.get $token))
 				  (call $addToken(local.get $state)(local.get $token))
-				  (call $str.catByte(local.get $token)(global.get $SEMI))   ;; push SEMI back on
-				)
-			  )
+				  (call $str.catByte(local.get $token)(global.get $SEMI))))  ;; push SEMI back on
 			  (call $map.set (local.get $state)(global.get $ginsideLineCom) (i32.const 1))
 			  (call $str.catByte(local.get $token)(local.get $byte))   ;; second SEMI
-			  (br $bLoop)
-			)
-		  )
+			  (br $bLoop)))
 		  (call $str.catByte (local.get $token)(local.get $byte))
-		  (br $bLoop)
-		)
-	  )
-	)
+		  (br $bLoop))))
 	(return (local.get $state))
   )
   (func $main (export "_start")
