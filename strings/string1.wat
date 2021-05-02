@@ -1570,6 +1570,25 @@
 			  (if (call $map.get (local.get $state)(global.get $ginsideLineCom))
 				(call $addToken (local.get $state)(local.get $token)))
 			  (br $bLoop)))
+		  (if (i32.or (i32.eq (local.get $byte)(global.get $TAB))
+					  (i32.eq (local.get $byte)(global.get $SP)))
+			(then
+			  (if 
+				(i32.eqz
+				  (i32.or
+					(i32.or (call $map.get (local.get $state)(global.get $ginsideWhiteSp))
+							(call $map.get (local.get $state)(global.get $ginsideString)))
+					(call $map.get (local.get $state)(global.get $ginsideLineCom))
+				  )
+				)
+				(then
+				  (call $addToken (local.get $state) (local.get $token))
+				  (call $map.set (local.get $state) (global.get $ginsideWhiteSp)(i32.const 1))
+				)
+			  )
+			  (call $str.catByte(local.get $token)(local.get $byte))
+			  (br $bLoop)
+		  ))
 		  (if (i32.eq (local.get $byte) (global.get $LPAREN))
 			(then
 			  (call $str.catByte (local.get $token)(local.get $byte))
@@ -1616,8 +1635,10 @@
   (global $testing i32 (i32.const 42))
   (global $maxNeg i32  (i32.const 0x80000000))  ;; (-2147483648)
   (global $zero   i32 (i32.const 48))			;; '0'
+  (global $TAB	  i32 (i32.const 0x09))			;; U+0009	Tab
   (global $LF	  i32 (i32.const 0x0A))			;; U+000A   Line Feed
   (global $CR	  i32 (i32.const 0x0D))			;; U+000D   Carriage Return
+  (global $SP	  i32 (i32.const 0x20))			;; U+0020	Space
   (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024	Dollar sign
   (global $DOLLARSIGN i32 (i32.const 0x24))  	;; U+0024	Dollar sign
   (global $LPAREN i32 (i32.const 0x28))			;; U+0028   Left Parenthesis
