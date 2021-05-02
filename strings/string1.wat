@@ -1506,6 +1506,8 @@
 	(local.set $state (call $wamTokenize (local.get $strPtr)))
 	(local.set $toks (call $map.get(local.get $state)(global.get $gtokstack)))
 	(local.set $numToks (call $i32list.getCurLen (local.get $toks)))
+	(call $strdata.print (global.get $gntoksfound))
+	(call $i32.printwlf (local.get $numToks))
 	(local.set $tokPos (i32.const 0))
 	(loop $tokLoop
 	  (if (i32.lt_u (local.get $tokPos)(local.get $numToks))
@@ -1520,6 +1522,8 @@
   )
   (func $addToken (param $state i32)(param $token i32)
 	(local $tokstack i32)
+	(local $tokcopy i32)
+	(local.set $tokcopy (call $str.mk))
 	(call $strdata.print(global.get $gaddToken:))
 	(call $str.print (local.get $token))
 	(call $byte.printwlf (i32.const 39)) ;; single quote
@@ -1536,7 +1540,9 @@
 		(return)))
 	(local.set $tokstack (call $map.get (local.get $state)(global.get $gtokstack)))
 	;;(call $i32.printwlf(call $i32list.getCurLen (local.get $tokstack)))
-	(call $i32list.push (local.get $tokstack)(local.get $token))
+	;; Need to copy token string before we clear it!
+	(call $str.catStr (local.get $tokcopy)(local.get $token))
+	(call $i32list.push (local.get $tokstack)(local.get $tokcopy))
 	(call $str.clear (local.get $token))  ;; clear the token string
   )
   (func $wamTokenize (param $strPtr i32)(result i32)
@@ -1558,18 +1564,18 @@
 	(local.set $token (call $str.mk))  ;; current token built up here
 	(local.set $bPos (i32.const -1))  ;; gets incr before use
 	(loop $bLoop
-	  (call $byte.print (i32.const 76))  ;; L
+	  ;;(call $byte.print (i32.const 76))  ;; L
 	  (local.set $bPos (i32.add (local.get $bPos)(i32.const 1)))
 	  (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
 	    (then
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
-		  (call $byte.print (i32.const 66))			;; B
-	      (call $byte.print (local.get $byte))
+		  ;;(call $byte.print (i32.const 66))			;; B
+	      ;;(call $byte.print (local.get $byte))
 		  ;;(call $i32.print (local.get $byte))
-		  (call $byte.print (i32.const 98))			;; b
+		  ;;(call $byte.print (i32.const 98))			;; b
 		  (if (i32.eq (local.get $byte) (global.get $LF))
 			(then
-			  (call $strdata.printwlf (global.get $gLF))
+			  ;;(call $strdata.printwlf (global.get $gLF))
 			  (if (call $map.get (local.get $state)(global.get $ginsideLineCom))
 				(call $addToken (local.get $state)(local.get $token)))
 			  (br $bLoop)))
@@ -1583,14 +1589,9 @@
 			  (call $str.catByte (local.get $token)(local.get $byte))
 			  (call $addToken (local.get $state)(local.get $token))
 			  (br $bLoop)))
-		  (call $strdata.printwlf(global.get $g$matchStar))
-		  (call $i32.printwlf (local.get $byte))
-		  (if (i32.eq (local.get $byte) (global.get $SEMI))
-			(call $byte.print (i32.const 33)))
 		  (if (i32.eq (local.get $byte) (global.get $SEMI))
 			(then
-		      (call $strdata.printwlf(global.get $g$match))
-			  
+		      ;;(call $strdata.printwlf(global.get $g$match))  
 			  (if 				;; (!insideLineComment && token[tprtr-1]==SEMI
 				(i32.and 
 				  (i32.eqz
@@ -1604,10 +1605,10 @@
 				  ;;(call $str.printwlf (local.get $token))
 				  (call $addToken(local.get $state)(local.get $token))
 				  (call $str.catByte(local.get $token)(global.get $SEMI))   ;; push SEMI back on
-				  (call $str.catByte (local.get $token)(local.get $byte))
 				)
 			  )
 			  (call $map.set (local.get $state)(global.get $ginsideLineCom) (i32.const 1))
+			  (call $str.catByte(local.get $token)(local.get $byte))   ;; second SEMI
 			  (br $bLoop)
 			)
 		  )
@@ -1691,7 +1692,8 @@
   (data (i32.const 3530) "insideLineCom\00")(global $ginsideLineCom i32 (i32.const 3530))
   (data (i32.const 3545) "tptr\00")			(global $gtptr i32 (i32.const 3545))
   (data (i32.const 3555) "tokstack\00")		(global $gtokstack i32 (i32.const 3555))
-  (data (i32.const 3570) " addToken '\00")	(global $gaddToken: i32 (i32.const 3570))
+  (data (i32.const 3570) " addToken: '\00")	(global $gaddToken: i32 (i32.const 3570))
   (data (i32.const 3585) "skipping\00")		(global $gskipping i32 (i32.const 3585))
+  (data (i32.const 3595) "#toks found:\00") (global $gntoksfound i32 (i32.const 3595))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
