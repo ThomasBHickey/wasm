@@ -1571,8 +1571,8 @@
 			(then
 			  (call $strdata.printwlf (global.get $gLF))
 			  (if (call $map.get (local.get $state)(global.get $ginsideLineCom))
-				(call $addToken (local.get $state)(local.get $token))))
-			(br $bLoop))
+				(call $addToken (local.get $state)(local.get $token)))
+			  (br $bLoop)))
 		  (if (i32.eq (local.get $byte) (global.get $LPAREN))
 			(then
 			  (call $str.catByte (local.get $token)(local.get $byte))
@@ -1583,7 +1583,7 @@
 			  (call $str.catByte (local.get $token)(local.get $byte))
 			  (call $addToken (local.get $state)(local.get $token))
 			  (br $bLoop)))
-		  (call $strdata.printwlf(global.get $ginsideLineCom))
+		  (call $strdata.printwlf(global.get $g$matchStar))
 		  (call $i32.printwlf (local.get $byte))
 		  (if (i32.eq (local.get $byte) (global.get $SEMI))
 			(call $byte.print (i32.const 33)))
@@ -1594,13 +1594,10 @@
 			  (if 				;; (!insideLineComment && token[tprtr-1]==SEMI
 				(i32.and 
 				  (i32.eqz
-					(call $map.get (local.get $state)(global.get $ginsideLineCom))
-				  )
+					(call $map.get (local.get $state)(global.get $ginsideLineCom)))
 				  (i32.eq 
 					(call $str.getLastByte (local.get $token))
-					(global.get $SEMI)
-				  )
-				)
+					(global.get $SEMI)))
 				(then
 				  ;;(call $str.printwlf (local.get $token))
 				  (call $str.drop(local.get $token));; drop the previous SEMI
