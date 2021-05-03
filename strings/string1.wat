@@ -1567,11 +1567,13 @@
 	  (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
 	    (then
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
+		  ;; LINEFEED
 		  (if (i32.eq (local.get $byte) (global.get $LF))
 			(then
 			  (if (call $map.get (local.get $state)(global.get $ginsideLineCom))
 				(call $addToken (local.get $state)(local.get $token)))
 			  (br $bLoop)))
+		  ;; TAB/SPACE
 		  (if (i32.or (i32.eq (local.get $byte)(global.get $TAB))
 					  (i32.eq (local.get $byte)(global.get $SP)))
 			(then
@@ -1591,16 +1593,25 @@
 			  (call $str.catByte(local.get $token)(local.get $byte))
 			  (br $bLoop)
 		  ))
+		  ;; OPEN PAREN
 		  (if (i32.eq (local.get $byte) (global.get $LPAREN))
 			(then
+			  (if
+				(i32.and
+				  (i32.eqz (call $map.get (local.get $state)(global.get $ginsideString)))
+				  (i32.eqz (call $map.get (local.get $state)(global.get $ginsideLineCom))))
+				(call $addToken(local.get $state)(local.get $token))
+				(br $bLoop))
 			  (call $str.catByte (local.get $token)(local.get $byte))
 			  (call $addToken (local.get $state)(local.get $token))
 			  (br $bLoop)))
+		  ;; CLOSE PAREN
 		  (if (i32.eq (local.get $byte) (global.get $RPAREN))
 			(then
 			  (call $str.catByte (local.get $token)(local.get $byte))
 			  (call $addToken (local.get $state)(local.get $token))
 			  (br $bLoop)))
+		  ;; SEMI
 		  (if (i32.eq (local.get $byte) (global.get $SEMI))
 			(then
 			  (if 				;; (!insideLineComment && token[tprtr-1]==SEMI
@@ -1617,6 +1628,7 @@
 			  (call $map.set (local.get $state)(global.get $ginsideLineCom) (i32.const 1))
 			  (call $str.catByte(local.get $token)(local.get $byte))   ;; second SEMI
 			  (br $bLoop)))
+		  ;; DOUBLE QUOTE
 		  (if (i32.eq (global.get $DBLQUOTE)(local.get $byte))
 		    (then
 			  (if
@@ -1644,6 +1656,14 @@
 			  (br $bLoop)
 			)
 		  )
+		  ;; DEFAULT
+		  (if 
+			(i32.and
+			  (i32.eqz (call $map.get (local.get $state)(global.get $ginsideString)))
+			  (i32.and 
+				(i32.eqz (call $map.get (local.get $state)(global.get $ginsideLineCom)))
+				(call $map.get (local.get $state)(global.get $ginsideWhiteSp))))
+			(call $addToken(local.get $state)(local.get $token)))
 		  (call $str.catByte (local.get $token)(local.get $byte))
 		  (br $bLoop))))
 	(return (local.get $state))
