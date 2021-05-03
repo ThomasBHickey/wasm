@@ -1520,6 +1520,8 @@
 		  (br $tokLoop))))
 	(local.get $toks) ;; something to return for now
   )
+  ;; Tokenization closely follows
+  ;; https://github.com/emilbayes/wat-tokenizer/blob/master/index.js
   (func $addToken (param $state i32)(param $token i32)
 	(local $tokstack i32)
 	(local $tokcopy i32)  ;; holds copy of to-be-cleared token
@@ -1615,6 +1617,33 @@
 			  (call $map.set (local.get $state)(global.get $ginsideLineCom) (i32.const 1))
 			  (call $str.catByte(local.get $token)(local.get $byte))   ;; second SEMI
 			  (br $bLoop)))
+		  (if (i32.eq (global.get $DBLQUOTE)(local.get $byte))
+		    (then
+			  (if
+				(i32.and
+				  (i32.eqz
+					(call $map.get (local.get $state)(global.get $ginsideString)))
+				  (i32.eqz
+					(call $map.get (local.get $state)(global.get $ginsideLineCom))))
+				(then
+				  (call $addToken (local.get $state)(local.get $token))
+				  (call $map.set (local.get $state)(global.get $ginsideString)(i32.const 1))
+				  (call $str.catByte (local.get $token)(local.get $byte))
+				  (br $bLoop)))
+			  (if
+				(i32.and
+				  (call $map.get (local.get $state)(global.get $ginsideString))
+				  (i32.ne
+					(call $str.getLastByte (local.get $token))
+					(global.get $BACKSLASH)))
+				(then
+				  (call $str.catByte (local.get $token)(local.get $byte))
+				  (call $addToken (local.get $state)(local.get $token))
+				  (br $bLoop)))
+			  (call $str.catByte (local.get $token)(local.get $byte))
+			  (br $bLoop)
+			)
+		  )
 		  (call $str.catByte (local.get $token)(local.get $byte))
 		  (br $bLoop))))
 	(return (local.get $state))
@@ -1639,12 +1668,14 @@
   (global $LF	  i32 (i32.const 0x0A))			;; U+000A   Line Feed
   (global $CR	  i32 (i32.const 0x0D))			;; U+000D   Carriage Return
   (global $SP	  i32 (i32.const 0x20))			;; U+0020	Space
-  (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024	Dollar sign
-  (global $DOLLARSIGN i32 (i32.const 0x24))  	;; U+0024	Dollar sign
-  (global $LPAREN i32 (i32.const 0x28))			;; U+0028   Left Parenthesis
-  (global $RPAREN i32 (i32.const 0x29))			;; U+0029   Right Parenthesis
+  (global $DBLQUOTE i32 (i32.const 0x22))		;; U+0022	Double Quote "
+  (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024	Dollar sign $
+  (global $DOLLARSIGN i32 (i32.const 0x24))  	;; U+0024	Dollar sign $
+  (global $LPAREN i32 (i32.const 0x28))			;; U+0028   Left Parenthesis (
+  (global $RPAREN i32 (i32.const 0x29))			;; U+0029   Right Parenthesis )
   (global $ASTERISK i32 (i32.const 0x2A))		;; *
   (global $FULLSTOP i32 (i32.const 0x2E))		;; .
+  (global $BACKSLASH i32 (i32.const 0x5C))		;; U+005C	Back Slash
   (global $CIRCUMFLEX i32 (i32.const 0x5E))		;; ^
   (global $SEMI	i32 (i32.const 0x3B))			;; ;
   (global $UTF8-2 i32 (i32.const 0xC2A2))		;; U+00A2	Cent sign

@@ -1,0 +1,12 @@
+(module
+  (memory 1)
+  (export "memory" (memory 0))
+  (func $t1 (result i32)
+	(i32.div_u (i32.const 1)(i32.const 1))
+  )
+  (export "t1" (func $t1))
+  ;; (func $main (export "_start")
+	;; (call $t1)
+	;; (drop)
+  ;; )
+)
