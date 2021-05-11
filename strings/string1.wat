@@ -93,6 +93,10 @@
 	;; throw a divide-by-zero exception!
 	(i32.div_u (i32.const 1)(i32.const 0))
   )
+  (func $error2
+    (local $t i32)
+    (local.set $t (i32.div_u (i32.const 1)(i32.const 0)))
+  )	
   ;; Still doesn't recognize negatives
   (func $i32.print (param $N i32)
 	(if (i32.ge_u (local.get $N)(i32.const 10))
@@ -1504,7 +1508,7 @@
 	(local $numToks i32)
 	(local $tokPos i32)
 	(local.set $state (call $wamTokenize (local.get $strPtr)))
-	(local.set $toks (call $map.get(local.get $state)(global.get $gtokstack)))
+	(local.set $toks (call $map.get(local.get $state)(global.get $gstack)))
 	(local.set $numToks (call $i32list.getCurLen (local.get $toks)))
 	(call $strdata.print (global.get $gntoksfound))
 	(call $i32.printwlf (local.get $numToks))
@@ -1523,7 +1527,9 @@
   ;; Tokenization closely follows
   ;; https://github.com/emilbayes/wat-tokenizer/blob/master/index.js
   (func $addToken (param $state i32)(param $token i32)
-	(local $tokstack i32)
+	(local $stack i32)
+	(local $top i32)
+	(local $node i32)
 	(local $tokcopy i32)  ;; holds copy of to-be-cleared token
 	(local.set $tokcopy (call $str.mk))
 	(call $strdata.print(global.get $gaddToken:))
@@ -1538,11 +1544,27 @@
 	  (then
 		(call $strdata.printwlf (global.get $gskipping))
 		(return)))
-	(local.set $tokstack (call $map.get (local.get $state)(global.get $gtokstack)))
+	(local.set $stack (call $map.get (local.get $state)(global.get $gstack)))
 	;; Copy token string before we clear it
 	(call $str.catStr (local.get $tokcopy)(local.get $token))
-	(call $i32list.push (local.get $tokstack)(local.get $tokcopy))
+	(call $i32list.push (local.get $stack)(local.get $tokcopy))
 	(call $str.clear (local.get $token))  ;; clear the token string
+  )
+  (func $pushList (param $state i32)
+    (local $newList i32)
+	(call $map.set (local.get $state)(global.get $glast)
+	  (call $map.get (local.get $state)(global.get $gcur)))
+	(local.set $newList (call $i32list.mk))
+	(call $map.set (local.get $state)(global.get $gcur)(local.get $newList))
+  )
+  (func $popList (param $state i32)
+	(call $map.set
+	  (local.get $state)
+	  (global.get $gcur)
+	  (call $map.get (local.get $state)(global.get $glast))
+	  )
+ 	  (if (i32.eqz (call $map.get (local.get $state) (global.get $gcur)))
+		(call $error2))
   )
   (func $wamTokenize (param $strPtr i32)(result i32)
     (local $token i32)
@@ -1552,12 +1574,17 @@
 	(local $buffLen i32)
 	(local $byte i32)
 	(local $state i32)
+	(local $stack i32)
+	(local $top i32)
+	(local $node i32)
+	(local.set $stack (call $i32list.mk))
 	(local.set $state (call $i32Map.mk)) ;; memory offsets instead of strings for keys
 	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
-	(call $map.set (local.get $state)(global.get $gtptr)(i32.const 0))
-	(call $map.set (local.get $state)(global.get $gtokstack)(call $i32list.mk))
+	(call $map.set (local.get $state)(global.get $gstack)(local.get $stack))
+	(call $map.set (local.get $state)(global.get $gcur)(local.get $stack))
+	(call $map.set (local.get $state)(global.get $glast)(i32.const 0))
 	(local.set $buffLen (call $str.getByteLen (local.get $strPtr)))
 	(local.set $tokenStart (i32.const 0))
 	(local.set $token (call $str.mk))  ;; current token built up here
@@ -1567,15 +1594,17 @@
 	  (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
 	    (then
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
+		  (call $byte.print (i32.const 60))(call $byte.print (local.get $byte))(call $byte.print(i32.const 62))
 		  ;; LINEFEED
 		  (if (i32.eq (local.get $byte) (global.get $LF))
 			(then
 			  (if (call $map.get (local.get $state)(global.get $ginsideLineCom))
-				(call $addToken (local.get $state)(local.get $token)))
-			  (br $bLoop)))
-		  ;; TAB/SPACE
+				(call $addToken (local.get $state)(local.get $token)))))
+		  ;; TAB/SPACE/LF
 		  (if (i32.or (i32.eq (local.get $byte)(global.get $TAB))
-					  (i32.eq (local.get $byte)(global.get $SP)))
+				(i32.or
+				  (i32.eq (local.get $byte)(global.get $SP))
+				  (i32.eq (local.get $byte)(global.get $LF))))
 			(then
 			  (if 
 				(i32.eqz
@@ -1600,16 +1629,26 @@
 				(i32.and
 				  (i32.eqz (call $map.get (local.get $state)(global.get $ginsideString)))
 				  (i32.eqz (call $map.get (local.get $state)(global.get $ginsideLineCom))))
+			  (then
 				(call $addToken(local.get $state)(local.get $token))
-				(br $bLoop))
-			  (call $str.catByte (local.get $token)(local.get $byte))
-			  (call $addToken (local.get $state)(local.get $token))
-			  (br $bLoop)))
+				(call $pushList (local.get $state))
+				(br $bLoop)))
+			  (call $str.catByte (local.get $token)(local.get $byte)
+			  (br $bLoop))))
 		  ;; CLOSE PAREN
 		  (if (i32.eq (local.get $byte) (global.get $RPAREN))
 			(then
+			  (if
+				(i32.and
+				  (i32.eqz (call $map.get (local.get $state)(global.get $ginsideString)))
+				  (i32.eqz (call $map.get (local.get $state)(global.get $ginsideLineCom))))
+				(then
+				  (call $strdata.printwlf(global.get $g$match))
+				  ;;(call $str.catByte (local.get $token)(local.get $byte))
+				  (call $addToken(local.get $state)(local.get $token))
+				  (call $popList (local.get $state))
+				  (br $bLoop)))
 			  (call $str.catByte (local.get $token)(local.get $byte))
-			  (call $addToken (local.get $state)(local.get $token))
 			  (br $bLoop)))
 		  ;; SEMI
 		  (if (i32.eq (local.get $byte) (global.get $SEMI))
@@ -1744,9 +1783,11 @@
   (data (i32.const 3515) "insideWhitesp\00")(global $ginsideWhiteSp i32 (i32.const 3515))
   (data (i32.const 3530) "insideLineCom\00")(global $ginsideLineCom i32 (i32.const 3530))
   (data (i32.const 3545) "tptr\00")			(global $gtptr i32 (i32.const 3545))
-  (data (i32.const 3555) "tokstack\00")		(global $gtokstack i32 (i32.const 3555))
+  (data (i32.const 3555) "stack\00")		(global $gstack i32 (i32.const 3555))
   (data (i32.const 3570) " addToken: '\00")	(global $gaddToken: i32 (i32.const 3570))
   (data (i32.const 3585) "skipping\00")		(global $gskipping i32 (i32.const 3585))
   (data (i32.const 3595) "#toks found:\00") (global $gntoksfound i32 (i32.const 3595))
+  (data (i32.const 3610) "cur\00")			(global $gcur i32 (i32.const 3610))
+  (data (i32.const 3620) "last\00")			(global $glast i32 (i32.const 3620))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
