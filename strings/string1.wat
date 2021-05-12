@@ -1273,6 +1273,7 @@
   )
   (func $map.mk (param $compareOff i32)(param $keyPrintOff i32)(result i32)
 	;; returns a pointer to a list of:
+	;;	 $iMap global (TypeNum)
 	;;   pointer to list of keys ($mapListOff)
 	;;   pointer to list of the values ($valListOff)
 	;;   function offset to the key comparison routine ($compareOff)
@@ -1280,6 +1281,9 @@
 	(local $mapList i32)
 	(local.set $mapList
 	  (call $i32list.mk))
+	(call $i32list.push ;; TypeNum
+	  (local.get $mapList)
+	  (global.get $iMap))
 	(call $i32list.push	;; keys
 	  (local.get $mapList)
 	  (call $i32list.mk))
@@ -1295,10 +1299,11 @@
 	(local.get $mapList)
   )
   ;; these are offsets within the state info list in each map
-  (global $mapListOff i32 (i32.const 0))
-  (global $valListOff i32 (i32.const 1))
-  (global $keyCompareOff i32 (i32.const 2))
-  (global $keyPrintOff i32 (i32.const 3))
+  (global $mapTypeOff i32 (i32.const 0))
+  (global $mapListOff i32 (i32.const 1))
+  (global $valListOff i32 (i32.const 2))
+  (global $keyCompareOff i32 (i32.const 3))
+  (global $keyPrintOff i32 (i32.const 4))
   (func $strMap.mk (result i32)
 	(call $map.mk
 	  (global.get $strCompareOffset)
