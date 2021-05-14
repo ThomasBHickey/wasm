@@ -107,20 +107,36 @@
 	(call $i32.printwlf (i32.lt_u (local.get $ptr)(global.get $nextFreeMem)))
 	(call $i32.printwlf (i32.and
 		(i32.ge_u (local.get $ptr)(global.get $firstFreeMem)
-		(i32.lt_u (local.get $ptr)(global.get $nextFreeMem)))) )
-	(call $i32.printwlf (global.get $firstFreeMem))
-	(call $i32.printwlf (global.get $nextFreeMem))
+		(i32.lt_u (local.get $ptr)(global.get $nextFreeMem)))))
+	(if
+	  (i32.and
+		(i32.ge_u (local.get $ptr)(global.get $gAAA))
+		(i32.le_u (local.get $ptr)(global.get $gZZZ)))
+		(return (call $strdata.printwsp(local.get $ptr))))
 	(call $strdata.printwsp(global.get $gUnableToPrint))
 	(call $i32.printwlf (local.get $ptr))
+  )
+  (func $print.typeNum (param $typeNum i32)
+    (call $byte.print (i32.shr_u (local.get $typeNum)(i32.const 24)))
+	(call $byte.print (i32.shr_u (local.get $typeNum)(i32.const 16)))
+	(call $byte.print (i32.shr_u (local.get $typeNum)(i32.const 8)))
+	(call $byte.print (i32.shr_u (local.get $typeNum)(i32.const 0)))
   )
   (func $print.ptr (param $ptr i32)
     (local $type i32)
 	(call $strdata.printwlf(global.get $gPrintPtr))
     (call $i32.printwlf(local.get $ptr))
 	(local.set $type (call $getTypeNum (local.get $ptr)))
-	(call $i32.hexprint (local.get $type))(call $byte.print(i32.const 10))
+	;;(call $i32.hexprint (local.get $type))(call $byte.print(i32.const 10))
+	(call $print.typeNum (local.get $type))(call $byte.print(i32.const 10))
 	(if (i32.eq (local.get $type)(global.get $i32L))
 	  (return (call $i32list.print(local.get $ptr))))
+	(if (i32.eq (local.get $type)(global.get $BStr))
+	  (return (call $str.print (local.get $ptr))))
+	(if (i32.eq (local.get $type)(global.get $StrM))
+	  (return (call $map.print (local.get $ptr))))
+	(if (i32.eq (local.get $type)(global.get $Map))
+	  (return (call $map.print (local.get $ptr))))
 	(call $strdata.printwsp(global.get $gUnableToPrint))
   )
   ;; Still doesn't recognize negatives
@@ -471,7 +487,8 @@
 		  (call $i32.printwsp (local.get $ipos))
 		  (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))
 		  ;;(call $i32list.print)
-		  (call $i32.hexprint)
+		  ;;(call $i32.hexprint)
+		  (call $print)
 		  ;;(call $i32.printwlf)
 	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
 	      (br $iLoop))))
@@ -1302,9 +1319,9 @@
 		(local.set $textPos (i32.add (local.get $textPos)(i32.const 1)))))
 	(i32.const 0)
   )
-  (func $map.mk (param $typeNum i32)(param $compareOff i32)(param $keyPrintOff i32)(result i32)
+  (func $map.mk (param $compareOff i32)(param $keyPrintOff i32)(result i32)
 	;; returns a pointer to a list of:
-	;;	 TypeNum (curently either $i32M or $StrM)
+	;;	 TypeNum ('Map ')
 	;;   pointer to list of keys ($mapListOff)
 	;;   pointer to list of the values ($valListOff)
 	;;   function offset to the key comparison routine ($compareOff)
@@ -1314,7 +1331,7 @@
 	  (call $i32list.mk))
 	(call $i32list.push ;; TypeNum
 	  (local.get $mapList)
-	  (local.get $typeNum))
+	  (global.get $Map))
 	(call $i32list.push	;; keys
 	  (local.get $mapList)
 	  (call $i32list.mk))
@@ -1335,15 +1352,15 @@
   (global $valListOff i32 (i32.const 2))
   (global $keyCompareOff i32 (i32.const 3))
   (global $keyPrintOff i32 (i32.const 4))
+  ;; Currently here is just one type of map
+  ;; Offsets for routines for key compare and key print are passed to $map.mk
   (func $strMap.mk (result i32)
 	(call $map.mk
-	  (global.get $StrM)
 	  (global.get $strCompareOffset)
 	  (global.get $strToStrOffset))
   )
   (func $i32Map.mk (result i32)
 	(call $map.mk
-	  (global.get $i32M)
 	  (global.get $i32CompareOffset)
 	  (global.get $i32ToStrOffset))
   )
@@ -1435,7 +1452,7 @@
 		  (br $mLoop))))
 	(global.get $maxNeg)	;; didn't find any match flag
   )
-  (func $map.dump (param $map i32)
+  (func $map.print(param $map i32)
 	(local $mapLen i32)
 	(local $mapPos i32)
 	(local $keyToStringOff i32)
@@ -1465,12 +1482,13 @@
 			  (local.get $valList)
 			  (local.get $mapPos)))
 		  (call $i32.printwsp (local.get $mapPos))
-		  (call $str.print
+		  (call $str.print  ;; we know it will be a string, so call directly
 			(local.get $key)
 			(call_indirect (type $keyToStringSig)
 			  (local.get $keyToStringOff)))
 		  (call $C.print (i32.const 32)) ;; space
-		  (call $i32.printwlf (local.get $val))
+		  ;;(call $i32.printwlf (local.get $val))
+		  (call $print (local.get $val))
 		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
 		  (br $mLoop))))
   )
@@ -1563,6 +1581,7 @@
 	(local $numToks i32)
 	(local $tokPos i32)
 	(local.set $wamStack (call $wamTokenize (local.get $strPtr)))
+	(call $print (local.get $wamStack))
 	;;(local.set $toks (call $map.get(local.get $state)(global.get $gstack)))
 	;; (local.set $numToks (call $i32list.getCurLen (local.get $toks)))
 	;; (call $strdata.print (global.get $gntoksfound))
@@ -1762,7 +1781,7 @@
 			(call $addToken(local.get $state)(local.get $token)))
 		  (call $str.catByte (local.get $token)(local.get $byte))
 		  (br $bLoop))))
-	;;(return (local.get $state))
+	(call $print (local.get $state))
 	(return (call $map.get (local.get $state)(global.get $gstack)))
   )
   (func $main (export "_start")
@@ -1781,7 +1800,7 @@
   (global $testing	i32 (i32.const 42))
   (global $i32L	  	i32	(i32.const 0x6933324C)) ;; 'i32L' type# for i32 lists
   (global $BStr		i32	(i32.const 0x42537472))	;; 'BStr' type# for byte strings
-  (global $i32M		i32 (i32.const 0x6933324D))	;; 'i32M' type# for i32 maps
+  (global $Map		i32 (i32.const 0x4D617020))	;; 'Map ' type# for i32 maps
   (global $StrM		i32	(i32.const 0x5374724D)) ;; 'StrM' type# for BStr maps
   (global $maxNeg	i32  (i32.const 0x80000000));; (-2147483648)
   (global $zero   i32 (i32.const 48))			;; '0'
