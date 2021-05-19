@@ -1,0 +1,1 @@
+wasmtime run strings/string1.wat --invoke _test

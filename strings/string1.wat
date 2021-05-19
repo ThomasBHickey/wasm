@@ -1,7 +1,8 @@
-;; run via "wasmtime string1.wat" 
-;; or "wasmtime string1.wasm" if it has been compiled by
-;; via wat2wasm --enable-bulk-memory string1.wat
+;; run via "wasmtime run string1.wat" 
 ;; (wasmtime recognizes the func exported as "_start")
+;; or "wasmtime string1.wasm" if it has been compiled by
+;; "wat2wasm --enable-bulk-memory string1.wat"
+;; run tests: "wasmtime run string1.wat --invoke _test"
 (module
   (import "wasi_unstable" "fd_read"
 	(func $fd_read (param i32 i32 i32 i32)  (result i32)))
@@ -114,7 +115,12 @@
 		(i32.le_u (local.get $ptr)(global.get $gZZZ)))
 		(return (call $strdata.printwsp(local.get $ptr))))
 	(call $strdata.printwsp(global.get $gUnableToPrint))
-	(call $i32.printwlf (local.get $ptr))
+	(call $i32.print (local.get $ptr))
+	(call $byte.print (i32.const 32)) ;; space
+	(call $byte.print (i32.const 40)) ;; (
+	(call $i32.hexprint (local.get $ptr))
+	(call $byte.print (i32.const 41)) ;; )
+	(call $byte.print (i32.const 10))
   )
   (func $print.typeNum (param $typeNum i32)
     (call $byte.print (i32.shr_u (local.get $typeNum)(i32.const 24)))
@@ -138,6 +144,19 @@
 	(if (i32.eq (local.get $type)(global.get $Map))
 	  (return (call $map.print (local.get $ptr))))
 	(call $strdata.printwsp(global.get $gUnableToPrint))
+  )
+  (func $print.ptr.indent (param $ptr i32)(param $indent i32)
+	(call $byte.print.repeat (i32.const 32)(local.get $indent))
+  )
+  (func $byte.print.repeat (param $byte i32)(param $rep i32)
+	(local $bc i32)
+	(local.set $bc (i32.const 0))
+	(loop $ploop
+	  (if (i32.lt_u (local.get $bc)(local.get $rep))
+		(then
+		  (call $byte.print(local.get $byte))
+		  (local.set $bc (i32.add (local.get $bc)(i32.const 1)))
+		  (br $ploop))))
   )
   ;; Still doesn't recognize negatives
   (func $i32.print (param $N i32)
@@ -290,10 +309,8 @@
 	(call $i32.print (local.get $testResult))
 	(call $byte.print (i32.const 10)) ;; linefeed
 	)
-;;(func $test (export "_test"))
-  (func $test
-	;; Run tests: wasmtime strings/string1.wat --invoke _test
-	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
+  (func $test (export "_test")
+	;; Run tests: wasmtime run strings/string1.wat --invoke _test
 	(local $testOff i32)
 	(local $lastTestOff i32)
 	(local.set $testOff (global.get $firstTestOffset))
@@ -1785,6 +1802,8 @@
 	(return (call $map.get (local.get $state)(global.get $gstack)))
   )
   (func $main (export "_start")
+	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
+	;; 
 	(local $buffer i32)
 	(local $wat i32)
     (call $test)
