@@ -22,9 +22,9 @@
   (table 24 funcref)  ;; must be >= to length of elem
   (elem (i32.const 0)
     $str.compare			;;0
-	$str.str				;;1
+	$str.toStr				;;1
 	$i32.compare			;;2
-	$i32.str				;;3
+	$i32.toStr				;;3
 
 	$i32list.sets.test		;;1 + 3 = $firstTestOffset
 	$str.catByte.test		;;2
@@ -45,8 +45,9 @@
 	$map.test				;;17
     $i32list.mk.test		;;18
 	$str.drop.test			;;19
+	$typeNum.toString.test	;;20
   )
-  (global $numTests i32 (i32.const 19)) ;; should match # tests in table
+  (global $numTests i32 (i32.const 20)) ;; should match # tests in table
   (global $firstTestOffset 	i32 (i32.const 4))
   (global $strCompareOffset i32 (i32.const 0))
   (global $strToStrOffset	i32 (i32.const 1))
@@ -128,6 +129,21 @@
 	(call $byte.print (i32.shr_u (local.get $typeNum)(i32.const 8)))
 	(call $byte.print (i32.shr_u (local.get $typeNum)(i32.const 0)))
   )
+  (func $typeNum.toString (param $typeNum i32)(result i32)
+    (local $strptr i32)
+	(local.set $strptr (call $str.mk))
+    (call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 24)))
+	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 16)))
+	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 8)))
+	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 0)))
+	(local.get $strptr)  ;;return the new string
+  )
+  (func $typeNum.toString.test (param $testNum i32)(result i32)
+	(i32.eqz
+	  (call $str.compare
+		(call $typeNum.toString (global.get $i32L)) ;; i32 value
+		(call $str.mkdata (global.get $gi32L))))	;; null terminated string
+  )
   (func $print.ptr (param $ptr i32)
     (local $type i32)
 	(call $strdata.printwlf(global.get $gPrintPtr))
@@ -139,11 +155,34 @@
 	  (return (call $i32list.print(local.get $ptr))))
 	(if (i32.eq (local.get $type)(global.get $BStr))
 	  (return (call $str.print (local.get $ptr))))
-	(if (i32.eq (local.get $type)(global.get $StrM))
-	  (return (call $map.print (local.get $ptr))))
+	;; (if (i32.eq (local.get $type)(global.get $StrM))
+	  ;; (return (call $map.print (local.get $ptr))))
 	(if (i32.eq (local.get $type)(global.get $Map))
 	  (return (call $map.print (local.get $ptr))))
 	(call $strdata.printwsp(global.get $gUnableToPrint))
+  )
+  (func $ptr.toString (param $ptr i32)
+    (local $type i32)
+	(local $strPtr i32)
+	(local.set $strPtr (call $str.mkdata(global.get $gPrintPtr)))
+	(call $str.catByte(local.get $strPtr)(global.get $LF))
+	;;(call $strdata.printwlf(global.get $gPrintPtr))
+    ;;(call $i32.printwlf(local.get $ptr))
+	(local.set $type (call $getTypeNum (local.get $ptr)))
+	;;(call $print.typeNum (local.get $type))(call $byte.print(i32.const 10))
+	(call $str.catStr (local.get $strPtr)(call $typeNum.toString (local.get $type)))
+	(if (i32.eq (local.get $type)(global.get $i32L))
+	  ;;(return (call $i32list.print(local.get $ptr))))
+	  (call $str.catStr (local.get $strPtr)(call $i32.toStr (local.get $ptr))))
+	(if (i32.eq (local.get $type)(global.get $BStr))
+	  ;;(return (call $str.print (local.get $ptr))))
+	  (call $str.catStr (local.get $strPtr)(local.get $ptr)))
+	(if (i32.eq (local.get $type)(global.get $Map))
+	  ;;(return (call $map.print (local.get $ptr))))
+	  (call $str.catStr (call $map.toStr (local.get $ptr))))
+	(call $str.catStr (local.get $strPtr)(call $str.mkdata (global.get $gUnableToPrint)))
+	;;(call $strdata.printwsp(global.get $gUnableToPrint))
+	(local.get $strPtr)
   )
   (func $print.ptr.indent (param $ptr i32)(param $indent i32)
 	(call $byte.print.repeat (i32.const 32)(local.get $indent))
@@ -167,7 +206,7 @@
 		(i32.rem_u (local.get $N)(i32.const 10))
 		(global.get $zero)))
   )
-  (func $i32.str (param $N i32)(result i32)
+  (func $i32.toStr (param $N i32)(result i32)
   ;; return a string representing an i32
   (local $strPtr i32)
   (local.set $strPtr (call $str.mk))
@@ -528,7 +567,7 @@
 	;;(call $C.print (i32.const 93)) ;; right bracket
 	(call $C.print (i32.const 10)) ;; new line
   )
-  (func $str.str (param $strPtr i32)(result i32)
+  (func $str.toStr (param $strPtr i32)(result i32)
 	;; This is used by map routines to dump a key that is a string
 	(local.get $strPtr)
   )
@@ -1818,9 +1857,10 @@
   )
   (global $testing	i32 (i32.const 42))
   (global $i32L	  	i32	(i32.const 0x6933324C)) ;; 'i32L' type# for i32 lists
+												;; needs to match $gi32L
   (global $BStr		i32	(i32.const 0x42537472))	;; 'BStr' type# for byte strings
   (global $Map		i32 (i32.const 0x4D617020))	;; 'Map ' type# for i32 maps
-  (global $StrM		i32	(i32.const 0x5374724D)) ;; 'StrM' type# for BStr maps
+  ;;(global $StrM		i32	(i32.const 0x5374724D)) ;; 'StrM' type# for BStr maps
   (global $maxNeg	i32  (i32.const 0x80000000));; (-2147483648)
   (global $zero   i32 (i32.const 48))			;; '0'
   (global $TAB	  i32 (i32.const 0x09))			;; U+0009	Tab
@@ -1890,6 +1930,7 @@
   (data (i32.const 3610) "cur\00")			(global $gcur i32 (i32.const 3610))
   (data (i32.const 3620) "last\00")			(global $glast i32 (i32.const 3620))
   (data (i32.const 3630) "Unable to print:\00")(global $gUnableToPrint i32 (i32.const 3630))
-  (data (i32.const 3650) "Print Ptr:\00")	(global $gPrintPtr i32 (i32.const 3650))
+  (data (i32.const 3650) "Print Ptr:\\00")	(global $gPrintPtr i32 (i32.const 3650))
+  (data (i32.const 3665) "i32L\00")			(global $gi32L i32 (i32.const 3665))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
