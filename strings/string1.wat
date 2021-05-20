@@ -63,21 +63,48 @@
   (global $writeBufLen 		i32 (i32.const 512))
   (global $nextFreeMem (mut i32)(i32.const 4096))
   (global $firstFreeMem 	i32 (i32.const 4096))
+  (global $maxFreeMem  (mut i32)(i32.const 4096)) ;; same as initial $firstFreeMem
+  (global $memReclaimed(mut i32)(i32.const 0))
   
+  (func $showMemUsedHelper (param $numBytes i32)(param $msg i32)
+    (call $str.print (local.get $msg))
+	(call $i32.printwsp (local.get $numBytes))
+	(call $byte.print (i32.const 40)) ;; (
+	(call $i32.print
+	  (i32.shr_u (local.get $numBytes) (i32.const 10)))
+	(call $C.print (i32.const 75)) ;; K
+	(call $C.print (i32.const 41)) ;; )
+	(call $C.print (i32.const 10)) ;; LF
+  )
   (func $showMemUsed 
     (local $bytesUsed i32)
+	(local $memUsedMsg i32)
+	(local $maxUsedMsg i32)
+	(local $memReclaimedMsg i32)
+	(local $maxUsed i32)
+	(local.set $memUsedMsg (call $str.mkdata (global.get $gMemUsed)))
+	(local.set $maxUsedMsg (call $str.mkdata (global.get $gMaxUsed)))
+	(local.set $memReclaimedMsg (call $str.mkdata (global.get $gMemReclaimed)))
 	(local.set $bytesUsed
 	  (i32.sub
 		(global.get $nextFreeMem)
 		(global.get $firstFreeMem)))
-	(call $strdata.print (global.get $gMemUsed))
-	(call $i32.printwsp (local.get $bytesUsed))
-	(call $C.print (i32.const 40))  ;; (
-	(call $i32.print
-	  (i32.shr_u (local.get $bytesUsed) (i32.const 10)))
-	(call $C.print (i32.const 75)) ;; K
-	(call $C.print (i32.const 41)) ;; )
-	(call $C.print (i32.const 10)) ;; LF
+	(call $showMemUsedHelper (local.get $bytesUsed)(local.get $memUsedMsg))
+	(local.set $bytesUsed
+	  (i32.sub
+		(global.get $maxFreeMem)
+		(global.get $firstFreeMem)))
+	(call $showMemUsedHelper (local.get $bytesUsed)(local.get $maxUsedMsg))
+	(call $showMemUsedHelper (global.get $memReclaimed)(local.get $memReclaimedMsg))
+	
+	;; (call $strdata.print (global.get $gMemUsed))
+	;; (call $i32.printwsp (local.get $bytesUsed))
+	;; (call $C.print (i32.const 40))  ;; (
+	;; (call $i32.print
+	  ;; (i32.shr_u (local.get $bytesUsed) (i32.const 10)))
+	;; (call $C.print (i32.const 75)) ;; K
+	;; (call $C.print (i32.const 41)) ;; )
+	;; (call $C.print (i32.const 10)) ;; LF
   )
   (func $getMem (param $size i32)(result i32)
 	;; Simple memory allocation done in 4-byte chunks
@@ -89,6 +116,19 @@
 				(i32.const 4))(i32.const 4)))
 	(global.get $nextFreeMem) ;; to return
 	(global.set $nextFreeMem (i32.add (global.get $nextFreeMem)(local.get $size4)))
+	(if (i32.gt_u (global.get $nextFreeMem)(global.get $maxFreeMem))
+	  (global.set $maxFreeMem (global.get $nextFreeMem)))
+  )
+  (func $reclaimMem (param $newNextFreeMem i32)
+  ;; A simple way to reclaim memory
+  ;; Should probably clear it!
+    (local $reclaimed i32)
+	(if (i32.gt_u (local.get $newNextFreeMem)(global.get $nextFreeMem))
+		(call $error2))
+	(local.set $reclaimed
+	  (i32.sub (global.get $nextFreeMem)(local.get $newNextFreeMem)))
+	(global.set $memReclaimed
+	  (i32.add (global.get $memReclaimed)(local.get $reclaimed)))
   )
   (func $error (result i32)
 	;; throw a divide-by-zero exception!
@@ -161,7 +201,7 @@
 	  (return (call $map.print (local.get $ptr))))
 	(call $strdata.printwsp(global.get $gUnableToPrint))
   )
-  (func $ptr.toString (param $ptr i32)
+  (func $ptr.toString (param $ptr i32)(result i32)
     (local $type i32)
 	(local $strPtr i32)
 	(local.set $strPtr (call $str.mkdata(global.get $gPrintPtr)))
@@ -179,7 +219,7 @@
 	  (call $str.catStr (local.get $strPtr)(local.get $ptr)))
 	(if (i32.eq (local.get $type)(global.get $Map))
 	  ;;(return (call $map.print (local.get $ptr))))
-	  (call $str.catStr (call $map.toStr (local.get $ptr))))
+	  (call $str.catStr (local.get $strPtr)(call $map.toStr (local.get $ptr))))
 	(call $str.catStr (local.get $strPtr)(call $str.mkdata (global.get $gUnableToPrint)))
 	;;(call $strdata.printwsp(global.get $gUnableToPrint))
 	(local.get $strPtr)
@@ -352,6 +392,8 @@
 	;; Run tests: wasmtime run strings/string1.wat --invoke _test
 	(local $testOff i32)
 	(local $lastTestOff i32)
+	(local $nextFreeMem i32)
+	(local.set $nextFreeMem (global.get $nextFreeMem))
 	(local.set $testOff (global.get $firstTestOffset))
 	(local.set $lastTestOff
 	  (i32.sub
@@ -367,6 +409,8 @@
 	  (local.set $testOff (i32.add (local.get $testOff)(i32.const 1)))
 	  (if (i32.le_u (local.get $testOff)(local.get $lastTestOff))
 	    (then (br $testLoop))))
+	(call $reclaimMem (local.get $nextFreeMem))
+	;;(global.set $nextFreeMem (local.get $nextFreeMem))
   )
 
   ;; i32Lists
@@ -1548,6 +1592,50 @@
 		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
 		  (br $mLoop))))
   )
+  (func $map.toStr(param $map i32)(result i32)
+	(local $mapLen i32)
+	(local $mapPos i32)
+	(local $keyToStringOff i32)
+	(local $keyList i32)
+	(local $valList i32)
+	(local $key i32)
+	(local $val i32)
+	(local $strPtr i32)
+	
+	(local.set $strPtr (call $str.mk))
+	
+	(local.set $keyList
+	  (call $i32list.get@ (local.get $map) (global.get $mapListOff)))
+	(local.set $valList
+	  (call $i32list.get@ (local.get $map) (global.get $valListOff)))
+
+	(local.set $keyToStringOff
+	  (call $i32list.get@ (local.get $map) (global.get $keyPrintOff)))
+	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
+	(local.set $mapPos (i32.const 0))
+	(loop $mLoop
+	  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
+		(then
+		  (local.set $key
+		    (call $i32list.get@
+			  (local.get $keyList)
+			  (local.get $mapPos)))
+		  (local.set $val
+		    (call $i32list.get@
+			  (local.get $valList)
+			  (local.get $mapPos)))
+		  (call $i32.printwsp (local.get $mapPos))
+		  (call $str.print  ;; we know it will be a string, so call directly
+			(local.get $key)
+			(call_indirect (type $keyToStringSig)
+			  (local.get $keyToStringOff)))
+		  (call $C.print (i32.const 32)) ;; space
+		  ;;(call $i32.printwlf (local.get $val))
+		  (call $print (local.get $val))
+		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
+		  (br $mLoop))))
+	(local.get $strPtr)
+  )
   (func $map.test (param $testNum i32)(result i32)
 	(local $imap i32)
 	(local $smap i32)
@@ -1932,5 +2020,7 @@
   (data (i32.const 3630) "Unable to print:\00")(global $gUnableToPrint i32 (i32.const 3630))
   (data (i32.const 3650) "Print Ptr:\\00")	(global $gPrintPtr i32 (i32.const 3650))
   (data (i32.const 3665) "i32L\00")			(global $gi32L i32 (i32.const 3665))
+  (data (i32.const 3670) "Max used: \00")	(global $gMaxUsed i32 (i32.const 3670))
+  (data (i32.const 3685) "Mem Reclaimed: \00")(global $gMemReclaimed i32 (i32.const 3685))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
