@@ -121,14 +121,33 @@
   )
   (func $reclaimMem (param $newNextFreeMem i32)
   ;; A simple way to reclaim memory
-  ;; Should probably clear it!
-    (local $reclaimed i32)
+  ;; Resets where new mem is allocated and clears the reclaimed words
+    (local $reclaimedBytes i32)
+	(local $reclaimedWords i32)
+	(local $wordToClear i32)
+	(local $oldNextFreeMem i32)
 	(if (i32.gt_u (local.get $newNextFreeMem)(global.get $nextFreeMem))
 		(call $error2))
-	(local.set $reclaimed
+	;; check for i32 word alignment
+	(if (i32.and (local.get $newNextFreeMem)(i32.const 3))
+	  (call $error3 (i32.const 32)))
+	(local.set $oldNextFreeMem (global.get $nextFreeMem))
+	(if (i32.and (local.get $oldNextFreeMem)(i32.const 3))
+	  (call $error3 (i32.const 33)))
+	(local.set $reclaimedBytes
 	  (i32.sub (global.get $nextFreeMem)(local.get $newNextFreeMem)))
 	(global.set $memReclaimed
-	  (i32.add (global.get $memReclaimed)(local.get $reclaimed)))
+	  (i32.add (global.get $memReclaimed)(local.get $reclaimedBytes)))
+	(local.set $wordToClear (local.get $newNextFreeMem))
+	(loop $clearLoop
+	  (if (i32.lt_u
+		(local.get $wordToClear)
+		(local.get $oldNextFreeMem))
+		(then
+		  (i32.store (local.get $wordToClear)(i32.const 0))
+		  (local.set $wordToClear (i32.add (local.get $wordToClear)(i32.const 4)))
+		  (br $clearLoop))))
+	(global.set $nextFreeMem (local.get $newNextFreeMem))
   )
   (func $error (result i32)
 	;; throw a divide-by-zero exception!
@@ -137,6 +156,10 @@
   (func $error2
     (local $t i32)
     (local.set $t (i32.div_u (i32.const 1)(i32.const 0)))
+  )
+  (func $error3 (param $err i32)
+	(call $i32.print (local.get $err))
+	(call $error2)
   )
   ;; 'Universal' print function
   (func $print (param $ptr i32)
