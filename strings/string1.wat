@@ -19,7 +19,7 @@
   (type $keyCompSig (func (param i32)(param i32)(result i32)))
   (type $keyToStringSig (func (param i32)(result i32)))
 
-  (table 24 funcref)  ;; must be >= to length of elem
+  (table 25 funcref)  ;; must be >= to length of elem
   (elem (i32.const 0)
     $str.compare			;;0
 	$str.toStr				;;1
@@ -46,8 +46,9 @@
     $i32list.mk.test		;;18
 	$str.drop.test			;;19
 	$typeNum.toString.test	;;20
+	$misc.test				;;21
   )
-  (global $numTests i32 (i32.const 20)) ;; should match # tests in table
+  (global $numTests i32 (i32.const 21)) ;; should match # tests in table
   (global $firstTestOffset 	i32 (i32.const 4))
   (global $strCompareOffset i32 (i32.const 0))
   (global $strToStrOffset	i32 (i32.const 1))
@@ -168,22 +169,26 @@
 		(i32.ge_u (local.get $ptr)(global.get $firstFreeMem))
 		(i32.lt_u (local.get $ptr)(global.get $nextFreeMem)))
 	  (return (call $print.ptr (local.get $ptr))))
-	(call $i32.printwlf (i32.ge_u (local.get $ptr)(global.get $firstFreeMem)))
-	(call $i32.printwlf (i32.lt_u (local.get $ptr)(global.get $nextFreeMem)))
-	(call $i32.printwlf (i32.and
-		(i32.ge_u (local.get $ptr)(global.get $firstFreeMem)
-		(i32.lt_u (local.get $ptr)(global.get $nextFreeMem)))))
+	;; (call $i32.printwlf (i32.ge_u (local.get $ptr)(global.get $firstFreeMem)))
+	;; (call $i32.printwlf (i32.lt_u (local.get $ptr)(global.get $nextFreeMem)))
+	;; (call $i32.printwlf (i32.and
+		;; (i32.ge_u (local.get $ptr)(global.get $firstFreeMem)
+		;; (i32.lt_u (local.get $ptr)(global.get $nextFreeMem)))))
 	(if
 	  (i32.and
 		(i32.ge_u (local.get $ptr)(global.get $gAAA))
 		(i32.le_u (local.get $ptr)(global.get $gZZZ)))
-		(return (call $strdata.printwsp(local.get $ptr))))
+		(return (call $strdata.print(local.get $ptr))))
 	(call $strdata.printwsp(global.get $gUnableToPrint))
 	(call $i32.print (local.get $ptr))
 	(call $byte.print (i32.const 32)) ;; space
 	(call $byte.print (i32.const 40)) ;; (
 	(call $i32.hexprint (local.get $ptr))
 	(call $byte.print (i32.const 41)) ;; )
+	(call $byte.print (i32.const 10))
+  )
+  (func $printwlf (param $ptr i32)
+	(call $print (local.get $ptr))
 	(call $byte.print (i32.const 10))
   )
   (func $print.typeNum (param $typeNum i32)
@@ -209,8 +214,8 @@
   )
   (func $print.ptr (param $ptr i32)
     (local $type i32)
-	(call $strdata.printwlf(global.get $gPrintPtr))
-    (call $i32.printwlf(local.get $ptr))
+	;;(call $strdata.printwlf(global.get $gPrintPtr))
+    ;;(call $i32.printwlf(local.get $ptr))
 	(local.set $type (call $getTypeNum (local.get $ptr)))
 	;;(call $i32.hexprint (local.get $type))(call $byte.print(i32.const 10))
 	(call $print.typeNum (local.get $type))(call $byte.print(i32.const 10))
@@ -218,8 +223,6 @@
 	  (return (call $i32list.print(local.get $ptr))))
 	(if (i32.eq (local.get $type)(global.get $BStr))
 	  (return (call $str.print (local.get $ptr))))
-	;; (if (i32.eq (local.get $type)(global.get $StrM))
-	  ;; (return (call $map.print (local.get $ptr))))
 	(if (i32.eq (local.get $type)(global.get $Map))
 	  (return (call $map.print (local.get $ptr))))
 	(call $strdata.printwsp(global.get $gUnableToPrint))
@@ -1967,6 +1970,13 @@
 	;;(call $strdata.printwsp (global.get $gZZZ))
 	;;(call $strdata.printwlf (global.get $gZZZ))
   )
+  (func $misc.test (param $testNum i32)(result i32)
+    (call $strdata.printwlf (global.get $gmisc.test.start))
+	(call $printwlf (call $str.mkdata (global.get $g$starLoop)))
+	(call $printwlf (global.get $g$starLoop))
+	(call $strdata.printwlf (global.get $gmisc.test.end))
+    (i32.const 0)
+  )
   (global $testing	i32 (i32.const 42))
   (global $i32L	  	i32	(i32.const 0x6933324C)) ;; 'i32L' type# for i32 lists
 												;; needs to match $gi32L
@@ -2046,5 +2056,7 @@
   (data (i32.const 3665) "i32L\00")			(global $gi32L i32 (i32.const 3665))
   (data (i32.const 3670) "Max used: \00")	(global $gMaxUsed i32 (i32.const 3670))
   (data (i32.const 3685) "Mem Reclaimed: \00")(global $gMemReclaimed i32 (i32.const 3685))
+  (data (i32.const 3705) "Start $misc.test\00")(global $gmisc.test.start i32 (i32.const 3705))
+  (data (i32.const 3725) "End $misc.test\00")(global $gmisc.test.end i32(i32.const 3725))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
