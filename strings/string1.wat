@@ -172,31 +172,6 @@
   (func $printsp
     (call $byte.print (i32.const 32))
   )
-  
-  ;; (func $print (param $ptr i32)
-    ;; (if
-	  ;; (i32.and
-		;; (i32.ge_u (local.get $ptr)(global.get $firstFreeMem))
-		;; (i32.lt_u (local.get $ptr)(global.get $nextFreeMem)))
-	  ;; (return (call $print.ptr (local.get $ptr))))
-	;; ;; (call $i32.printwlf (i32.ge_u (local.get $ptr)(global.get $firstFreeMem)))
-	;; ;; (call $i32.printwlf (i32.lt_u (local.get $ptr)(global.get $nextFreeMem)))
-	;; ;; (call $i32.printwlf (i32.and
-		;; ;; (i32.ge_u (local.get $ptr)(global.get $firstFreeMem)
-		;; ;; (i32.lt_u (local.get $ptr)(global.get $nextFreeMem)))))
-	;; (if
-	  ;; (i32.and
-		;; (i32.ge_u (local.get $ptr)(global.get $gAAA))
-		;; (i32.le_u (local.get $ptr)(global.get $gZZZ)))
-		;; (return (call $strdata.print(local.get $ptr))))
-	;; ;;(call $strdata.printwsp(global.get $gUnableToPrint))
-	;; (call $i32.print (local.get $ptr))
-	;; (call $byte.print (i32.const 32)) ;; space
-	;; (call $byte.print (i32.const 40)) ;; (
-	;; (call $i32.hexprint (local.get $ptr))
-	;; (call $byte.print (i32.const 41)) ;; )
-	;; (call $byte.print (i32.const 10))
-  ;; )
   (func $toStr (param $ptr i32)(result i32)
     (if
 	  (i32.and
@@ -210,20 +185,6 @@
 		(return (call $str.mkdata(local.get $ptr))))
 	(call $i32.toStr (local.get $ptr))
   )
-  ;; (func $toStrwsp (param $ptr i32)(result i32)
-    ;; (local $strPtr i32)
-	;; (local.set (call $toStr (local.get $ptr)))
-	;; (call 
-  ;; (func $print (param $ptr i32)
-	;; (call $print (local.get $ptr))
-	;; (call $print (
-  ;; )
-  ;; (func $print.typeNum (param $typeNum i32)
-    ;; (call $byte.print (i32.shr_u (local.get $typeNum)(i32.const 24)))
-	;; (call $byte.print (i32.shr_u (local.get $typeNum)(i32.const 16)))
-	;; (call $byte.print (i32.shr_u (local.get $typeNum)(i32.const 8)))
-	;; (call $byte.print (i32.shr_u (local.get $typeNum)(i32.const 0)))
-  ;; )
   (func $typeNum.toStr (param $typeNum i32)(result i32)
     (local $strptr i32)
 	(local.set $strptr (call $str.mk))
@@ -239,31 +200,12 @@
 		(call $typeNum.toStr (global.get $i32L)) ;; i32 value
 		(call $str.mkdata (global.get $gi32L))))	;; null terminated string
   )
-  ;; (func $print.ptr (param $ptr i32)
-    ;; (local $type i32)
-	;; ;;(call $strdata.printwlf(global.get $gPrintPtr))
-    ;; ;;(call $i32.printwlf(local.get $ptr))
-	;; (local.set $type (call $getTypeNum (local.get $ptr)))
-	;; ;;(call $i32.hexprint (local.get $type))(call $byte.print(i32.const 10))
-	;; ;;(call $print.typeNum (local.get $type))(call $byte.print(i32.const 10))
-	;; (if (i32.eq (local.get $type)(global.get $i32L))
-	  ;; (return (call $i32list.print(local.get $ptr))))
-	;; (if (i32.eq (local.get $type)(global.get $BStr))
-	  ;; (return (call $str.print (local.get $ptr))))
-	;; (if (i32.eq (local.get $type)(global.get $Map))
-	  ;; (return (call $map.print (local.get $ptr))))
-	;; (call $strdata.printwsp(global.get $gUnableToPrint))
-  ;; )
   (func $ptr.toStr (param $ptr i32)(result i32)
     (local $type i32)
 	(local $strPtr i32)
-	;;(local.set $strPtr (call $str.mkdata(global.get $gPrintPtr)))
 	(local.set $strPtr (call $str.mk))
 	(call $str.catByte(local.get $strPtr)(global.get $LF))
-	;;(call $strdata.printwlf(global.get $gPrintPtr))
-    ;;(call $i32.printwlf(local.get $ptr))
 	(local.set $type (call $getTypeNum (local.get $ptr)))
-	;;(call $print.typeNum (local.get $type))(call $byte.print(i32.const 10))
 	(if (i32.eq (local.get $type)(global.get $BStr))
 	  (return (local.get $ptr)))
 	(if (i32.eq (local.get $type)(global.get $i32L))
@@ -279,9 +221,6 @@
 	(call $str.catStr (local.get $strPtr)(call $str.mkdata (global.get $gUnableToPrint)))
 	(local.get $strPtr)
   )
-  ;; (func $print.ptr.indent (param $ptr i32)(param $indent i32)
-	;; (call $byte.print.repeat (i32.const 32)(local.get $indent))
-  ;; )
   (func $byte.print.repeat (param $byte i32)(param $rep i32)
 	(local $bc i32)
 	(local.set $bc (i32.const 0))
@@ -292,8 +231,8 @@
 		  (local.set $bc (i32.add (local.get $bc)(i32.const 1)))
 		  (br $ploop))))
   )
-  ;; Still doesn't recognize negatives
   (func $i32.print (param $N i32)
+  ;; Still doesn't recognize negatives
 	(if (i32.ge_u (local.get $N)(i32.const 10))
 	  (then (call $i32.print (i32.div_u (local.get $N)(i32.const 10)))))
 	(call $byte.print
@@ -618,17 +557,6 @@
 	(i32.const 0) ;; passed
   )
 	
-  ;; (func $i32list.push.test (param $testNum i32)(result i32)
-    ;; (local $listPtr i32)
-	;; (local.set $listPtr (call $i32list.mk))
-	;; (call $i32list.push (local.get $listPtr) (i32.const 42))
-	;; (call $i32list.push (local.get $listPtr) (i32.const 43))
-	;; (if (i32.ne (i32.const 42)(call $i32list.get@ (local.get $listPtr)(i32.const 0)))
-		;; (return (i32.const 1)))
-	;; (if (i32.ne (i32.const 43)(call $i32list.get@ (local.get $listPtr)(i32.const 1)))
-		;; (return (i32.const 2)))
-	;; (i32.const 0)
-  ;; )
   ;; (func $i32list.print (param $lstPtr i32)
 	;; (local $curLength i32)
 	;; (local $ipos i32)
@@ -893,24 +821,15 @@
 	;; see if first or last data stings have gotten stomped on
 	(local $aaa i32)(local $zzz i32)(local $first i32)(local $last i32)
 	(local.set $first (call $str.mkdata (global.get $gAAA)))
-	;;(call $str.printwlf (local.get $first))
-	;;(call $i32.printwlf (call $str.getDataOff (local.get $first)))
-	;;(call $byte.printwlf (call $str.getByte (local.get $first)(i32.const 0)))
 	(local.set $last (call $str.mkdata (global.get $gZZZ)))
 	(local.set $aaa (call $str.mk))
-	;;(call $i32.printwlf (call $str.getDataOff (local.get $aaa)))
-	(call $str.catByte(local.get $aaa) (i32.const 65))
-	;;(call $byte.printwlf (call $str.getByte (local.get $aaa)(i32.const 0)))
 	(call $str.catByte(local.get $aaa) (i32.const 65))
 	(call $str.catByte(local.get $aaa) (i32.const 65))
-	;;(call $str.printwlf (local.get $aaa))
+	(call $str.catByte(local.get $aaa) (i32.const 65))
 	(local.set $zzz (call $str.mk))
 	(call $str.catByte(local.get $zzz) (i32.const 90))
 	(call $str.catByte(local.get $zzz) (i32.const 90))
 	(call $str.catByte(local.get $zzz) (i32.const 90))
-	;;(call $str.printwlf(local.get $aaa))
-	;;(call $i32.printwlf (call $str.getByteLen (local.get $aaa)))
-	;;(call $str.printwlf(local.get $zzz))
 	(i32.eqz
 	  (i32.and
 		(call $str.compare (local.get $aaa)(local.get $first))
@@ -924,7 +843,6 @@
 	(local.set $slice (call $str.mk))
 	(local.set $bpos (local.get $offset))
 	(local.set $lastbpos (i32.add (local.get $offset)(local.get $length)))
-	;; (call $i32.printwlf (local.get $lastbpos))
 	(loop $bLoop
 	  (if (i32.lt_u (local.get $bpos)(local.get $lastbpos))
 		(then
@@ -939,8 +857,6 @@
 		  (local.set $bpos (i32.add (i32.const 1)(local.get $bpos)))
 		  (br $bLoop)
 		)))
-	;; (call $C.print (i32.const 123))
-	;; (call $str.printwlf (local.get $slice))
 	(local.get $slice)
   )
   (func $str.mkslice.test (param $testNum i32)(result i32)
@@ -1194,9 +1110,6 @@
 	(call $str.catByte (local.get $spAAA2)(i32.const 65))
 	(call $str.catByte (local.get $spAAA2)(i32.const 65))
 	(local.set $spZZZ (call $str.mkdata (global.get $gZZZ)))
-	;;(call $str.printwlf (local.get $spAAA))
-	;;(call $str.printwlf (local.get $spAAA2))
-	;;(call $str.printwlf (local.get $spZZZ))
 	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA)))
 		(return (i32.const 1)))  ;; same string, should have matched
 	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA2)))
@@ -1325,9 +1238,6 @@
   ;; Regular Expressions by Kernighan & Pike
   (func $match (param $re i32) (param $text i32) (result i32)
 	(local $textPos i32)
-	;;(call $str.printwlf (call $str.mkdata (global.get $g$match)))
-	;;(call $str.printwlf (local.get $re))
-	;;(call $str.printwlf (local.get $text))
     (if				;;if (re[0]=='^') return matchhere(re+1, text)
 	  (i32.eq
 		(call $str.getByte (local.get $re)(i32.const 0))
@@ -1395,12 +1305,6 @@
   (func $matchHere (param $re i32)(param $rePos i32)
 					(param $text i32)(param $textPos i32)
 					(result i32)
-	;;(call $str.printwlf (call $str.mkdata (global.get $g$matchHere)))
-	;;(call $str.print (call $str.mkdata (global.get $gre:)))
-	;;(call $str.printwsp (local.get $re))
-	;;(call $i32.printwlf (local.get $rePos))
-	;;(call $str.printwsp (local.get $text))
-	;;(call $i32.printwlf(local.get $textPos))
 	(if			;; if (re[0] == '\0' return 1  (at end of re)
 	  (i32.ge_u
 		(local.get $rePos)
@@ -1420,10 +1324,6 @@
 		  (i32.add (local.get $rePos)(i32.const 2))
 		  (local.get $text)
 		  (local.get $textPos))))
-	;; Check for end of text & end of Regexp
-	;; if (re[0]=='$' && re[1]=='\0')
-	;;    return *text == '\0';
-	;;(call $str.printwlf (call $str.mkdata (global.get $gEndoftext?)))
 	(if
 	  (i32.and
 		(i32.eq
@@ -1811,23 +1711,7 @@
 	(local $numToks i32)
 	(local $tokPos i32)
 	(local.set $wamStack (call $wamTokenize (local.get $strPtr)))
-	;;(call $print (local.get $wamStack))
 	(call $str.print (call $ptr.toStr (local.get $wamStack)))
-	;;(local.set $toks (call $map.get(local.get $state)(global.get $gstack)))
-	;; (local.set $numToks (call $i32list.getCurLen (local.get $toks)))
-	;; (call $strdata.print (global.get $gntoksfound))
-	;; (call $i32.printwlf (local.get $numToks))
-	;; (local.set $tokPos (i32.const 0))
-	;; (loop $tokLoop
-	  ;; (if (i32.lt_u (local.get $tokPos)(local.get $numToks))
-	    ;; (then
-		  ;; (local.set $token
-			;; (call $i32list.get@ (local.get $toks) (local.get $tokPos)))
-		  ;; (call $C.print (i32.const 62))  ;; >
-		  ;; (call $str.printwlf (local.get $token))
-		  ;; (local.set $tokPos(i32.add (local.get $tokPos)(i32.const 1)))
-		  ;; (br $tokLoop))))
-	;; (local.get $toks) ;; something to return for now
 	(local.get $wamStack) ;; something to return for now
   )
   ;; Tokenization closely follows
