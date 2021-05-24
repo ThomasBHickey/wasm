@@ -69,7 +69,7 @@
   
   (func $showMemUsedHelper (param $numBytes i32)(param $msg i32)
     (call $str.print (local.get $msg))
-	(call $i32.printwsp (local.get $numBytes))
+	(call $i32.print (local.get $numBytes))(call $printsp)
 	(call $byte.print (i32.const 40)) ;; (
 	(call $i32.print
 	  (i32.shr_u (local.get $numBytes) (i32.const 10)))
@@ -162,16 +162,13 @@
 	(call $i32.print (local.get $err))
 	(call $error2)
   )
-  ;; 'Universal' print function
   (func $print (param $ptr i32)
+    ;; 'Universal' print function
     (call $str.print (call $toStr (local.get $ptr)))
   )
-  (func $printlf 
-    (call $byte.print (i32.const 10))
-  )
-  (func $printsp
-    (call $byte.print (i32.const 32))
-  )
+  (func $printlf (call $byte.print (i32.const 10)))
+  (func $printsp (call $byte.print (i32.const 32)))
+  
   (func $toStr (param $ptr i32)(result i32)
     (if
 	  (i32.and
@@ -209,13 +206,11 @@
 	(if (i32.eq (local.get $type)(global.get $BStr))
 	  (return (local.get $ptr)))
 	(if (i32.eq (local.get $type)(global.get $i32L))
-	  ;;(return (call $i32list.print(local.get $ptr))))
 	  (call $str.catStr 
 		  (local.get $strPtr)
 		  (call $i32list.toStr (local.get $ptr)))
 	  (return (local.get $strPtr)))
 	(if (i32.eq (local.get $type)(global.get $Map))
-	  ;;(return (call $map.print (local.get $ptr))))
 	  (call $str.catStr (local.get $strPtr)(call $map.toStr (local.get $ptr)))
 	  (return (local.get $strPtr)))
 	(call $str.catStr (local.get $strPtr)(call $str.mkdata (global.get $gUnableToPrint)))
@@ -241,27 +236,46 @@
 		(global.get $zero)))
   )
   (func $i32.toStr (param $N i32)(result i32)
-  ;; return a string representing an i32
-  (local $strPtr i32)
-  (local.set $strPtr (call $str.mk))
-	(if (i32.ge_u (local.get $N)(i32.const 10))
-	  (then 
-		(call $str.catByte
-		  (local.get $strPtr)
-		  (i32.div_u
-			(local.get $N)
-			(i32.const 10)))))
-	(call $str.catByte
-	  (local.get $strPtr) 
+	;; return a string representing an i32
+	(local $strPtr i32)
+	(local.set $strPtr (call $str.mk))
+	(call $i32.toStrHelper (local.get $strPtr)(local.get $N))
+	(local.get $strPtr)
+  )
+  (func $i32.toStrHelper(param $strPtr i32)(param $N i32)
+    (if (i32.ge_u (local.get $N)(i32.const 10))
+	  (call $i32.toStrHelper
+		(local.get $strPtr)
+		(i32.div_u (local.get $N)(i32.const 10))))
+	(call $str.catByte (local.get $strPtr)
 	  (i32.add
 		(i32.rem_u (local.get $N)(i32.const 10))
 		(global.get $zero)))
-	(local.get $strPtr)
   )
-  (func $i32.printwsp (param $N i32)  ;; with space
-    (call $i32.print (local.get $N))
-	(call $byte.print (i32.const 32))  ;; space
-  )
+  ;; (func $i32.toStr (param $N i32)(result i32)
+  ;; ;; return a string representing an i32
+  ;; (local $strPtr i32)
+  ;; (local.set $strPtr (call $str.mk))
+	;; (if (i32.ge_u (local.get $N)(i32.const 10))
+	  ;; (then 
+		;; (call $str.catByte
+		  ;; (local.get $strPtr)
+		  ;; (i32.add
+			;; (i32.div_u
+			  ;; (local.get $N)
+			  ;; (i32.const 10))
+			;; (global.get $zero))))
+	;; (call $str.catByte
+	  ;; (local.get $strPtr) 
+	  ;; (i32.add
+		;; (i32.rem_u (local.get $N)(i32.const 10))
+		;; (global.get $zero)))
+	;; (local.get $strPtr)
+  ;; )
+  ;; (func $i32.printwsp (param $N i32)  ;; with space
+    ;; (call $i32.print (local.get $N))
+	;; (call $byte.print (i32.const 32))  ;; space
+  ;; )
   ;; (func $i32.printwlf (param $N i32)  ;; with line feed
     ;; (call $i32.print (local.get $N))
 	;; (call $byte.print (i32.const 10))  ;; space
@@ -556,71 +570,43 @@
 	  (return (i32.const 3)))
 	(i32.const 0) ;; passed
   )
-	
-  ;; (func $i32list.print (param $lstPtr i32)
-	;; (local $curLength i32)
-	;; (local $ipos i32)
-	;; (local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
-	;; (call $i32.printwlf (local.get $curLength))
-	;; (local.set $ipos (i32.const 0))
-	;; (call $C.print (i32.const 91)) ;; left bracket
-	;; (loop $iLoop
-	  ;; (if (i32.lt_u (local.get $ipos)(local.get $curLength))
-		;; (then
-		  ;; (call $i32.printwsp (local.get $ipos))
-		  ;; (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))
-		  ;; ;;(call $i32list.print)
-		  ;; ;;(call $i32.hexprint)
-		  ;; (call $print)
-		  ;; ;;(call $i32.printwlf)
-	      ;; (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
-	      ;; (br $iLoop))))
-	;; (call $C.print (i32.const 93)) ;; right bracket
-	;; (call $C.print (i32.const 10)) ;; new line
-  ;; )
   (func $i32list.toStr (param $lstPtr i32)(result i32)
 	(local $strPtr i32)
+	(local $strTmp i32)
 	(local $curLength i32)
 	(local $ipos i32)
 	(local.set $strPtr (call $str.mk))
 	(local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
-	;;(call $i32.printwlf (local.get $curLength))
-	(local.set $ipos (i32.const 0))
-	;;(call $C.print (i32.const 91)) ;; left bracket
 	(call $str.catByte (local.get $strPtr)(i32.const 91)) ;; left bracket
+	(local.set $ipos (i32.const 0))
 	(loop $iLoop
 	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
 		(then
-		  ;;(call $i32.printwsp (local.get $ipos))
-		  (call $toStr (call $i32list.get@ (local.get $lstPtr)(local.get $ipos)))
-		  ;;(call $i32list.print)
-		  ;;(call $i32.hexprint)
-		  ;;(call $print)
-		  (call $str.catStr (local.get $strPtr))
-		  ;;(call $i32.printwlf)
+		  (local.set $strTmp (call $toStr (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))))
+		  (call $str.catStr (local.get $strPtr)(local.get $strTmp))
+		  (call $str.catsp (local.get $strPtr))
 	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
 	      (br $iLoop))))
-	;;(call $C.print (i32.const 93)) ;; right bracket
+	(call $str.drop (local.get $strPtr))  ;; extra final space
 	(call $str.catByte (local.get $strPtr)(i32.const 93)) ;; right bracket
-	;;(call $C.print (i32.const 10)) ;; new line
 	(local.get $strPtr)
   )
-  (func $i32strlist.print (param $lstPtr i32)
-	(local $curLength i32)
-	(local $ipos i32)
-	(local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
-	(local.set $ipos (i32.const 0))
-	;;(call $C.print (i32.const 91)) ;; left bracket
-	(loop $iLoop
-	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
-		(then
-		  (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))
-		  (call $str.printwlf)   
-	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
-	      (br $iLoop))))
-	;;(call $C.print (i32.const 93)) ;; right bracket
-	(call $C.print (i32.const 10)) ;; new line
-  )
+  ;; (func $i32strlist.print (param $lstPtr i32)
+	;; (local $curLength i32)
+	;; (local $ipos i32)
+	;; (local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
+	;; (local.set $ipos (i32.const 0))
+	;; ;;(call $C.print (i32.const 91)) ;; left bracket
+	;; (loop $iLoop
+	  ;; (if (i32.lt_u (local.get $ipos)(local.get $curLength))
+		;; (then
+		  ;; (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))
+		  ;; (call $str.printwlf)   
+	      ;; (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
+	      ;; (br $iLoop))))
+	;; ;;(call $C.print (i32.const 93)) ;; right bracket
+	;; (call $C.print (i32.const 10)) ;; new line
+  ;; )
   (func $str.toStr (param $strPtr i32)(result i32)
 	;; This is used by map routines to dump a key that is a string
 	(local.get $strPtr)
@@ -978,6 +964,11 @@
 	(call $str.setByteLen(local.get $strPtr)
 	  (i32.add (local.get $byteLen)(i32.const 1)))
   )
+  (func $str.catsp (param $strPtr i32)
+	(call $str.catByte (local.get $strPtr)(i32.const 32)))
+  (func $str.catlf (param $strPtr i32)
+    (call $str.catByte (local.get $strPtr)(i32.const 10)))
+  
   (func $str.catByte.test (param $testNum i32)(result i32)
 	(local $sp i32)
 	(local $memsp i32)
@@ -1538,46 +1529,46 @@
 		  (br $mLoop))))
 	(global.get $maxNeg)	;; didn't find any match flag
   )
-  (func $map.print(param $map i32)
-	(local $mapLen i32)
-	(local $mapPos i32)
-	(local $keyToStrOff i32)
-	(local $keyList i32)
-	(local $valList i32)
-	(local $key i32)
-	(local $val i32)
+  ;; (func $map.print(param $map i32)
+	;; (local $mapLen i32)
+	;; (local $mapPos i32)
+	;; (local $keyToStrOff i32)
+	;; (local $keyList i32)
+	;; (local $valList i32)
+	;; (local $key i32)
+	;; (local $val i32)
 	
-	(local.set $keyList
-	  (call $i32list.get@ (local.get $map) (global.get $mapListOff)))
-	(local.set $valList
-	  (call $i32list.get@ (local.get $map) (global.get $valListOff)))
+	;; (local.set $keyList
+	  ;; (call $i32list.get@ (local.get $map) (global.get $mapListOff)))
+	;; (local.set $valList
+	  ;; (call $i32list.get@ (local.get $map) (global.get $valListOff)))
 
-	(local.set $keyToStrOff
-	  (call $i32list.get@ (local.get $map) (global.get $keyPrintOff)))
-	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
-	(local.set $mapPos (i32.const 0))
-	(loop $mLoop
-	  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
-		(then
-		  (local.set $key
-		    (call $i32list.get@
-			  (local.get $keyList)
-			  (local.get $mapPos)))
-		  (local.set $val
-		    (call $i32list.get@
-			  (local.get $valList)
-			  (local.get $mapPos)))
-		  (call $i32.printwsp (local.get $mapPos))
-		  (call $str.print  ;; we know it will be a string, so call directly
-			(local.get $key)
-			(call_indirect (type $keytoStrSig)
-			  (local.get $keyToStrOff)))
-		  (call $C.print (i32.const 32)) ;; space
-		  ;;(call $i32.printwlf (local.get $val))
-		  (call $print (local.get $val))
-		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
-		  (br $mLoop))))
-  )
+	;; (local.set $keyToStrOff
+	  ;; (call $i32list.get@ (local.get $map) (global.get $keyPrintOff)))
+	;; (local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
+	;; (local.set $mapPos (i32.const 0))
+	;; (loop $mLoop
+	  ;; (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
+		;; (then
+		  ;; (local.set $key
+		    ;; (call $i32list.get@
+			  ;; (local.get $keyList)
+			  ;; (local.get $mapPos)))
+		  ;; (local.set $val
+		    ;; (call $i32list.get@
+			  ;; (local.get $valList)
+			  ;; (local.get $mapPos)))
+		  ;; (call $print(local.get $mapPos))(call $printsp)
+		  ;; (call $str.print  ;; we know it will be a string, so call directly
+			;; (local.get $key)
+			;; (call_indirect (type $keytoStrSig)
+			  ;; (local.get $keyToStrOff)))
+		  ;; (call $C.print (i32.const 32)) ;; space
+		  ;; ;;(call $i32.printwlf (local.get $val))
+		  ;; (call $print (local.get $val))
+		  ;; (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
+		  ;; (br $mLoop))))
+  ;; )
   (func $map.toStr(param $map i32)(result i32)
 	(local $mapLen i32)
 	(local $mapPos i32)
@@ -1610,14 +1601,16 @@
 		    (call $i32list.get@
 			  (local.get $valList)
 			  (local.get $mapPos)))
-		  (call $i32.printwsp (local.get $mapPos))
-		  (call $str.print  ;; we know it will be a string, so call directly
+		  ;;(call $print(local.get $mapPos))(call $printsp)
+		  (call $str.catStr(local.get $strPtr)(call $toStr (local.get $mapPos)))
+		  (call $str.catStr
+		    (local.get $strPtr)
 			(local.get $key)
 			(call_indirect (type $keytoStrSig)
 			  (local.get $keytoStrOff)))
-		  (call $C.print (i32.const 32)) ;; space
+		  (call $str.catsp (local.get $strPtr))
 		  ;;(call $i32.printwlf (local.get $val))
-		  (call $print (local.get $val))
+		  (call $str.catStr (local.get $strPtr) (call $toStr(local.get $val)))
 		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
 		  (br $mLoop))))
 	(local.get $strPtr)
@@ -1919,11 +1912,13 @@
 	(call $printlf)
 	;; Try a string pointer
 	;;(call $printwlf (call $str.mkdata (global.get $g$starLoop)))
-	(call $byte.print (i32.const 10))
 	(call $print (call $str.mkdata (global.get $g$starLoop)))
-	(call $byte.print (i32.const 10))
+	(call $printlf)
 	;; Try a null terminated string
 	(call $print (global.get $g$starLoop))
+	;; try an int
+	(call $print (call $i32.toStr(i32.const 42)))(call $printlf)
+	(call $print (i32.const 43))(call $printlf)
 	;; Try an i32 list
 	(local.set $ptr (call $i32list.mk))
 	(call $i32list.push (local.get $ptr)(i32.const 42))
