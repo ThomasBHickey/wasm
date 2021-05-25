@@ -97,15 +97,6 @@
 		(global.get $firstFreeMem)))
 	(call $showMemUsedHelper (local.get $bytesUsed)(local.get $maxUsedMsg))
 	(call $showMemUsedHelper (global.get $memReclaimed)(local.get $memReclaimedMsg))
-	
-	;; (call $strdata.print (global.get $gMemUsed))
-	;; (call $i32.printwsp (local.get $bytesUsed))
-	;; (call $C.print (i32.const 40))  ;; (
-	;; (call $i32.print
-	  ;; (i32.shr_u (local.get $bytesUsed) (i32.const 10)))
-	;; (call $C.print (i32.const 75)) ;; K
-	;; (call $C.print (i32.const 41)) ;; )
-	;; (call $C.print (i32.const 10)) ;; LF
   )
   (func $getMem (param $size i32)(result i32)
 	;; Simple memory allocation done in 4-byte chunks
@@ -252,35 +243,7 @@
 		(i32.rem_u (local.get $N)(i32.const 10))
 		(global.get $zero)))
   )
-  ;; (func $i32.toStr (param $N i32)(result i32)
-  ;; ;; return a string representing an i32
-  ;; (local $strPtr i32)
-  ;; (local.set $strPtr (call $str.mk))
-	;; (if (i32.ge_u (local.get $N)(i32.const 10))
-	  ;; (then 
-		;; (call $str.catByte
-		  ;; (local.get $strPtr)
-		  ;; (i32.add
-			;; (i32.div_u
-			  ;; (local.get $N)
-			  ;; (i32.const 10))
-			;; (global.get $zero))))
-	;; (call $str.catByte
-	  ;; (local.get $strPtr) 
-	  ;; (i32.add
-		;; (i32.rem_u (local.get $N)(i32.const 10))
-		;; (global.get $zero)))
-	;; (local.get $strPtr)
-  ;; )
-  ;; (func $i32.printwsp (param $N i32)  ;; with space
-    ;; (call $i32.print (local.get $N))
-	;; (call $byte.print (i32.const 32))  ;; space
-  ;; )
-  ;; (func $i32.printwlf (param $N i32)  ;; with line feed
-    ;; (call $i32.print (local.get $N))
-	;; (call $byte.print (i32.const 10))  ;; space
-  ;; )
-  (func $i32.hexprint (param $N i32)
+ (func $i32.hexprint (param $N i32)
 	(call $byte.print (global.get $zero))
 	(call $byte.print (i32.const 120)) ;; 'x'
 	(call $i32.hexprintsup (local.get $N))
@@ -571,12 +534,18 @@
 	(i32.const 0) ;; passed
   )
   (func $i32list.toStr (param $lstPtr i32)(result i32)
+	;; check if first entry is a TypeNum
 	(local $strPtr i32)
 	(local $strTmp i32)
 	(local $curLength i32)
 	(local $ipos i32)
 	(local.set $strPtr (call $str.mk))
 	(local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
+	(if
+	  (local.get $curLength)  ;; at least one item
+	  (then
+		(if (call $map.is (call $i32list.get@ (local.get $lstPtr)(i32.const 0)))
+		  (return (call $map.toStr (local.get $lstPtr))))))
 	(call $str.catByte (local.get $strPtr)(i32.const 91)) ;; left bracket
 	(local.set $ipos (i32.const 0))
 	(loop $iLoop
@@ -591,22 +560,6 @@
 	(call $str.catByte (local.get $strPtr)(i32.const 93)) ;; right bracket
 	(local.get $strPtr)
   )
-  ;; (func $i32strlist.print (param $lstPtr i32)
-	;; (local $curLength i32)
-	;; (local $ipos i32)
-	;; (local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
-	;; (local.set $ipos (i32.const 0))
-	;; ;;(call $C.print (i32.const 91)) ;; left bracket
-	;; (loop $iLoop
-	  ;; (if (i32.lt_u (local.get $ipos)(local.get $curLength))
-		;; (then
-		  ;; (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))
-		  ;; (call $str.printwlf)   
-	      ;; (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
-	      ;; (br $iLoop))))
-	;; ;;(call $C.print (i32.const 93)) ;; right bracket
-	;; (call $C.print (i32.const 10)) ;; new line
-  ;; )
   (func $str.toStr (param $strPtr i32)(result i32)
 	;; This is used by map routines to dump a key that is a string
 	(local.get $strPtr)
@@ -1423,6 +1376,9 @@
 	  (local.get $keyPrintOff))
 	(local.get $mapList)
   )
+  (func $map.is (param $ptr i32)(result i32)
+    (i32.eq (local.get $ptr)(global.get $Map))
+  )
   ;; these are offsets within the state info list in each map
   (global $mapTypeOff i32 (i32.const 0))
   (global $mapListOff i32 (i32.const 1))
@@ -1602,7 +1558,7 @@
 			  (local.get $valList)
 			  (local.get $mapPos)))
 		  ;;(call $print(local.get $mapPos))(call $printsp)
-		  (call $str.catStr(local.get $strPtr)(call $toStr (local.get $mapPos)))
+		  ;;(call $str.catStr(local.get $strPtr)(call $toStr (local.get $mapPos)))
 		  (call $str.catStr
 		    (local.get $strPtr)
 			(local.get $key)
@@ -1912,18 +1868,26 @@
 	(call $printlf)
 	;; Try a string pointer
 	;;(call $printwlf (call $str.mkdata (global.get $g$starLoop)))
-	(call $print (call $str.mkdata (global.get $g$starLoop)))
-	(call $printlf)
+	;;(call $print (call $str.mkdata (global.get $g$starLoop)))
+	;;(call $printlf)
 	;; Try a null terminated string
-	(call $print (global.get $g$starLoop))
+	;;(call $print (global.get $g$starLoop))
 	;; try an int
-	(call $print (call $i32.toStr(i32.const 42)))(call $printlf)
-	(call $print (i32.const 43))(call $printlf)
+	;;(call $print (call $i32.toStr(i32.const 42)))(call $printlf)
+	;;(call $print (i32.const 43))(call $printlf)
 	;; Try an i32 list
 	(local.set $ptr (call $i32list.mk))
 	(call $i32list.push (local.get $ptr)(i32.const 42))
 	(call $i32list.push (local.get $ptr)(i32.const 43))
 	(call $print (local.get $ptr))(call $printlf)
+	(local.set $ptr (call $i32Map.mk))
+	;;(call $map.set (local.get $ptr)(i32.const 3)(i32.const 43))
+	;;(call $map.set (local.get $ptr)(i32.const 5)(i32.const 45))
+	(call $print (call $map.toStr (local.get $ptr)))
+	(call $print (local.get $ptr))
+	(call $printlf)
+	;;(local.set $ptr (call $strMap.mk))
+	
 	(call $print(global.get $gmisc.test.end))(call $printlf)
 	(call $showMemUsed)
     (i32.const 0)
