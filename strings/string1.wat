@@ -70,12 +70,12 @@
   (func $showMemUsedHelper (param $numBytes i32)(param $msg i32)
     (call $str.print (local.get $msg))
 	(call $i32.print (local.get $numBytes))(call $printsp)
-	(call $byte.print (i32.const 40)) ;; (
+	(call $byte.print (global.get $LPAREN))
 	(call $i32.print
-	  (i32.shr_u (local.get $numBytes) (i32.const 10)))
+	  (i32.shr_u (local.get $numBytes) (global.get $LF)))
 	(call $C.print (i32.const 75)) ;; K
-	(call $C.print (i32.const 41)) ;; )
-	(call $C.print (i32.const 10)) ;; LF
+	(call $C.print (global.get $RPAREN))
+	(call $C.print (global.get $LF))
   )
   (func $showMemUsed 
     (local $bytesUsed i32)
@@ -157,8 +157,8 @@
     ;; 'Universal' print function
     (call $str.print (call $toStr (local.get $ptr)))
   )
-  (func $printlf (call $byte.print (i32.const 10)))
-  (func $printsp (call $byte.print (i32.const 32)))
+  (func $printlf (call $byte.print (global.get $LF)))
+  (func $printsp (call $byte.print (global.get $SP)))
   
   (func $toStr (param $ptr i32)(result i32)
     (local $strPtr i32)
@@ -174,11 +174,11 @@
 		(then
 		  (local.set $strPtr (call $i32.toStr (local.get $ptr)))
 		  (call $str.catsp (local.get $strPtr))
-		  (call $str.catByte (local.get $strPtr)(i32.const 40)) ;; left paren
-		  (call $str.catByte (local.get $strPtr)(i32.const 34)) ;; dble quote
+		  (call $str.catByte (local.get $strPtr)(global.get $LPAREN))
+		  (call $str.catByte (local.get $strPtr)(global.get $DBLQUOTE))
 		  (call $str.catStr (local.get $strPtr)(call $str.mkdata(local.get $ptr)))
-		  (call $str.catByte (local.get $strPtr)(i32.const 34)) ;; dble quote
-		  (call $str.catByte (local.get $strPtr)(i32.const 41)) ;; right paren
+		  (call $str.catByte (local.get $strPtr)(global.get $DBLQUOTE))
+		  (call $str.catByte (local.get $strPtr)(global.get $RPAREN))
 		  (return (local.get $strPtr))))
 	(call $i32.toStr (local.get $ptr))
   )
@@ -255,7 +255,7 @@
 	(call $byte.print (global.get $zero))
 	(call $byte.print (i32.const 120)) ;; 'x'
 	(call $i32.hexprintsup (local.get $N))
-	(call $byte.print (i32.const 32))  ;; space
+	(call $byte.print (global.get $SP))  ;; space
   )
   (func $i32.hexprintsup (param $N i32)
     ;; support for $i32.hexprint
@@ -276,12 +276,12 @@
 			(i32.const 55)))))  ;; 'A'-10
   )
   (func $PtrDump (param $ptr i32)
-	(call $byte.print(i32.const 123)) ;; '{'
+	(call $byte.print(global.get $LBRACE))
 	  (call $i32.print (local.get $ptr))
 	  (call $i32.print (call $i32list.getCurLen (local.get $ptr)))
 	  (call $i32.print (call $i32list.getMaxLen (local.get $ptr)))
 	  (call $i32.print (call $i32list.getDataOff (local.get $ptr)))
-	(call $byte.print(i32.const 125)) ;; '}'
+	(call $byte.print(global.get $RBRACE))
   )
   (func $byte.print (param $B i32)
 	(i32.store (global.get $writeIOVsOff0)(global.get $writeBuffOff))
@@ -323,7 +323,7 @@
 	(call $byte.print (i32.const 101)) ;; e
 	(call $byte.print (i32.const 115)) ;; s
 	(call $byte.print (i32.const 116)) ;; t
-	(call $byte.print (i32.const  32)) ;; space
+	(call $byte.print (global.get $SP)) ;; space
   )
   (func $Test.show (param $testNum i32)(param $testResult i32)
 	(local $adjTestNum i32)
@@ -344,22 +344,22 @@
   (func $Test.showOK (param $testnum i32)
     (call $Test.printTest)
 	(call $i32.print (local.get $testnum))
-	(call $byte.print (i32.const 32)) ;; space
+	(call $byte.print (global.get $SP))
 	(call $byte.print (i32.const 79)) ;; O
 	(call $byte.print (i32.const 75)) ;; K
-	(call $byte.print (i32.const 10)) ;; linefeed
+	(call $byte.print (global.get $LF))
   )
   (func $Test.showFailed (param $testnum i32)(param $testResult i32)
     (call $Test.printTest)
 	(call $i32.print (local.get $testnum))
-	(call $byte.print (i32.const 32)) ;; space
+	(call $byte.print (global.get $SP))
 	(call $byte.print (i32.const 78)) ;; N
 	(call $byte.print (i32.const 79)) ;; O
 	(call $byte.print (i32.const 75)) ;; K
-	(call $byte.print (i32.const 33)) ;; !
-	(call $byte.print (i32.const 33)) ;; !
-	(call $byte.print (i32.const 33)) ;; !
-	(call $byte.print (i32.const 32)) ;; space
+	(call $byte.print (global.get $BANG))
+	(call $byte.print (global.get $BANG))
+	(call $byte.print (global.get $BANG))
+	(call $byte.print (global.get $SP))
 	(call $i32.print (local.get $testResult))
 	(call $byte.print (i32.const 10)) ;; linefeed
 	)
@@ -548,20 +548,20 @@
 	  (then
 		(if (call $map.is (call $i32list.get@ (local.get $lstPtr)(i32.const 0)))
 		  (return (call $map.toStr (local.get $lstPtr))))))
-	(call $str.catByte (local.get $strPtr)(i32.const 91)) ;; left bracket
+	(call $str.catByte (local.get $strPtr)(global.get $LSQBRACK))
 	(local.set $ipos (i32.const 0))
 	(loop $iLoop
 	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
 		(then
 		  (local.set $strTmp (call $toStr (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))))
 		  (call $str.catStr (local.get $strPtr)(local.get $strTmp))
-		  (call $str.catByte (local.get $strPtr)(i32.const 44)) ;; comma
+		  (call $str.catByte (local.get $strPtr)(global.get $COMMA))
 		  (call $str.catsp (local.get $strPtr))
 	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
 	      (br $iLoop))))
 	(call $str.drop (local.get $strPtr))  ;; extra comma
 	(call $str.drop (local.get $strPtr))  ;; extra final space
-	(call $str.catByte (local.get $strPtr)(i32.const 93)) ;; right bracket
+	(call $str.catByte (local.get $strPtr)(global.get $RSQBRACK)) ;; right bracket
 	(local.get $strPtr)
   )
   (func $str.toStr (param $strPtr i32)(result i32)
@@ -1502,7 +1502,7 @@
 		  (local.set $mapPos (i32.add (local.get $mapPos)(i32.const 1)))
 		  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
 		    (then
-			  (call $str.catByte (local.get $strPtr)(i32.const 44)) ;; comma
+			  (call $str.catByte (local.get $strPtr)(global.get $COMMA))
 			  ;;(call $str.catlf (local.get $strPtr))
 			  (call $str.catsp (local.get $strPtr))))
 		  (br $mLoop))))
@@ -1820,21 +1820,27 @@
   (global $BStr		i32	(i32.const 0x42537472))	;; 'BStr' type# for byte strings
   (global $Map		i32 (i32.const 0x4D617020))	;; 'Map ' type# for i32 maps
   (global $maxNeg	i32  (i32.const 0x80000000));; (-2147483648)
-  (global $zero   i32 (i32.const 48))			;; '0'
   (global $TAB	  i32 (i32.const 0x09))			;; U+0009	Tab
   (global $LF	  i32 (i32.const 0x0A))			;; U+000A   Line Feed
   (global $CR	  i32 (i32.const 0x0D))			;; U+000D   Carriage Return
   (global $SP	  i32 (i32.const 0x20))			;; U+0020	Space
+  (global $BANG		i32 (i32.const 0x21))		;; U+0021	Exclamation Mark !
   (global $DBLQUOTE i32 (i32.const 0x22))		;; U+0022	Double Quote "
   (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024	Dollar sign $
   (global $DOLLARSIGN i32 (i32.const 0x24))  	;; U+0024	Dollar sign $
   (global $LPAREN i32 (i32.const 0x28))			;; U+0028   Left Parenthesis (
   (global $RPAREN i32 (i32.const 0x29))			;; U+0029   Right Parenthesis )
-  (global $ASTERISK i32 (i32.const 0x2A))		;; *
-  (global $FULLSTOP i32 (i32.const 0x2E))		;; .
-  (global $BACKSLASH i32 (i32.const 0x5C))		;; U+005C	Back Slash
-  (global $CIRCUMFLEX i32 (i32.const 0x5E))		;; ^
-  (global $SEMI	i32 (i32.const 0x3B))			;; ;
+  (global $zero   i32 (i32.const 0x30))			;; U+0030 	Digit Zero 0
+  (global $ASTERISK i32 (i32.const 0x2A))		;; U+002A	Asterisk *
+  (global $COMMA  i32 (i32.const 0x2C))			;; U+002C	Comma ,
+  (global $SEMI	i32 (i32.const 0x3B))			;; U+003B	Semicolon ;
+  (global $LSQBRACK i32 (i32.const 0x5B))		;; U+005B	Left Square Bracket [
+  (global $RSQBRACK i32 (i32.const 0x5D))		;; U+005D	Right Square Bracket [
+  (global $FULLSTOP i32 (i32.const 0x2E))		;; U+002E	Full Stop .
+  (global $BACKSLASH i32 (i32.const 0x5C))		;; U+005C	Back Slash \ 
+  (global $CIRCUMFLEX i32 (i32.const 0x5E))		;; U+005E	Circumflex Accent ^
+  (global $LBRACE	i32 (i32.const 0x7B))		;; U+007B	Left Curly Bracket {
+  (global $RBRACE	i32 (i32.const 0x7D))		;; U+007B	Right Curly Bracket }
   (global $UTF8-2 i32 (i32.const 0xC2A2))		;; U+00A2	Cent sign
   (global $UTF8-3 i32 (i32.const 0xE0A4B9))		;; U+0939	Devanagari Letter Ha
   (global $UTF8-4 i32 (i32.const 0xF0908D88))	;; U+10348	Gothic Letter Hwair
