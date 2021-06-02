@@ -385,7 +385,7 @@
 	  (if (i32.le_u (local.get $testOff)(local.get $lastTestOff))
 	    (then (br $testLoop))))
 	(call $reclaimMem (local.get $nextFreeMem))
-	(call $showMemUsed)
+	;;(call $showMemUsed)
   )
 
   ;; i32Lists
@@ -559,8 +559,10 @@
 		  (call $str.catsp (local.get $strPtr))
 	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
 	      (br $iLoop))))
-	(call $str.drop (local.get $strPtr))  ;; extra comma
-	(call $str.drop (local.get $strPtr))  ;; extra final space
+	(if (local.get $curLength)
+	  (then
+		(call $str.drop (local.get $strPtr))  ;; extra comma
+		(call $str.drop (local.get $strPtr))))  ;; extra final space
 	(call $str.catByte (local.get $strPtr)(global.get $RSQBRACK)) ;; right bracket
 	(local.get $strPtr)
   )
@@ -1481,7 +1483,8 @@
 	  (call $i32list.get@ (local.get $map) (global.get $keyPrintOff)))
 	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
 	(local.set $mapPos (i32.const 0))
-	(call $str.catByte (local.get $strPtr)(i32.const 123))  ;; open brace
+	(call $str.catlf (local.get $strPtr))
+	(call $str.catByte (local.get $strPtr)(global.get $LBRACE))
 	(loop $mLoop
 	  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
 		(then
@@ -1506,7 +1509,7 @@
 			  ;;(call $str.catlf (local.get $strPtr))
 			  (call $str.catsp (local.get $strPtr))))
 		  (br $mLoop))))
-	(call $str.catByte (local.get $strPtr)(i32.const 125))  ;; closing brace
+	(call $str.catByte (local.get $strPtr)(global.get $RBRACE))
 	(local.get $strPtr)
   )
   (func $map.test (param $testNum i32)(result i32)
@@ -1592,7 +1595,7 @@
 	(local $numToks i32)
 	(local $tokPos i32)
 	(local.set $wamStack (call $wamTokenize (local.get $strPtr)))
-	(call $print (local.get $wamStack))(call $printlf)
+	;;(call $print (local.get $wamStack))(call $printlf)
 	(local.get $wamStack) ;; something to return for now
   )
   ;; Tokenization closely follows
@@ -1655,7 +1658,7 @@
 	(call $map.set (local.get $state)(global.get $gstack)(local.get $stack))
 	(call $map.set (local.get $state)(global.get $gcur)(local.get $stack))
 	(call $map.set (local.get $state)(global.get $glast)(i32.const 0))
-	(call $print (local.get $state))
+	;;(call $print (local.get $state))
 	(local.set $buffLen (call $str.getByteLen (local.get $strPtr)))
 	(local.set $tokenStart (i32.const 0))
 	(local.set $token (call $str.mk))  ;; current token built up here
@@ -1777,7 +1780,8 @@
 			(call $addToken(local.get $state)(local.get $token)))
 		  (call $str.catByte (local.get $token)(local.get $byte))
 		  (br $bLoop))))
-	(call $print (local.get $state))
+	(call $print (local.get $state))(call $printlf)
+	;;(call $print (global.get $gstack))
 	(return (call $map.get (local.get $state)(global.get $gstack)))
   )
   (func $main (export "_start")
@@ -1790,15 +1794,18 @@
 	(call $print (call $str.mkdata(global.get $gBytesRead)))
 	(call $print(call $str.getByteLen (local.get $buffer))) (call $printlf)
 	(local.set $wat (call $wam2wat (local.get $buffer)))
+	(call $print (local.get $wat))(call $printlf)
 	(call $showMemUsed)
   )
   (func $misc.test (param $testNum i32)(result i32)
 	(local $dictptr i32)
 	(local $listptr i32)
+	(return (i32.const 0))
 	(call $showMemUsed)
 	(call $print(call $str.mkdata(global.get $gmisc.test.start)))(call $printlf)
 	;; Try an i32 list
 	(local.set $listptr (call $i32list.mk))
+	(call $print (local.get $listptr))(call $printlf)
 	(call $i32list.push (local.get $listptr)(i32.const 42))
 	(call $i32list.push (local.get $listptr)(i32.const 43))
 	(call $print (local.get $listptr))(call $printlf)
