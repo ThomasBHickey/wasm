@@ -19,7 +19,7 @@
   (type $keyCompSig (func (param i32)(param i32)(result i32)))
   (type $keytoStrSig (func (param i32)(result i32)))
 
-  (table 25 funcref)  ;; must be >= to length of elem
+  (table 30 funcref)  ;; must be >= to length of elem
   (elem (i32.const 0)
     $str.compare			;;0
 	$str.toStr				;;1
@@ -46,9 +46,10 @@
     $i32list.mk.test		;;18
 	$str.drop.test			;;19
 	$typeNum.toStr.test		;;20
-	$misc.test				;;21
+	$toStr.test				;;21
+	$misc.test				;;22
   )
-  (global $numTests i32 (i32.const 21)) ;; should match # tests in table
+  (global $numTests i32 (i32.const 22)) ;; should match # tests in table
   (global $firstTestOffset 	i32 (i32.const 4))
   (global $strCompareOffset i32 (i32.const 0))
   (global $strToStrOffset	i32 (i32.const 1))
@@ -181,6 +182,36 @@
 		  (call $str.catByte (local.get $strPtr)(global.get $RPAREN))
 		  (return (local.get $strPtr))))
 	(call $i32.toStr (local.get $ptr))
+  )
+  (func $toStr.test (param $testNum i32)(result i32)
+	(local $list i32)
+	(local $map i32)
+	(local.set $list (call $i32list.mk))
+	(if
+	  (i32.eqz (call $str.compare
+		(call $toStr (local.get $list))
+		(call $str.mkdata (global.get $gDblBrack))))
+	  (return (i32.const 1)))
+	(call $i32list.push (local.get $list)(call $i32list.mk))
+	(if
+	  (i32.eqz (call $str.compare
+		(call $toStr (local.get $list))
+		(call $str.mkdata (global.get $gDblDblBrack))))
+	  (return (i32.const 2)))
+	(local.set $map (call $i32Map.mk))
+	(if
+	  (i32.eqz (call $str.compare
+		(call $toStr (local.get $map))
+		(call $str.mkdata (global.get $gDblBrace))))
+	  (return (i32.const 3)))
+	(local.set $list (call $i32list.mk))
+	(call $i32list.push (local.get $list)(call $strMap.mk))
+	(if
+	  (i32.eqz (call $str.compare
+		(call $toStr (local.get $list))
+		(call $str.mkdata (global.get $gBrackedBrace))))
+	  (return (i32.const 4)))
+	(return (i32.const 0))
   )
   (func $typeNum.toStr (param $typeNum i32)(result i32)
     (local $strptr i32)
@@ -1483,7 +1514,7 @@
 	  (call $i32list.get@ (local.get $map) (global.get $keyPrintOff)))
 	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
 	(local.set $mapPos (i32.const 0))
-	(call $str.catlf (local.get $strPtr))
+	;;(call $str.catlf (local.get $strPtr))
 	(call $str.catByte (local.get $strPtr)(global.get $LBRACE))
 	(loop $mLoop
 	  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
@@ -1612,6 +1643,9 @@
 	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
+	(if (i32.eq (call $str.getByteLen (local.get $token))(i32.const 1))
+	  (if (call $str.getByte (local.get $token)(i32.const 0))
+		(local.set $token (call $str.mkdata (global.get $gLF)))))
 	(if
 	  (i32.eqz  ;; ignore empty slices
 		(call $str.getByteLen(local.get $token)))
@@ -1798,28 +1832,7 @@
 	(call $showMemUsed)
   )
   (func $misc.test (param $testNum i32)(result i32)
-	(local $dictptr i32)
-	(local $listptr i32)
-	(return (i32.const 0))
-	(call $showMemUsed)
-	(call $print(call $str.mkdata(global.get $gmisc.test.start)))(call $printlf)
-	;; Try an i32 list
-	(local.set $listptr (call $i32list.mk))
-	(call $print (local.get $listptr))(call $printlf)
-	(call $i32list.push (local.get $listptr)(i32.const 42))
-	(call $i32list.push (local.get $listptr)(i32.const 43))
-	(call $print (local.get $listptr))(call $printlf)
-	(local.set $dictptr (call $i32Map.mk))
-	(call $map.set (local.get $dictptr)(i32.const 3)(i32.const 43))
-	(call $map.set (local.get $dictptr)(i32.const 4)(global.get $g$starLoop))
-	(call $map.set (local.get $dictptr)(i32.const 5)(i32.const 45))
-	(call $print (local.get $dictptr))
-	(call $printlf)
-	(call $i32list.push (local.get $listptr)(local.get $dictptr))
-	(call $print (local.get $listptr))(call $printlf)
-	(call $print(call $str.mkdata(global.get $gmisc.test.end)))(call $printlf)
-	(call $showMemUsed)
-    (i32.const 0)
+	(i32.const 0)
   )
   (global $testing	i32 (i32.const 42))
   (global $i32L	  	i32	(i32.const 0x6933324C)) ;; 'i32L' type# for i32 lists
@@ -1906,6 +1919,10 @@
   (data (i32.const 3670) "Max used: \00")	(global $gMaxUsed i32 (i32.const 3670))
   (data (i32.const 3685) "Mem Reclaimed: \00")(global $gMemReclaimed i32 (i32.const 3685))
   (data (i32.const 3705) "Start $misc.test\00")(global $gmisc.test.start i32 (i32.const 3705))
-  (data (i32.const 3725) "End $misc.test\00")(global $gmisc.test.end i32(i32.const 3725))
+  (data (i32.const 3725) "End $misc.test\00")(global $gmisc.test.end i32 (i32.const 3725))
+  (data (i32.const 3745) "[]\00")			(global $gDblBrack i32 (i32.const 3745))
+  (data (i32.const 3750) "[[]]\00")			(global $gDblDblBrack i32 (i32.const 3750))
+  (data (i32.const 3760) "{}\00")			(global $gDblBrace i32 (i32.const 3760))
+  (data (i32.const 3765) "[{}]\00")			(global $gBrackedBrace i32 (i32.const 3765))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
