@@ -1,0 +1,1 @@
+((local   i32.const		 3))

@@ -47,9 +47,10 @@
 	$str.drop.test			;;19
 	$typeNum.toStr.test		;;20
 	$toStr.test				;;21
-	$misc.test				;;22
+	$emptyStr.test			;;22
+	$misc.test				;;23
   )
-  (global $numTests i32 (i32.const 22)) ;; should match # tests in table
+  (global $numTests i32 (i32.const 23)) ;; should match # tests in table
   (global $firstTestOffset 	i32 (i32.const 4))
   (global $strCompareOffset i32 (i32.const 0))
   (global $strToStrOffset	i32 (i32.const 1))
@@ -234,7 +235,11 @@
 	(local.set $strPtr (call $str.mk))
 	(local.set $type (call $getTypeNum (local.get $ptr)))
 	(if (i32.eq (local.get $type)(global.get $BStr))
-	  (return (local.get $ptr)))
+	  (then
+		(call $str.catByte (local.get $strPtr)(global.get $DBLQUOTE))
+		(call $str.catStr (local.get $strPtr)(local.get $ptr))
+		(call $str.catByte (local.get $strPtr)(global.get $DBLQUOTE))
+		(return (local.get $strPtr))))
 	(if (i32.eq (local.get $type)(global.get $i32L))
 	  (call $str.catStr 
 		  (local.get $strPtr)
@@ -1631,6 +1636,43 @@
   )
   ;; Tokenization closely follows
   ;; https://github.com/emilbayes/wat-tokenizer/blob/master/index.js
+  (func $emptyStr (param $strPtr i32)(result i32)
+	(local $bp i32)
+	(local $byte i32)
+	(local $strLen i32)
+	(local.set $strLen (call $str.getByteLen (local.get $strPtr)))
+	(if (i32.eqz (local.get $strLen))
+	  (return (i32.const 1))) ;; empty
+	(local.set $bp (i32.const 0))
+	(loop $bloop
+	  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bp)))
+	  (if
+	    (i32.and
+		  (i32.ne (local.get $byte) (global.get $SP))
+		  (i32.ne (local.get $byte) (global.get $TAB)))
+		(return (i32.const 0)))  ;; Not empty
+	  (local.set $bp (i32.add (local.get $bp)(i32.const 1)))
+	  (if (i32.lt_u (local.get $bp)(local.get $strLen))
+		(br $bloop))
+	)
+	(i32.const 1)  ;; empty
+  )
+  (func $emptyStr.test (param $testNum i32)(result i32)
+	(local $strPtr i32)
+	(local.set $strPtr (call $str.mk))
+	(if (i32.eqz (call $emptyStr (local.get $strPtr)))
+	  (return (i32.const 1)))  ;; should be empty
+	(call $str.catByte (local.get $strPtr)(global.get $SP))
+	(if (i32.eqz (call $emptyStr (local.get $strPtr)))
+	  (return (i32.const 2)))
+	(call $str.catByte (local.get $strPtr)(global.get $TAB))
+	(if (i32.eqz (call $emptyStr (local.get $strPtr)))
+	  (return (i32.const 4))) ;; tabs count as empty!
+	(call $str.catByte (local.get $strPtr)(global.get $DOLLARSIGN))
+	(if (call $emptyStr (local.get $strPtr))
+	  (return (i32.const 4)))  ;; Not empty
+	(i32.const 0) ;; success
+  )
   (func $addToken (param $state i32)(param $token i32)
 	(local $stack i32)
 	(local $top i32)
@@ -1638,24 +1680,25 @@
 	(local $tokcopy i32)  ;; holds copy of to-be-cleared token
 	(local.set $tokcopy (call $str.mk))
 	(call $strdata.print(global.get $gaddToken:))
-	(call $str.print (local.get $token))
+	(call $print (local.get $token))(call $byte.print (global.get $SINGQUOTE))(call $printlf)
 	;;(call $byte.printwlf (i32.const 39)) ;; single quote
 	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
 	(if (i32.eq (call $str.getByteLen (local.get $token))(i32.const 1))
-	  (if (call $str.getByte (local.get $token)(i32.const 0))
+	  (if (i32.eq  ;; convert line feed to 'LF'
+		(call $str.getByte (local.get $token)(i32.const 0))
+		(global.get $LF))
 		(local.set $token (call $str.mkdata (global.get $gLF)))))
-	(if
-	  (i32.eqz  ;; ignore empty slices
-		(call $str.getByteLen(local.get $token)))
+	(if (call $emptyStr (local.get $token))
 	  (then
-		;;(call $strdata.printwlf (global.get $gskipping))
+		(call $str.clear (local.get $token))
 		(return)))
 	(local.set $stack (call $map.get (local.get $state)(global.get $gstack)))
 	;; Copy token string before we clear it
 	(call $str.catStr (local.get $tokcopy)(local.get $token))
 	(call $i32list.push (local.get $stack)(local.get $tokcopy))
+	(call $print (global.get $gstack))(call $byte.print (global.get $COLON))
 	(call $str.clear (local.get $token))  ;; clear the token string
   )
   (func $pushList (param $state i32)
@@ -1710,12 +1753,13 @@
 			  (if (call $map.get (local.get $state)(global.get $ginsideLineCom))
 				(call $addToken (local.get $state)(local.get $token)))))
 		  ;; TAB/SPACE/LF
-		  (if (i32.or (i32.eq (local.get $byte)(global.get $TAB))
+		  (if (i32.or
+				(i32.eq (local.get $byte)(global.get $TAB))
 				(i32.or
 				  (i32.eq (local.get $byte)(global.get $SP))
 				  (i32.eq (local.get $byte)(global.get $LF))))
 			(then
-			  (if 
+			  (if   ;; not insideWhiteSp or insideString or insideLineComment add Token
 				(i32.eqz
 				  (i32.or
 					(i32.or (call $map.get (local.get $state)(global.get $ginsideWhiteSp))
@@ -1848,11 +1892,13 @@
   (global $DBLQUOTE i32 (i32.const 0x22))		;; U+0022	Double Quote "
   (global $UTF8-1 i32 (i32.const 0x24))  		;; U+0024	Dollar sign $
   (global $DOLLARSIGN i32 (i32.const 0x24))  	;; U+0024	Dollar sign $
+  (global $SINGQUOTE i32 (i32.const 0x27))		;; U+0027	Singe Quote '
   (global $LPAREN i32 (i32.const 0x28))			;; U+0028   Left Parenthesis (
   (global $RPAREN i32 (i32.const 0x29))			;; U+0029   Right Parenthesis )
   (global $zero   i32 (i32.const 0x30))			;; U+0030 	Digit Zero 0
   (global $ASTERISK i32 (i32.const 0x2A))		;; U+002A	Asterisk *
   (global $COMMA  i32 (i32.const 0x2C))			;; U+002C	Comma ,
+  (global $COLON  i32 (i32.const 0x3A))			;; U+003A	Colon :
   (global $SEMI	i32 (i32.const 0x3B))			;; U+003B	Semicolon ;
   (global $LSQBRACK i32 (i32.const 0x5B))		;; U+005B	Left Square Bracket [
   (global $RSQBRACK i32 (i32.const 0x5D))		;; U+005D	Right Square Bracket [
