@@ -1,1 +1,1 @@
-((local   i32.const		 3))
+(((local	i32.const		 43)))
