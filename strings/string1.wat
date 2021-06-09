@@ -48,9 +48,10 @@
 	$typeNum.toStr.test		;;20
 	$toStr.test				;;21
 	$emptyStr.test			;;22
-	$misc.test				;;23
+	$i32list.pop.test		;;23
+	$misc.test				;;24
   )
-  (global $numTests i32 (i32.const 23)) ;; should match # tests in table
+  (global $numTests i32 (i32.const 24)) ;; should match # tests in table
   (global $firstTestOffset 	i32 (i32.const 4))
   (global $strCompareOffset i32 (i32.const 0))
   (global $strToStrOffset	i32 (i32.const 1))
@@ -180,15 +181,16 @@
 	  (i32.and
 		(i32.ge_u (local.get $ptr)(global.get $gAAA))
 		(i32.le_u (local.get $ptr)(global.get $gZZZ)))
-		(then
-		  (local.set $strPtr (call $i32.toStr (local.get $ptr)))
-		  (call $str.catsp (local.get $strPtr))
-		  (call $str.catByte (local.get $strPtr)(global.get $LPAREN))
-		  (call $str.catByte (local.get $strPtr)(global.get $DBLQUOTE))
-		  (call $str.catStr (local.get $strPtr)(call $str.mkdata(local.get $ptr)))
-		  (call $str.catByte (local.get $strPtr)(global.get $DBLQUOTE))
-		  (call $str.catByte (local.get $strPtr)(global.get $RPAREN))
-		  (return (local.get $strPtr))))
+	  (return (call $str.mkdata(local.get $ptr))))
+		;; (then
+		  ;; (local.set $strPtr (call $i32.toStr (local.get $ptr)))
+		  ;; (call $str.catsp (local.get $strPtr))
+		  ;; (call $str.catByte (local.get $strPtr)(global.get $LPAREN))
+		  ;; (call $str.catByte (local.get $strPtr)(global.get $DBLQUOTE))
+		  ;; (call $str.catStr (local.get $strPtr)(call $str.mkdata(local.get $ptr)))
+		  ;; (call $str.catByte (local.get $strPtr)(global.get $DBLQUOTE))
+		  ;; (call $str.catByte (local.get $strPtr)(global.get $RPAREN))
+		  ;; (return (local.get $strPtr))))
 	(call $i32.toStr (local.get $ptr))
   )
   (func $toStr.test (param $testNum i32)(result i32)
@@ -570,6 +572,14 @@
 	  (local.get $lstPtr)
 	  (local.get $lastPos))
 	(local.get $popped)
+  )
+  (func $i32list.pop.test (param $testNum i32)(result i32)
+	(local $lstPtr i32)
+	(local $temp i32)
+	(local.set $lstPtr (call $i32list.mk))
+	(call $i32list.push (local.get $lstPtr)(i32.const 42))
+	(local.set $temp (call $i32list.pop (local.get $lstPtr)))
+	(i32.ne (local.get $temp)(i32.const 42))
   )
   (func $i32list.push.test (param $testNum i32)(result i32)
     (local $lstPtr i32)
@@ -1644,13 +1654,14 @@
   )
   (func $wam2wat (param $strPtr i32)(result i32)
 	;; Accepts WAM file as a string, returns a list of tokens
-	(local $wamStack i32)
-	(local $token i32)
-	(local $numToks i32)
-	(local $tokPos i32)
-	(local.set $wamStack (call $wamTokenize (local.get $strPtr)))
+	(local $tree i32)
+	;;(local $token i32)
+	;;(local $numToks i32)
+	;;(local $tokPos i32)
+	(local.set $tree (call $wamTokenize (local.get $strPtr)))
 	;;(call $print (local.get $wamStack))(call $printlf)
-	(local.get $wamStack) ;; something to return for now
+	(call $print (global.get $gTree:))
+	(local.get $tree) ;; something to return for now
   )
   ;; Tokenization closely follows
   ;; https://github.com/emilbayes/wat-tokenizer/blob/master/index.js
@@ -1718,22 +1729,26 @@
   (func $pushExpr (param $state i32)
     (local $newExpr i32)
 	(local $exprStack i32)
-	(call $print (global.get $gpushExpr))
+	(call $printwlf (global.get $gpushExpr))
+	(call $printwlf (local.get $state))
 	(local.set $newExpr (call $i32list.mk))
 	(local.set $exprStack (call $map.get (local.get $state)(global.get $gexprStack)))
 	(call $i32list.push (local.get $exprStack)(local.get $newExpr))
 	(call $map.set (local.get $state)(global.get $gcurExpr)(local.get $newExpr))
+	(call $printwlf (local.get $state))
   )
   (func $popExpr (param $state i32)
 	(local $exprStack i32)
 	(call $print (global.get $gpopExpr))
 	(local.set $exprStack (call $map.get (local.get $state)(global.get $gexprStack)))
+	(call $printwlf (local.get $exprStack))
 	(drop (call $i32list.pop (local.get $exprStack)))
-	(call $map.set
-	  (local.get $state)
-	  (global.get $gcurExpr)
-	  (call $i32list.tail (local.get $exprStack))
-	)
+	(call $printwlf (local.get $exprStack))
+	;; (call $map.set
+	  ;; (local.get $state)
+	  ;; (global.get $gcurExpr)
+	  ;; (call $i32list.tail (local.get $exprStack))
+	;; )
   )
   (func $wamTokenize (param $strPtr i32)(result i32)
     (local $token i32)
@@ -1743,15 +1758,17 @@
 	(local $byte i32)
 	(local $state i32)
 	(local $exprStack i32)
-	;;(local $top i32)
+	(local $top i32)
 	;;(local $curExpr i32)
 	(local.set $exprStack (call $i32list.mk))
+	(local.set $top (call $i32list.mk))
+	(call $i32list.push (local.get $exprStack)(local.get $top))
 	(local.set $state (call $i32Map.mk)) ;; memory offsets instead of strings for keys
 	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $gexprStack)(local.get $exprStack))
-	;;(call $map.set (local.get $state)(global.get $gcurExpr)(local.get $stack))
+	(call $map.set (local.get $state)(global.get $gcurExpr)(local.get $top))
 	;;(call $map.set (local.get $state)(global.get $glast)(i32.const 0))
 	;;(call $print (local.get $state))
 	(local.set $buffLen (call $str.getByteLen (local.get $strPtr)))
@@ -1765,6 +1782,7 @@
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
 		  ;; bracket with '<' and '>'
 		  (call $byte.print (i32.const 60))(call $byte.print (local.get $byte))(call $byte.print(i32.const 62))
+		  (call $printlf)
 		  ;; LINEFEED
 		  (if (i32.eq (local.get $byte) (global.get $LF))
 			(then
@@ -1878,7 +1896,7 @@
 		  (br $bLoop))))
 	(call $print (local.get $state))(call $printlf)
 	;;(call $print (global.get $gstack))
-	(return (call $map.get (local.get $state)(global.get $gexprStack)))
+	(return (local.get $top))
   )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
@@ -1990,5 +2008,6 @@
   (data (i32.const 3765) "[{}]\00")			(global $gBrackedBrace i32 (i32.const 3765))
   (data (i32.const 3770) "pushExpr\00")		(global $gpushExpr i32 (i32.const 3770))
   (data (i32.const 3785) "popExpr\00")		(global $gpopExpr i32 (i32.const 3785))
+  (data (i32.const 3795) "Tree:\00")		(global $gTree: i32 (i32.const 3795))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
