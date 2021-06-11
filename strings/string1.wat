@@ -9,7 +9,7 @@
   (import "wasi_unstable" "fd_write"
 	(func $fd_write (param i32 i32 i32 i32) (result i32)))
 
-  (memory 1)
+  (memory 16)
   (export "memory" (memory 0))
 
   ;; test function signatures
@@ -1746,10 +1746,9 @@
 	(local.set $newExpr (call $i32list.mk))
 	(local.set $curExpr    (call $map.get (local.get $state)(global.get $gcurExpr)))
 	(local.set $exprStack (call $map.get (local.get $state)(global.get $gexprStack)))
-	(call $i32list.push (local.get $curExpr)  (local.get $newExpr))
 	(call $i32list.push (local.get $exprStack)(local.get $newExpr))
+	(call $i32list.push (local.get $curExpr)  (local.get $newExpr))
 	(call $map.set (local.get $state)(global.get $gcurExpr)(local.get $newExpr))
-	;;(local.set $top (call $map.get (local.get $state)(global.get $gtop)))
 	;;(call $i32list.push (local.get $top)(local.get $newExpr))
 	(call $print (global.get $gOut:))(call $printwlf (local.get $state))
   )
@@ -1760,7 +1759,7 @@
 	(local.set $exprStack (call $map.get (local.get $state)(global.get $gexprStack)))
 	(call $printwsp (global.get $gexprStack))(call $printwlf (local.get $exprStack))
 	(drop (call $i32list.pop (local.get $exprStack)))
-	;;(call $map.set (local.get $state)(global.get $gexprStack)(call $i32list.tail (local.get $exprStack)))
+	(call $map.set (local.get $state)(global.get $gcurExpr)(call $i32list.tail (local.get $exprStack)))
 	(call $print (global.get $gOut:))(call $printwlf (local.get $state))
   )
   (func $wamTokenize (param $strPtr i32)(result i32)
