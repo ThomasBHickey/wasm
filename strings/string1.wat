@@ -69,6 +69,7 @@
   (global $firstFreeMem 	i32 (i32.const 4096))
   (global $maxFreeMem  (mut i32)(i32.const 4096)) ;; same as initial $firstFreeMem
   (global $memReclaimed(mut i32)(i32.const 0))
+  (global $memReclamations (mut i32)(i32.const 0))
   
   (func $showMemUsedHelper (param $numBytes i32)(param $msg i32)
     (call $str.print (local.get $msg))
@@ -100,6 +101,7 @@
 		(global.get $firstFreeMem)))
 	(call $showMemUsedHelper (local.get $bytesUsed)(local.get $maxUsedMsg))
 	(call $showMemUsedHelper (global.get $memReclaimed)(local.get $memReclaimedMsg))
+	(call $showMemUsedHelper (global.get $memReclamations)(local.get $memReclamationsMsg))
   )
   (func $getMem (param $size i32)(result i32)
 	;; Simple memory allocation done in 4-byte chunks
@@ -143,6 +145,7 @@
 		  (local.set $wordToClear (i32.add (local.get $wordToClear)(i32.const 4)))
 		  (br $clearLoop))))
 	(global.set $nextFreeMem (local.get $newNextFreeMem))
+	(global.set $memReclamations (i32.add (global.get $memReclamations)(i32.const 1)))
   )
   (func $error (result i32)
 	;; throw a divide-by-zero exception!
@@ -2039,5 +2042,6 @@
   (data (i32.const 3805) "In:\00")			(global $gIn: i32 (i32.const 3805))
   (data (i32.const 3810) "Out:\00")			(global $gOut: i32 (i32.const 3810))
   (data (i32.const 3820) "Empty!\00")		(global $gEmpty! i32 (i32.const 3820))
+  (data (i32.const 3830) "Mem Reclamations: \00")(global. $gMemReclamations  i32 (i32.const 3830))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
