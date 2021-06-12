@@ -86,10 +86,12 @@
 	(local $memUsedMsg i32)
 	(local $maxUsedMsg i32)
 	(local $memReclaimedMsg i32)
+	(local $memReclamationsMsg i32)
 	(local $maxUsed i32)
 	(local.set $memUsedMsg (call $str.mkdata (global.get $gCurMemUse)))
 	(local.set $maxUsedMsg (call $str.mkdata (global.get $gMaxUsed)))
 	(local.set $memReclaimedMsg (call $str.mkdata (global.get $gMemReclaimed)))
+	(local.set $memReclamationsMsg (call $str.mkdata (global.get $gMemReclamations)))
 	(local.set $bytesUsed
 	  (i32.sub
 		(global.get $nextFreeMem)
@@ -2042,6 +2044,6 @@
   (data (i32.const 3805) "In:\00")			(global $gIn: i32 (i32.const 3805))
   (data (i32.const 3810) "Out:\00")			(global $gOut: i32 (i32.const 3810))
   (data (i32.const 3820) "Empty!\00")		(global $gEmpty! i32 (i32.const 3820))
-  (data (i32.const 3830) "Mem Reclamations: \00")(global. $gMemReclamations  i32 (i32.const 3830))
+  (data (i32.const 3830) "Mem Reclamations: \00")(global $gMemReclamations  i32 (i32.const 3830))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
