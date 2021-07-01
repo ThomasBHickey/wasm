@@ -70,6 +70,7 @@
   (global $maxFreeMem  (mut i32)(i32.const 4096)) ;; same as initial $firstFreeMem
   (global $memReclaimed(mut i32)(i32.const 0))
   (global $memReclamations (mut i32)(i32.const 0))
+  (global $debugW2W 	(mut i32)(i32.const 0))
   
   (func $showMemUsedHelper (param $numBytes i32)(param $msg i32)
     (call $str.print (local.get $msg))
@@ -1719,17 +1720,19 @@
   (func $addToken (param $state i32)(param $token i32)
 	(local $curExpr i32)
 	(local $tokcopy i32)  ;; holds copy of to-be-cleared token
-	;; (call $printwsp (global.get $gaddToken:))
-	;; (call $printwlf (local.get $token))
-	;; (call $printwsp (global.get $gIn:))(call $printwlf (local.get $state))
+	(if (global.get $debugW2W)(then
+	  (call $printwsp (global.get $gaddToken:))
+	  (call $printwlf (local.get $token))
+	  (call $printwsp (global.get $gIn:))
+	  (call $printwlf (local.get $state))))
 	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
 	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
-	(if (i32.eq (call $str.getByteLen (local.get $token))(i32.const 1))
-	  (if (i32.eq  ;; convert line feed to 'LF'
-		(call $str.getByte (local.get $token)(i32.const 0))
-		(global.get $LF))
-		(local.set $token (call $str.mkdata (global.get $gLF)))))
+	;; (if (i32.eq (call $str.getByteLen (local.get $token))(i32.const 1))
+	  ;; (if (i32.eq  ;; convert line feed to 'LF'
+		;; (call $str.getByte (local.get $token)(i32.const 0))
+		;; (global.get $LF))
+		;; (local.set $token (call $str.mkdata (global.get $gLF)))))
 	(if (call $emptyStr (local.get $token))
 	  (then
 		(call $str.clear (local.get $token))
@@ -1742,22 +1745,25 @@
 	(local.set $curExpr (call $map.get (local.get $state)(global.get $gcurExpr)))
 	(call $i32list.push (local.get $curExpr)(local.get $tokcopy))
 	(call $str.clear (local.get $token))  ;; clear the token string
-	;; (call $print (global.get $gOut:))(call $printwlf (local.get $state))
+	(if (global.get $debugW2W) (then
+	  (call $print (global.get $gOut:))(call $printwlf (local.get $state))))
   )
   (func $pushExpr (param $state i32)
     (local $newExpr i32)
 	(local $curExpr i32)
 	(local $exprStack i32)
 	(local $top i32)
-	;; (call $printwlf (global.get $gpushExpr))
-	;; (call $printwsp (global.get $gIn:))(call $printwlf (local.get $state))
+	;;(call $printwlf (global.get $gpushExpr))
+	(if (global.get $debugW2W) (then
+	  (call $printwsp (global.get $gIn:))(call $printwlf (local.get $state))))
 	(local.set $newExpr (call $i32list.mk))
 	(local.set $curExpr    (call $map.get (local.get $state)(global.get $gcurExpr)))
 	(local.set $exprStack (call $map.get (local.get $state)(global.get $gexprStack)))
 	(call $i32list.push (local.get $exprStack)(local.get $newExpr))
 	(call $i32list.push (local.get $curExpr)  (local.get $newExpr))
 	(call $map.set (local.get $state)(global.get $gcurExpr)(local.get $newExpr))
-	;; (call $print (global.get $gOut:))(call $printwlf (local.get $state))
+	(if (global.get $debugW2W)(then
+	  (call $print (global.get $gOut:))(call $printwlf (local.get $state))))
   )
   (func $popExpr (param $state i32)
 	(local $exprStack i32)
@@ -1799,16 +1805,13 @@
 	  (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
 	    (then
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
-		  ;; bracket with '<' and '>'
-		  ;;(call $byte.print (i32.const 60))(call $byte.print (local.get $byte))(call $byte.print(i32.const 62))
-		  ;;(call $printlf)
-		  ;; LINEFEED
 		  (if (i32.eq (local.get $byte) (global.get $LF))
+			;; LINEFEED
 			(then
 			  (if (call $map.get (local.get $state)(global.get $ginsideLineCom))
 				(call $addToken (local.get $state)(local.get $token)))))
-		  ;; TAB/SPACE/LF
 		  (if (i32.or
+			;; TAB/SPACE/LF
 				(i32.eq (local.get $byte)(global.get $TAB))
 				(i32.or
 				  (i32.eq (local.get $byte)(global.get $SP))
@@ -1830,8 +1833,8 @@
 			  (call $str.catByte(local.get $token)(local.get $byte))
 			  (br $bLoop)
 		  ))
-		  ;; OPEN PAREN
 		  (if (i32.eq (local.get $byte) (global.get $LPAREN))
+			;; OPEN PAREN
 			(then
 			  (if
 				(i32.and
@@ -1843,8 +1846,8 @@
 				(br $bLoop)))
 			  (call $str.catByte (local.get $token)(local.get $byte)
 			  (br $bLoop))))
-		  ;; CLOSE PAREN
 		  (if (i32.eq (local.get $byte) (global.get $RPAREN))
+			;; CLOSE PAREN
 			(then
 			  (if
 				(i32.and
@@ -1858,8 +1861,8 @@
 				  (br $bLoop)))
 			  (call $str.catByte (local.get $token)(local.get $byte))
 			  (br $bLoop)))
-		  ;; SEMI
 		  (if (i32.eq (local.get $byte) (global.get $SEMI))
+			;; SEMI
 			(then
 			  (if 				;; (!insideLineComment && token[tprtr-1]==SEMI
 				(i32.and 
@@ -1875,8 +1878,8 @@
 			  (call $map.set (local.get $state)(global.get $ginsideLineCom) (i32.const 1))
 			  (call $str.catByte(local.get $token)(local.get $byte))   ;; second SEMI
 			  (br $bLoop)))
-		  ;; DOUBLE QUOTE
 		  (if (i32.eq (global.get $DBLQUOTE)(local.get $byte))
+			;; DOUBLE QUOTE
 		    (then
 			  (if
 				(i32.and
@@ -1916,17 +1919,62 @@
 	;;(call $print (local.get $state))(call $printlf)
 	(call $map.get (local.get $state) (global.get $gtop))
   )
+  (func $showSomeSpace (param $indent i32)
+    (local $count i32)
+	(local.set $count (i32.const 0))
+	;;(call $byte.print(global.get $DOLLARSIGN))
+	;;(call $i32.print (local.get $indent))
+	;;(call $byte.print (global.get $LF))
+	(loop $cc  ;; do indent
+	  (if (i32.lt_u (local.get $count)(local.get $indent))
+		(then
+		  (call $byte.print(global.get $SP))
+		  (local.set $count (i32.add (local.get $count)(i32.const 1)))
+		  (br $cc))))
+  )
+  (func $showTree  (param $tree i32)(param $indent i32)
+	(local $type i32)
+	(local $listLeng i32)
+	(local $listPos i32)
+	(local.set $type (call $getTypeNum (local.get $tree)))
+	(if (i32.eq (local.get $type)(global.get $i32L))
+	  (then
+		(call $showSomeSpace (local.get $indent))
+		(call $byte.print (global.get $LPAREN))
+		(local.set $listLeng (call $i32list.getCurLen (local.get $tree)))
+		(local.set $listPos (i32.const 0))
+		(loop $listLoop
+		  (if (i32.lt_u (local.get $listPos)(local.get $listLeng))
+			(then
+			  (call $showTree (call $i32list.get@ (local.get $tree)(local.get $listPos))
+						(i32.add (local.get $indent)(i32.const 3)))
+			  (local.set $listPos (i32.add (local.get $listPos)(i32.const 1)))
+			  (br $listLoop)
+			)
+		  )
+		)
+		(call $byte.print (global.get $RPAREN))
+	  )
+	  (else		;; needs to be moved to top of test
+		(if (i32.eq (local.get $type)(global.get $BStr))
+		  (call $str.printwsp (local.get $tree)))
+	  )
+	)
+  )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
 	;; 
 	(local $buffer i32)
-	(local $wat i32)
+	(local $tree i32)
     ;;(call $test)
 	(local.set $buffer (call $readFile))
 	(call $print (call $str.mkdata(global.get $gBytesRead)))
 	(call $print(call $str.getByteLen (local.get $buffer))) (call $printlf)
-	(local.set $wat (call $wam2wat (local.get $buffer)))
-	(call $print (local.get $wat))(call $printlf)
+	(local.set $tree (call $wam2wat (local.get $buffer)))
+	(global.set $debugW2W (i32.const 1))
+	;;(call $printwlf (local.get $tree))
+	(call $showTree (call $i32list.pop (local.get $tree))(i32.const 0))
+	(call $byte.print(global.get $LF))
 	(call $showMemUsed)
   )
   (func $misc.test (param $testNum i32)(result i32)
@@ -1946,7 +1994,7 @@
 	;; (call $printwlf (local.get $stack))
 	(i32.const 0)
   )
-  (global $testing	i32 (i32.const 42))
+  ;;(global $debugW2W	i32 (i32.const 0))
   (global $i32L	  	i32	(i32.const 0x6933324C)) ;; 'i32L' type# for i32 lists
 												;; needs to match $gi32L
   (global $BStr		i32	(i32.const 0x42537472))	;; 'BStr' type# for byte strings
