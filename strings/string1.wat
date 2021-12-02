@@ -1225,8 +1225,9 @@
 		(return (i32.const 4)))
 	(i32.const 0)
   )
-  (func $readFile (result i32)
+  (func $readFile (result i32) ;; 
 	;; Reads a file in and returns a list of string pointers to the lines in it
+	;; NOT REALLY!! IT IS JUST RETURNING A LONG STRING
 	;; Not UTF-8 safe ?
 	(local $listPtr i32)(local $strPtr i32)(local $nread i32)
 	(i32.store (global.get $readIOVsOff0) (global.get $readBuffOff))
