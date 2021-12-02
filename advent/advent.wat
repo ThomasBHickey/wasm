@@ -1710,17 +1710,17 @@
   (func $i32.compare (param $i1 i32)(param $i2 i32)(result i32)
 	(i32.eq (local.get $i1)(local.get $i2))
   )
-  (func $wam2wat (param $strPtr i32)(result i32)
-	;; Accepts WAM file as a string, returns a list of tokens
-	(local $top i32)
-	;;(local $token i32)
-	;;(local $numToks i32)
-	;;(local $tokPos i32)
-	(local.set $top (call $wamTokenize (local.get $strPtr)))
-	;;(call $print (local.get $wamStack))(call $printlf)
-	;;(call $printwsp (global.get $gtop))
-	(local.get $top) ;; something to return for now
-  )
+  ;; (func $wam2wat (param $strPtr i32)(result i32)
+	;; ;; Accepts WAM file as a string, returns a list of tokens
+	;; (local $top i32)
+	;; ;;(local $token i32)
+	;; ;;(local $numToks i32)
+	;; ;;(local $tokPos i32)
+	;; (local.set $top (call $wamTokenize (local.get $strPtr)))
+	;; ;;(call $print (local.get $wamStack))(call $printlf)
+	;; ;;(call $printwsp (global.get $gtop))
+	;; (local.get $top) ;; something to return for now
+  ;; )
   ;; Tokenization closely follows
   ;; https://github.com/emilbayes/wat-tokenizer/blob/master/index.js
   (func $emptyStr (param $strPtr i32)(result i32)
@@ -1760,260 +1760,260 @@
 	  (return (i32.const 4)))  ;; Not empty
 	(i32.const 0) ;; success
   )
-  (func $addToken (param $state i32)(param $token i32)
-	(local $curExpr i32)
-	(local $tokcopy i32)  ;; holds copy of to-be-cleared token
-	(if (global.get $debugW2W)(then
-	  (call $printwsp (global.get $gaddToken:))
-	  (call $printwlf (local.get $token))
-	  (call $printwsp (global.get $gIn:))
-	  (call $printwlf (local.get $state))))
-	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
-	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
-	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
-	;; (if (i32.eq (call $str.getByteLen (local.get $token))(i32.const 1))
-	  ;; (if (i32.eq  ;; convert line feed to 'LF'
-		;; (call $str.getByte (local.get $token)(i32.const 0))
-		;; (global.get $LF))
-		;; (local.set $token (call $str.mkdata (global.get $gLF)))))
-	(if (call $emptyStr (local.get $token))
-	  (then
-		(call $str.clear (local.get $token))
-		;; (call $printwlf (global.get $gEmpty!))
-		;; (call $print (global.get $gOut:))(call $printwlf (local.get $state))
-		(return)))
-	;; Copy token string before we clear it
-	(local.set $tokcopy (call $str.mk))
-	(call $str.catStr (local.get $tokcopy)(local.get $token))
-	(local.set $curExpr (call $map.get (local.get $state)(global.get $gcurExpr)))
-	(call $i32list.push (local.get $curExpr)(local.get $tokcopy))
-	(call $str.clear (local.get $token))  ;; clear the token string
-	(if (global.get $debugW2W) (then
-	  (call $print (global.get $gOut:))(call $printwlf (local.get $state))))
-  )
-  (func $pushExpr (param $state i32)
-    (local $newExpr i32)
-	(local $curExpr i32)
-	(local $exprStack i32)
-	(local $top i32)
-	;;(call $printwlf (global.get $gpushExpr))
-	(if (global.get $debugW2W) (then
-	  (call $printwsp (global.get $gIn:))(call $printwlf (local.get $state))))
-	(local.set $newExpr (call $i32list.mk))
-	(local.set $curExpr    (call $map.get (local.get $state)(global.get $gcurExpr)))
-	(local.set $exprStack (call $map.get (local.get $state)(global.get $gexprStack)))
-	(call $i32list.push (local.get $exprStack)(local.get $newExpr))
-	(call $i32list.push (local.get $curExpr)  (local.get $newExpr))
-	(call $map.set (local.get $state)(global.get $gcurExpr)(local.get $newExpr))
-	(if (global.get $debugW2W)(then
-	  (call $print (global.get $gOut:))(call $printwlf (local.get $state))))
-  )
-  (func $popExpr (param $state i32)
-	(local $exprStack i32)
-	;; (call $printwlf (global.get $gpopExpr))
-	;; (call $printwsp (global.get $gIn:))(call $printwlf (local.get $state))
-	(local.set $exprStack (call $map.get (local.get $state)(global.get $gexprStack)))
-	;; (call $printwsp (global.get $gexprStack))(call $printwlf (local.get $exprStack))
-	(drop (call $i32list.pop (local.get $exprStack)))
-	(call $map.set (local.get $state)(global.get $gcurExpr)(call $i32list.tail (local.get $exprStack)))
-	;;(call $print (global.get $gOut:))(call $printwlf (local.get $state))
-  )
-  (func $wamTokenize (param $strPtr i32)(result i32)
-    (local $token i32)
-	(local $tokenStart i32)
-	(local $bPos i32)
-	(local $buffLen i32)
-	(local $byte i32)
-	(local $state i32)
-	(local $exprStack i32)
-	(local $top i32)
-	(local $curExpr i32)
-	(local.set $top (call $i32list.mk))
-	(local.set $exprStack (call $i32list.mk))
-	(call $i32list.push (local.get $exprStack)(local.get $top))
-	(local.set $state (call $i32Map.mk)) ;; memory offsets instead of strings for keys
-	(call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
-	(call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
-	(call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
-	(call $map.set (local.get $state)(global.get $gexprStack)(local.get $exprStack))
-	(call $map.set (local.get $state)(global.get $gcurExpr)(local.get $top))
-	(call $map.set (local.get $state)(global.get $gtop)(local.get $top))
-	;;(call $printwlf (local.get $state))
-	(local.set $buffLen (call $str.getByteLen (local.get $strPtr)))
-	(local.set $tokenStart (i32.const 0))
-	(local.set $token (call $str.mk))  ;; current token built up here
-	(local.set $bPos (i32.const -1))  ;; gets incr before use
-	(loop $bLoop
-	  (local.set $bPos (i32.add (local.get $bPos)(i32.const 1)))
-	  (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
-	    (then
-		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
-		  (if (i32.eq (local.get $byte) (global.get $LF))
-			;; LINEFEED
-			(then
-			  (if (call $map.get (local.get $state)(global.get $ginsideLineCom))
-				(call $addToken (local.get $state)(local.get $token)))))
-		  (if (i32.or
-			;; TAB/SPACE/LF
-				(i32.eq (local.get $byte)(global.get $TAB))
-				(i32.or
-				  (i32.eq (local.get $byte)(global.get $SP))
-				  (i32.eq (local.get $byte)(global.get $LF))))
-			(then
-			  (if   ;; not insideWhiteSp or insideString or insideLineComment add Token
-				(i32.eqz
-				  (i32.or
-					(i32.or (call $map.get (local.get $state)(global.get $ginsideWhiteSp))
-							(call $map.get (local.get $state)(global.get $ginsideString)))
-					(call $map.get (local.get $state)(global.get $ginsideLineCom))
-				  )
-				)
-				(then
-				  (call $addToken (local.get $state) (local.get $token))
-				  (call $map.set (local.get $state) (global.get $ginsideWhiteSp)(i32.const 1))
-				)
-			  )
-			  (call $str.catByte(local.get $token)(local.get $byte))
-			  (br $bLoop)
-		  ))
-		  (if (i32.eq (local.get $byte) (global.get $LPAREN))
-			;; OPEN PAREN
-			(then
-			  (if
-				(i32.and
-				  (i32.eqz (call $map.get (local.get $state)(global.get $ginsideString)))
-				  (i32.eqz (call $map.get (local.get $state)(global.get $ginsideLineCom))))
-			  (then
-				(call $addToken(local.get $state)(local.get $token))
-				(call $pushExpr (local.get $state))
-				(br $bLoop)))
-			  (call $str.catByte (local.get $token)(local.get $byte)
-			  (br $bLoop))))
-		  (if (i32.eq (local.get $byte) (global.get $RPAREN))
-			;; CLOSE PAREN
-			(then
-			  (if
-				(i32.and
-				  (i32.eqz (call $map.get (local.get $state)(global.get $ginsideString)))
-				  (i32.eqz (call $map.get (local.get $state)(global.get $ginsideLineCom))))
-				(then
-				  ;;(call $strdata.printwlf(global.get $g$match))
-				  ;;(call $str.catByte (local.get $token)(local.get $byte))
-				  (call $addToken(local.get $state)(local.get $token))
-				  (call $popExpr (local.get $state))
-				  (br $bLoop)))
-			  (call $str.catByte (local.get $token)(local.get $byte))
-			  (br $bLoop)))
-		  (if (i32.eq (local.get $byte) (global.get $SEMI))
-			;; SEMI
-			(then
-			  (if 				;; (!insideLineComment && token[tprtr-1]==SEMI
-				(i32.and 
-				  (i32.eqz
-					(call $map.get (local.get $state)(global.get $ginsideLineCom)))
-				  (i32.eq 
-					(call $str.getLastByte (local.get $token))
-					(global.get $SEMI)))
-				(then
-				  (call $str.drop(local.get $token));; drop the previous SEMI
-				  (call $addToken(local.get $state)(local.get $token))
-				  (call $str.catByte(local.get $token)(global.get $SEMI))))  ;; push SEMI back on
-			  (call $map.set (local.get $state)(global.get $ginsideLineCom) (i32.const 1))
-			  (call $str.catByte(local.get $token)(local.get $byte))   ;; second SEMI
-			  (br $bLoop)))
-		  (if (i32.eq (global.get $DBLQUOTE)(local.get $byte))
-			;; DOUBLE QUOTE
-		    (then
-			  (if
-				(i32.and
-				  (i32.eqz
-					(call $map.get (local.get $state)(global.get $ginsideString)))
-				  (i32.eqz
-					(call $map.get (local.get $state)(global.get $ginsideLineCom))))
-				(then
-				  (call $addToken (local.get $state)(local.get $token))
-				  (call $map.set (local.get $state)(global.get $ginsideString)(i32.const 1))
-				  (call $str.catByte (local.get $token)(local.get $byte))
-				  (br $bLoop)))
-			  (if
-				(i32.and
-				  (call $map.get (local.get $state)(global.get $ginsideString))
-				  (i32.ne
-					(call $str.getLastByte (local.get $token))
-					(global.get $BACKSLASH)))
-				(then
-				  (call $str.catByte (local.get $token)(local.get $byte))
-				  (call $addToken (local.get $state)(local.get $token))
-				  (br $bLoop)))
-			  (call $str.catByte (local.get $token)(local.get $byte))
-			  (br $bLoop)
-			)
-		  )
-		  ;; DEFAULT
-		  (if 
-			(i32.and
-			  (i32.eqz (call $map.get (local.get $state)(global.get $ginsideString)))
-			  (i32.and 
-				(i32.eqz (call $map.get (local.get $state)(global.get $ginsideLineCom)))
-				(call $map.get (local.get $state)(global.get $ginsideWhiteSp))))
-			(call $addToken(local.get $state)(local.get $token)))
-		  (call $str.catByte (local.get $token)(local.get $byte))
-		  (br $bLoop))))
-	;;(call $print (local.get $state))(call $printlf)
-	(call $map.get (local.get $state) (global.get $gtop))
-  )
-  (func $showSomeSpace (param $indent i32)
-    (local $count i32)
-	(local.set $count (i32.const 0))
-	(loop $cc  ;; do indent
-	  (if (i32.lt_u (local.get $count)(local.get $indent))
-		(then
-		  (call $byte.print(global.get $SP))
-		  (local.set $count (i32.add (local.get $count)(i32.const 1)))
-		  (br $cc))))
-  )
-  (func $showTree  (param $tree i32)(param $indent i32)
-	(local $type i32)
-	(local $listLeng i32)
-	(local $listPos i32)
-	(local.set $type (call $getTypeNum (local.get $tree)))
-	(if (i32.eq (local.get $type)(global.get $i32L))
-	  (then
-		(call $showSomeSpace (local.get $indent))
-		(call $byte.print (global.get $LPAREN))
-		(local.set $listLeng (call $i32list.getCurLen (local.get $tree)))
-		(local.set $listPos (i32.const 0))
-		(loop $listLoop
-		  (if (i32.lt_u (local.get $listPos)(local.get $listLeng))
-			(then
-			  (call $showTree (call $i32list.get@ (local.get $tree)(local.get $listPos))
-						(i32.add (local.get $indent)(i32.const 3)))
-			  (local.set $listPos (i32.add (local.get $listPos)(i32.const 1)))
-			  (br $listLoop)
-			)
-		  )
-		)
-		(call $byte.print (global.get $RPAREN))
-	  )
-	  (else		;; needs to be moved to top of test
-		(if (i32.eq (local.get $type)(global.get $BStr))
-		  (call $str.printwsp (local.get $tree)))
-	  )
-	)
-  )
+  ;; (func $addToken (param $state i32)(param $token i32)
+	;; (local $curExpr i32)
+	;; (local $tokcopy i32)  ;; holds copy of to-be-cleared token
+	;; (if (global.get $debugW2W)(then
+	  ;; (call $printwsp (global.get $gaddToken:))
+	  ;; (call $printwlf (local.get $token))
+	  ;; (call $printwsp (global.get $gIn:))
+	  ;; (call $printwlf (local.get $state))))
+	;; (call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
+	;; (call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
+	;; (call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
+	;; ;; (if (i32.eq (call $str.getByteLen (local.get $token))(i32.const 1))
+	  ;; ;; (if (i32.eq  ;; convert line feed to 'LF'
+		;; ;; (call $str.getByte (local.get $token)(i32.const 0))
+		;; ;; (global.get $LF))
+		;; ;; (local.set $token (call $str.mkdata (global.get $gLF)))))
+	;; (if (call $emptyStr (local.get $token))
+	  ;; (then
+		;; (call $str.clear (local.get $token))
+		;; ;; (call $printwlf (global.get $gEmpty!))
+		;; ;; (call $print (global.get $gOut:))(call $printwlf (local.get $state))
+		;; (return)))
+	;; ;; Copy token string before we clear it
+	;; (local.set $tokcopy (call $str.mk))
+	;; (call $str.catStr (local.get $tokcopy)(local.get $token))
+	;; (local.set $curExpr (call $map.get (local.get $state)(global.get $gcurExpr)))
+	;; (call $i32list.push (local.get $curExpr)(local.get $tokcopy))
+	;; (call $str.clear (local.get $token))  ;; clear the token string
+	;; (if (global.get $debugW2W) (then
+	  ;; (call $print (global.get $gOut:))(call $printwlf (local.get $state))))
+  ;; )
+  ;; (func $pushExpr (param $state i32)
+    ;; (local $newExpr i32)
+	;; (local $curExpr i32)
+	;; (local $exprStack i32)
+	;; (local $top i32)
+	;; ;;(call $printwlf (global.get $gpushExpr))
+	;; (if (global.get $debugW2W) (then
+	  ;; (call $printwsp (global.get $gIn:))(call $printwlf (local.get $state))))
+	;; (local.set $newExpr (call $i32list.mk))
+	;; (local.set $curExpr    (call $map.get (local.get $state)(global.get $gcurExpr)))
+	;; (local.set $exprStack (call $map.get (local.get $state)(global.get $gexprStack)))
+	;; (call $i32list.push (local.get $exprStack)(local.get $newExpr))
+	;; (call $i32list.push (local.get $curExpr)  (local.get $newExpr))
+	;; (call $map.set (local.get $state)(global.get $gcurExpr)(local.get $newExpr))
+	;; (if (global.get $debugW2W)(then
+	  ;; (call $print (global.get $gOut:))(call $printwlf (local.get $state))))
+  ;; )
+  ;; (func $popExpr (param $state i32)
+	;; (local $exprStack i32)
+	;; ;; (call $printwlf (global.get $gpopExpr))
+	;; ;; (call $printwsp (global.get $gIn:))(call $printwlf (local.get $state))
+	;; (local.set $exprStack (call $map.get (local.get $state)(global.get $gexprStack)))
+	;; ;; (call $printwsp (global.get $gexprStack))(call $printwlf (local.get $exprStack))
+	;; (drop (call $i32list.pop (local.get $exprStack)))
+	;; (call $map.set (local.get $state)(global.get $gcurExpr)(call $i32list.tail (local.get $exprStack)))
+	;; ;;(call $print (global.get $gOut:))(call $printwlf (local.get $state))
+  ;; )
+  ;; (func $wamTokenize (param $strPtr i32)(result i32)
+    ;; (local $token i32)
+	;; (local $tokenStart i32)
+	;; (local $bPos i32)
+	;; (local $buffLen i32)
+	;; (local $byte i32)
+	;; (local $state i32)
+	;; (local $exprStack i32)
+	;; (local $top i32)
+	;; (local $curExpr i32)
+	;; (local.set $top (call $i32list.mk))
+	;; (local.set $exprStack (call $i32list.mk))
+	;; (call $i32list.push (local.get $exprStack)(local.get $top))
+	;; (local.set $state (call $i32Map.mk)) ;; memory offsets instead of strings for keys
+	;; (call $map.set (local.get $state)(global.get $ginsideString)(i32.const 0))
+	;; (call $map.set (local.get $state)(global.get $ginsideWhiteSp)(i32.const 0))
+	;; (call $map.set (local.get $state)(global.get $ginsideLineCom)(i32.const 0))
+	;; (call $map.set (local.get $state)(global.get $gexprStack)(local.get $exprStack))
+	;; (call $map.set (local.get $state)(global.get $gcurExpr)(local.get $top))
+	;; (call $map.set (local.get $state)(global.get $gtop)(local.get $top))
+	;; ;;(call $printwlf (local.get $state))
+	;; (local.set $buffLen (call $str.getByteLen (local.get $strPtr)))
+	;; (local.set $tokenStart (i32.const 0))
+	;; (local.set $token (call $str.mk))  ;; current token built up here
+	;; (local.set $bPos (i32.const -1))  ;; gets incr before use
+	;; (loop $bLoop
+	  ;; (local.set $bPos (i32.add (local.get $bPos)(i32.const 1)))
+	  ;; (if (i32.lt_u (local.get $bPos)(local.get $buffLen))
+	    ;; (then
+		  ;; (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bPos)))
+		  ;; (if (i32.eq (local.get $byte) (global.get $LF))
+			;; ;; LINEFEED
+			;; (then
+			  ;; (if (call $map.get (local.get $state)(global.get $ginsideLineCom))
+				;; (call $addToken (local.get $state)(local.get $token)))))
+		  ;; (if (i32.or
+			;; ;; TAB/SPACE/LF
+				;; (i32.eq (local.get $byte)(global.get $TAB))
+				;; (i32.or
+				  ;; (i32.eq (local.get $byte)(global.get $SP))
+				  ;; (i32.eq (local.get $byte)(global.get $LF))))
+			;; (then
+			  ;; (if   ;; not insideWhiteSp or insideString or insideLineComment add Token
+				;; (i32.eqz
+				  ;; (i32.or
+					;; (i32.or (call $map.get (local.get $state)(global.get $ginsideWhiteSp))
+							;; (call $map.get (local.get $state)(global.get $ginsideString)))
+					;; (call $map.get (local.get $state)(global.get $ginsideLineCom))
+				  ;; )
+				;; )
+				;; (then
+				  ;; (call $addToken (local.get $state) (local.get $token))
+				  ;; (call $map.set (local.get $state) (global.get $ginsideWhiteSp)(i32.const 1))
+				;; )
+			  ;; )
+			  ;; (call $str.catByte(local.get $token)(local.get $byte))
+			  ;; (br $bLoop)
+		  ;; ))
+		  ;; (if (i32.eq (local.get $byte) (global.get $LPAREN))
+			;; ;; OPEN PAREN
+			;; (then
+			  ;; (if
+				;; (i32.and
+				  ;; (i32.eqz (call $map.get (local.get $state)(global.get $ginsideString)))
+				  ;; (i32.eqz (call $map.get (local.get $state)(global.get $ginsideLineCom))))
+			  ;; (then
+				;; (call $addToken(local.get $state)(local.get $token))
+				;; (call $pushExpr (local.get $state))
+				;; (br $bLoop)))
+			  ;; (call $str.catByte (local.get $token)(local.get $byte)
+			  ;; (br $bLoop))))
+		  ;; (if (i32.eq (local.get $byte) (global.get $RPAREN))
+			;; ;; CLOSE PAREN
+			;; (then
+			  ;; (if
+				;; (i32.and
+				  ;; (i32.eqz (call $map.get (local.get $state)(global.get $ginsideString)))
+				  ;; (i32.eqz (call $map.get (local.get $state)(global.get $ginsideLineCom))))
+				;; (then
+				  ;; ;;(call $strdata.printwlf(global.get $g$match))
+				  ;; ;;(call $str.catByte (local.get $token)(local.get $byte))
+				  ;; (call $addToken(local.get $state)(local.get $token))
+				  ;; (call $popExpr (local.get $state))
+				  ;; (br $bLoop)))
+			  ;; (call $str.catByte (local.get $token)(local.get $byte))
+			  ;; (br $bLoop)))
+		  ;; (if (i32.eq (local.get $byte) (global.get $SEMI))
+			;; ;; SEMI
+			;; (then
+			  ;; (if 				;; (!insideLineComment && token[tprtr-1]==SEMI
+				;; (i32.and 
+				  ;; (i32.eqz
+					;; (call $map.get (local.get $state)(global.get $ginsideLineCom)))
+				  ;; (i32.eq 
+					;; (call $str.getLastByte (local.get $token))
+					;; (global.get $SEMI)))
+				;; (then
+				  ;; (call $str.drop(local.get $token));; drop the previous SEMI
+				  ;; (call $addToken(local.get $state)(local.get $token))
+				  ;; (call $str.catByte(local.get $token)(global.get $SEMI))))  ;; push SEMI back on
+			  ;; (call $map.set (local.get $state)(global.get $ginsideLineCom) (i32.const 1))
+			  ;; (call $str.catByte(local.get $token)(local.get $byte))   ;; second SEMI
+			  ;; (br $bLoop)))
+		  ;; (if (i32.eq (global.get $DBLQUOTE)(local.get $byte))
+			;; ;; DOUBLE QUOTE
+		    ;; (then
+			  ;; (if
+				;; (i32.and
+				  ;; (i32.eqz
+					;; (call $map.get (local.get $state)(global.get $ginsideString)))
+				  ;; (i32.eqz
+					;; (call $map.get (local.get $state)(global.get $ginsideLineCom))))
+				;; (then
+				  ;; (call $addToken (local.get $state)(local.get $token))
+				  ;; (call $map.set (local.get $state)(global.get $ginsideString)(i32.const 1))
+				  ;; (call $str.catByte (local.get $token)(local.get $byte))
+				  ;; (br $bLoop)))
+			  ;; (if
+				;; (i32.and
+				  ;; (call $map.get (local.get $state)(global.get $ginsideString))
+				  ;; (i32.ne
+					;; (call $str.getLastByte (local.get $token))
+					;; (global.get $BACKSLASH)))
+				;; (then
+				  ;; (call $str.catByte (local.get $token)(local.get $byte))
+				  ;; (call $addToken (local.get $state)(local.get $token))
+				  ;; (br $bLoop)))
+			  ;; (call $str.catByte (local.get $token)(local.get $byte))
+			  ;; (br $bLoop)
+			;; )
+		  ;; )
+		  ;; ;; DEFAULT
+		  ;; (if 
+			;; (i32.and
+			  ;; (i32.eqz (call $map.get (local.get $state)(global.get $ginsideString)))
+			  ;; (i32.and 
+				;; (i32.eqz (call $map.get (local.get $state)(global.get $ginsideLineCom)))
+				;; (call $map.get (local.get $state)(global.get $ginsideWhiteSp))))
+			;; (call $addToken(local.get $state)(local.get $token)))
+		  ;; (call $str.catByte (local.get $token)(local.get $byte))
+		  ;; (br $bLoop))))
+	;; ;;(call $print (local.get $state))(call $printlf)
+	;; (call $map.get (local.get $state) (global.get $gtop))
+  ;; )
+  ;; (func $showSomeSpace (param $indent i32)
+    ;; (local $count i32)
+	;; (local.set $count (i32.const 0))
+	;; (loop $cc  ;; do indent
+	  ;; (if (i32.lt_u (local.get $count)(local.get $indent))
+		;; (then
+		  ;; (call $byte.print(global.get $SP))
+		  ;; (local.set $count (i32.add (local.get $count)(i32.const 1)))
+		  ;; (br $cc))))
+  ;; )
+  ;; (func $showTree  (param $tree i32)(param $indent i32)
+	;; (local $type i32)
+	;; (local $listLeng i32)
+	;; (local $listPos i32)
+	;; (local.set $type (call $getTypeNum (local.get $tree)))
+	;; (if (i32.eq (local.get $type)(global.get $i32L))
+	  ;; (then
+		;; (call $showSomeSpace (local.get $indent))
+		;; (call $byte.print (global.get $LPAREN))
+		;; (local.set $listLeng (call $i32list.getCurLen (local.get $tree)))
+		;; (local.set $listPos (i32.const 0))
+		;; (loop $listLoop
+		  ;; (if (i32.lt_u (local.get $listPos)(local.get $listLeng))
+			;; (then
+			  ;; (call $showTree (call $i32list.get@ (local.get $tree)(local.get $listPos))
+						;; (i32.add (local.get $indent)(i32.const 3)))
+			  ;; (local.set $listPos (i32.add (local.get $listPos)(i32.const 1)))
+			  ;; (br $listLoop)
+			;; )
+		  ;; )
+		;; )
+		;; (call $byte.print (global.get $RPAREN))
+	  ;; )
+	  ;; (else		;; needs to be moved to top of test
+		;; (if (i32.eq (local.get $type)(global.get $BStr))
+		  ;; (call $str.printwsp (local.get $tree)))
+	  ;; )
+	;; )
+  ;; )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
-	(local $buffer i32)
-	(local $tree i32)
-    ;;(call $test)
-	(local.set $buffer (call $readFile))
-	(call $print (call $str.mkdata(global.get $gBytesRead)))
-	(call $print(call $str.getByteLen (local.get $buffer))) (call $printlf)
-	(local.set $tree (call $wam2wat (local.get $buffer)))
-	(global.set $debugW2W (i32.const 1))
-	;;(call $printwlf (local.get $tree))
-	(call $showTree (call $i32list.pop (local.get $tree))(i32.const 0))
-	(call $byte.print(global.get $LF))
+	;; (local $buffer i32)
+	;; (local $tree i32)
+    ;; ;;(call $test)
+	;; (local.set $buffer (call $readFile))
+	;; (call $print (call $str.mkdata(global.get $gBytesRead)))
+	;; (call $print(call $str.getByteLen (local.get $buffer))) (call $printlf)
+	;; (local.set $tree (call $wam2wat (local.get $buffer)))
+	;; (global.set $debugW2W (i32.const 1))
+	;; ;;(call $printwlf (local.get $tree))
+	;; (call $showTree (call $i32list.pop (local.get $tree))(i32.const 0))
+	;; (call $byte.print(global.get $LF))
 	(call $showMemUsed)
   )
   (func $misc.test (param $testNum i32)(result i32)

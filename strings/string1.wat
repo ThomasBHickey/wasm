@@ -305,7 +305,7 @@
 		(i32.rem_u (local.get $N)(i32.const 10))
 		(global.get $zero)))
   )
- (func $i32.hexprint (param $N i32)
+  (func $i32.hexprint (param $N i32)
 	(call $byte.print (global.get $zero))
 	(call $byte.print (i32.const 120)) ;; 'x'
 	(call $i32.hexprintsup (local.get $N))
@@ -1922,9 +1922,6 @@
   (func $showSomeSpace (param $indent i32)
     (local $count i32)
 	(local.set $count (i32.const 0))
-	;;(call $byte.print(global.get $DOLLARSIGN))
-	;;(call $i32.print (local.get $indent))
-	;;(call $byte.print (global.get $LF))
 	(loop $cc  ;; do indent
 	  (if (i32.lt_u (local.get $count)(local.get $indent))
 		(then
@@ -1963,7 +1960,6 @@
   )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
-	;; 
 	(local $buffer i32)
 	(local $tree i32)
     ;;(call $test)
