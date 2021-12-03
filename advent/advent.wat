@@ -1318,7 +1318,6 @@
 	(local $byte i32)
 	(local.set $strPtr (call $str.mk))
 	(loop $bloop
-	
 	  (local.set $byte (call $readByte))
 	  (if (i32.ge_s (local.get $byte)(i32.const 0))
 		(then
@@ -1326,8 +1325,15 @@
 			(return (local.get $strPtr)))
 		  (call $str.catByte(local.get $strPtr)(local.get $byte))
 		  (br $bloop)
-		))
-	  (return (global.get $maxNeg))
+		)
+	  )
+	  (if (i32.eq (local.get $byte)(global.get $maxNeg))
+	    (then
+		  (if (call $str.getByteLen (local.get $strPtr))
+			(return (local.get $strPtr)))
+		  (return (global.get $maxNeg))
+		)
+	  )
 	)
 	(local.get $strPtr)
   )
@@ -1660,7 +1666,7 @@
 	(call $printwlf (local.get $lstLen))
 	(local.set $pairListPtr (call $i32list.mk)) ;; list of pairs
 	(loop $pairLoop
-	  (call $printwlf (local.get $lstPos))
+	  ;;(call $printwlf (local.get $lstPos))
 	  (local.set $pairPtr (call $i32list.mk))
 	  (if		;; no more pairs?
 	    (i32.ge_u
@@ -1683,15 +1689,31 @@
 	(local.get $pairListPtr)
   )
   (func $day1 (export "_day1")
-    (local $lines i32)(local $pairs i32)
-	;;(local.set $strings (call $readFileSlow))
-	;;(call $printwlf (global.get $gAdvent1!))
-	;;(call $print (local.get $strings))
+    (local $lines i32)(local $pairs i32)(local $greaterCount i32)
+	(local $pairsLen i32)(local $pairPos i32)(local $pair i32)
+	(local $p1val i32)(local $p2val i32)
 	(local.set $lines (call $readFileSlow))
-	(call $printwlf (local.get $lines))
+	;;(call $printwlf (local.get $lines))
 	(local.set $pairs (call $pairwise (local.get $lines)))
-	(call $print (local.get $pairs))
-	(call $printlf)
+	(local.set $pairsLen (call $i32list.getCurLen (local.get $pairs)))
+	;;(call $print (local.get $pairs))
+	;;(call $printlf)
+	(local.set $greaterCount (i32.const 0))
+	(local.set $pairPos (i32.const 0))
+	(loop $pairLoop
+	  (local.set $pair
+		(call $i32list.get@ (local.get $pairs)(local.get $pairPos)))
+	  ;;(call $printwlf (local.get $pair))
+	  (local.set $p1val (call $str.toI32 (call $i32list.get@ (local.get $pair)(i32.const 0))))
+	  (local.set $p2val (call $str.toI32 (call $i32list.get@ (local.get $pair)(i32.const 1))))
+	  ;; (local.set $p2val (call $str.toI32 (call $i32list.get@ (i32.const 1))))
+	  (if (i32.lt_u (local.get $p1val)(local.get $p2val))
+		(local.set $greaterCount (i32.add (local.get $greaterCount)(i32.const 1))))
+	  (local.set $pairPos (i32.add (local.get $pairPos)(i32.const 1)))
+	  (if (i32.lt_u (local.get $pairPos)(local.get $pairsLen))
+	    (br $pairLoop))
+	)
+	(call $printwlf (local.get $greaterCount))
   )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
