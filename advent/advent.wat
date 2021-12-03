@@ -1291,7 +1291,7 @@
   )
 	
   (func $readByte (result i32)
-	(local $nread i32)
+	(local $nread i32)(local $rbyte i32)
 	(i32.store (global.get $readIOVsOff0) (global.get $readBuffOff))
 	(i32.store (global.get $readIOVsOff4) (i32.const 1))
 	(call $fd_read
@@ -1301,17 +1301,24 @@
 	  (global.get $readIOVsOff4) ;; num bytes read goes here
 	)
 	drop  ;; $fd_read return value
-	(local.set $nread (global.get $readIOVsOff4))
-	(call $i32.print (local.get $nread)) (call $printlf)
-	(if (i32.eq (local.get $nread)(i32.const 0))
-		(return (global.get $maxNeg)))
-	(local.get $nread)
+	(local.set $nread (i32.load8_u (global.get $readIOVsOff4)))
+	(if (i32.eqz (local.get $nread))
+	  (return (global.get $maxNeg)))
+	;;(call $i32.print (local.get $nread))(call $printlf)
+	(return (i32.load8_u (global.get $readBuffOff)))
+	;; (call $print (global.get $gIn:))
+	;; (call $i32.print (i32.shr_u (global.get $readBuffOff)(i32.const 18)))
+	;; (call $i32.print (local.get $nread)) (call $printlf)
+	;; (if (i32.eq (local.get $nread)(i32.const 0))
+		;; (return (global.get $maxNeg)))
+	;; (local.get $nread)
   )
   (func $readString (result i32)
 	(local $strPtr i32)
 	(local $byte i32)
 	(local.set $strPtr (call $str.mk))
 	(loop $bloop
+	
 	  (local.set $byte (call $readByte))
 	  (if (i32.ge_s (local.get $byte)(i32.const 0))
 		(then
@@ -1330,6 +1337,7 @@
 	(local.set $listPtr (call $i32list.mk))
 	(loop $lineLoop
 	  (local.set $strPtr (call $readString))
+	  ;;(call $printwlf (local.get $strPtr))
 	  ;; (if ($i32.eq (local.get $strPtr)(global.get $maxNeg))
 		;; (return (local.get $listPtr)))
 	  (if
@@ -1818,7 +1826,14 @@
 	  (return (i32.const 4)))  ;; Not empty
 	(i32.const 0) ;; success
   )
-
+  (func $day1 (export "_day1")
+    (local $strings i32)
+	;;(local.set $strings (call $readFileSlow))
+	;;(call $printwlf (global.get $gAdvent1!))
+	;;(call $print (local.get $strings))
+	(call $print (call $readFileSlow))
+	(call $printlf)
+  )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
 	;; (local $buffer i32)
