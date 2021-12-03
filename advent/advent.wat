@@ -1337,9 +1337,6 @@
 	(local.set $listPtr (call $i32list.mk))
 	(loop $lineLoop
 	  (local.set $strPtr (call $readString))
-	  ;;(call $printwlf (local.get $strPtr))
-	  ;; (if ($i32.eq (local.get $strPtr)(global.get $maxNeg))
-		;; (return (local.get $listPtr)))
 	  (if
 		(i32.eq
 		  (local.get $strPtr)
@@ -1350,181 +1347,10 @@
 	)
 	(return (local.get $listPtr))
   )
-  ;; ;; match from https://www.drdobbs.com/184410904
-  ;; ;; Regular Expressions by Kernighan & Pike
-  ;; (func $match (param $re i32) (param $text i32) (result i32)
-	;; (local $textPos i32)
-    ;; (if				;;if (re[0]=='^') return matchhere(re+1, text)
-	  ;; (i32.eq
-		;; (call $str.getByte (local.get $re)(i32.const 0))
-		;; (global.get $CIRCUMFLEX))
-	  ;; (return
-	    ;; (call $matchHere 
-		  ;; (local.get $re)(i32.const 1)
-		  ;; (local.get $text)(i32.const 0))
-		  ;; ))
-	;; (local.set $textPos (i32.const 0))
-	;; (loop $textLoop
-	  ;; (if 
-		;; (call $matchHere
-		  ;; (local.get $re) (i32.const 0)
-		  ;; (local.get $text)(local.get $textPos))
-		;; (return (i32.const 1)))
-	  ;; (local.set $textPos
-		;; (i32.add
-		  ;; (local.get $textPos)
-		  ;; (i32.const 1)))
-	  ;; (if
-		;; (i32.lt_u
-		  ;; (local.get $textPos)
-		  ;; (call $str.getByteLen (local.get $text)))
-		;; (br $textLoop)))
-	;; (i32.const 0)  ;; failed to match
-  ;; )
   ;; dummy function for commented out $match
   (func $match.test (param $testNum i32)(result i32)
 	(i32.const 0)
   )
-  ;; (func $match.test (param $testNum i32)(result i32)
-	;; (if
-	  ;; (i32.eqz
-		;; (call $match
-		  ;; (call $str.mkdata (global.get $g^A))
-		  ;; (call $str.mkdata (global.get $gABCDEF))))
-	  ;; (return (i32.const 1)))  ;; failed test 1
-	;; (if (call $match  ;; should not match!
-		  ;; (call $str.mkdata (global.get $g^B))
-		  ;; (call $str.mkdata (global.get $gABCDEF)))
-	  ;; (return (i32.const 2)))  ;; failed test 2
-	;; (if
-	  ;; (i32.eqz
-		;; (call $match
-		  ;; (call $str.mkdata (global.get $g^A$))
-		  ;; (call $str.mkdata (global.get $gA))))
-	  ;; (return (i32.const 3))) ;; failed test 3
-	;; (if
-	  ;; (i32.eqz
-		;; (call $match
-		  ;; (call $str.mkdata (global.get $g.*))
-		  ;; (call $str.mkdata (global.get $gABCDEF))))
-	  ;; (return (i32.const 4)))	;; Failure, should have matched
-	;; (if
-	  ;; (i32.eqz
-		;; (call $match
-		  ;; (call $str.mkdata (global.get $gCD))
-		  ;; (call $str.mkdata (global.get $gABCDEF))))
-	  ;; (return (i32.const 5)))  ;; Failure should have  matched
-	;; (if
-	  ;; (i32.eqz
-		;; (call $match
-		  ;; (call $str.mkdata (global.get $g.*F))
-		  ;; (call $str.mkdata (global.get $gABCDEF))))
-	  ;; (return (i32.const 6)))  ;; Failed, should have matched
-    ;; (i32.const 0)  ;; passed
-  ;; )
-  ;; (func $matchHere (param $re i32)(param $rePos i32)
-					;; (param $text i32)(param $textPos i32)
-					;; (result i32)
-	;; (if			;; if (re[0] == '\0' return 1  (at end of re)
-	  ;; (i32.ge_u
-		;; (local.get $rePos)
-		;; (call $str.getByteLen (local.get $re))) ;; len(re) >= 
-	  ;; (return (i32.const 1)))  ;; end of $re
-	;; (if			;; if (re[1]=='*' return matchstart(re[0], re+2, text)
-	  ;; (i32.eq
-		;; (global.get $ASTERISK)
-		;; (call $str.getByte (local.get $re)
-		  ;; (i32.add
-			;; (i32.const 1)
-			;; (local.get $rePos))))
-	  ;; (return
-		;; (call $matchStar
-		  ;; (call $str.getByte (local.get $re)(local.get $rePos))
-		  ;; (local.get $re)
-		  ;; (i32.add (local.get $rePos)(i32.const 2))
-		  ;; (local.get $text)
-		  ;; (local.get $textPos))))
-	;; (if
-	  ;; (i32.and
-		;; (i32.eq
-		  ;; (global.get $DOLLARSIGN)
-		  ;; (call $str.getByte
-			;; (local.get $re)
-			;; (local.get $rePos)))
-		;; (i32.ge_u
-		  ;; (i32.add (i32.const 1)(local.get $rePos))
-		  ;; (call
-			;; $str.getByteLen
-			;; (local.get $re))))
-	  ;; (return
-		;; (i32.ge_u
-		  ;; (local.get $textPos)
-		  ;; (call
-			;; $str.getByteLen
-			  ;; (local.get $text)))))
-	;; ;; Check rest of match
-	;; (if
-	  ;; (i32.and   ;; &&
-		;; (i32.lt_u ;; *text !='\0'
-		  ;; (local.get $textPos)
-		  ;; (call
-			;; $str.getByteLen
-			;; (local.get $text)))
-		;; (i32.or ;; ||
-		  ;; (i32.eq  ;; re[0]=='.'
-			  ;; (call
-				;; $str.getByte
-				;; (local.get $re)
-				;; (local.get $rePos)
-			  ;; (global.get $FULLSTOP)
-			  ;; ))
-		  ;; (i32.eq  ;; re[0]==*text
-			;; (call $str.getByte (local.get $re)  (local.get $rePos))
-			;; (call $str.getByte (local.get $text)(local.get $textPos))
-		  ;; )))
-	  ;; (return
-	    ;; (call 
-	      ;; $matchHere
-		  ;; (local.get $re)
-		  ;; (i32.add
-			;; (local.get $rePos)
-			;; (i32.const 1))
-		  ;; (local.get $text)
-		  ;; (i32.add
-			;; (local.get $textPos)
-			;; (i32.const 1)))))
-	;; (i32.const 0)
-  ;; )
-  ;; ;; int matchstar(int c, char *re, char *text)
-  ;; (func $matchStar (param $byte i32)
-	;; (param $re i32)(param $rePos i32)
-	;; (param $text i32)(param $textPos i32) (result i32)
-	;; (loop $starLoop
-	  ;; (if    					;; if (matchere(re, text)) return 1;
-		;; (call $matchHere 
-		  ;; (local.get $re)  (local.get $rePos)
-		  ;; (local.get $text)(local.get $textPos))
-		;; (return (i32.const 1)))
-	  ;; (br_if $starLoop
-		;; (i32.and						;; &&
-		  ;; (i32.le_u						;; *text !='\0'
-			;; (local.get $textPos)
-			;; (call
-			  ;; $str.getByteLen
-				;; (local.get $text)))  
-		  ;; (i32.or						;; ||
-			;; (i32.eq
-			  ;; (call						;; *text++==c
-				;; $str.getByte
-				  ;; (local.get $text)
-				  ;; (local.get $textPos))
-			  ;; (local.get $byte))
-			;; (i32.eq
-				;; (local.get $byte)		;; c=='.'
-				;; (global.get $FULLSTOP))))
-		;; (local.set $textPos (i32.add (local.get $textPos)(i32.const 1)))))
-	;; (i32.const 0)
-  ;; )
   (func $map.mk (param $compareOff i32)(param $keyPrintOff i32)(result i32)
 	;; returns a pointer to an i32 list of:
 	;;	 TypeNum ('Map ')
@@ -1826,12 +1652,45 @@
 	  (return (i32.const 4)))  ;; Not empty
 	(i32.const 0) ;; success
   )
+  ;; Return a list of pairs from a list.  Each pair is in turn a 2-element list
+  (func $pairwise (param $lstPtr i32)(result i32)
+	(local $pairPtr i32)(local $lstPos i32)(local $lstLen i32)(local $pairListPtr i32)
+	(local.set $lstPos (i32.const 0))
+	(local.set $lstLen (call $i32list.getCurLen (local.get $lstPtr)))
+	(call $printwlf (local.get $lstLen))
+	(local.set $pairListPtr (call $i32list.mk)) ;; list of pairs
+	(loop $pairLoop
+	  (call $printwlf (local.get $lstPos))
+	  (local.set $pairPtr (call $i32list.mk))
+	  (if		;; no more pairs?
+	    (i32.ge_u
+		  (i32.add (local.get $lstPos)(i32.const 1))
+		  (local.get $lstLen)
+		  )
+		(return (local.get $pairListPtr)))
+	  (call $i32list.push (local.get $pairPtr)
+	    (call $i32list.get@
+		  (local.get $lstPtr)
+		  (local.get $lstPos)))
+	  (call $i32list.push (local.get $pairPtr)
+	    (call $i32list.get@
+		  (local.get $lstPtr)
+		  (i32.add (local.get $lstPos)(i32.const 1))))
+	  (local.set $lstPos (i32.add (local.get $lstPos)(i32.const 1)))
+	  (call $i32list.push (local.get $pairListPtr)(local.get $pairPtr))
+	  (br $pairLoop)
+	)
+	(local.get $pairListPtr)
+  )
   (func $day1 (export "_day1")
-    (local $strings i32)
+    (local $lines i32)(local $pairs i32)
 	;;(local.set $strings (call $readFileSlow))
 	;;(call $printwlf (global.get $gAdvent1!))
 	;;(call $print (local.get $strings))
-	(call $print (call $readFileSlow))
+	(local.set $lines (call $readFileSlow))
+	(call $printwlf (local.get $lines))
+	(local.set $pairs (call $pairwise (local.get $lines)))
+	(call $print (local.get $pairs))
 	(call $printlf)
   )
   (func $main (export "_start")
