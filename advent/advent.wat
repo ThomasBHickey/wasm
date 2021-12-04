@@ -1786,6 +1786,58 @@
 	)
 	(call $printwlf (local.get $greaterCount))
   )
+  (func $day2 (export "_day2")
+	(local $lines i32) (local $numLines i32)(local $line i32)
+	(local $lineNum i32) (local $splitLine i32)
+	(local $horizPos i32) (local $depth i32)
+	(local $command i32) (local $param i32)
+	(local $str.forward i32)(local $str.down i32)(local $str.up i32)
+	(local.set $str.forward (call $str.mkdata (global.get $gforward)))
+	(local.set $str.down (call $str.mkdata (global.get $gdown)))
+	(local.set $str.up (call $str.mkdata (global.get $gup)))
+	(local.set $horizPos (i32.const 0))
+	(local.set $depth (i32.const 0))
+	(local.set $lines (call $readFileSlow))
+	(local.set $numLines (call $i32list.getCurLen (local.get $lines)))
+	(call $printwlf (local.get $numLines))
+	(call $printwlf (local.get $str.forward))
+	;;(local.set $line (call $i32list.get@ (local.get $lines)(i32.const 0)))
+	;;(call $printwlf (local.get $line))
+	;;(call $printwlf (call $str.Csplit (local.get $line)(global.get $SP)))
+	(local.set $lineNum (i32.const 0))
+	(loop $lineLoop  ;; expects at least one line
+	  (local.set $line (call $i32list.get@(local.get $lines)(local.get $lineNum)))
+	  ;;(call $printwlf (local.get $line))
+	  (local.set $splitLine (call $str.Csplit (local.get $line)(global.get $SP)))
+	  (call $printwlf (local.get $splitLine))
+	  (local.set $command
+		(call $i32list.get@ (local.get $splitLine)(i32.const 0)))
+	  (local.set $param
+		(call $str.toI32 (call $i32list.get@ (local.get $splitLine)(i32.const 1))))
+	  (call $print (local.get $param))
+	  (if 
+		(call $str.compare (local.get $str.forward) (local.get $command))
+		(local.set $horizPos 
+			  (i32.add (local.get $horizPos)(local.get $param)))
+	  )
+	  (if 
+		(call $str.compare (local.get $str.down) (local.get $command))
+		(local.set $depth 
+			  (i32.sub (local.get $depth)(local.get $param)))
+	  )
+	  (if 
+		(call $str.compare (local.get $str.up) (local.get $command))
+		(local.set $depth 
+			  (i32.add (local.get $depth)(local.get $param)))
+	  )
+	  ;;(call $printlf)(call $printwlf (local.get $horizPos))(call $printlf)
+	  (local.set $lineNum (i32.add (local.get $lineNum)(i32.const 1)))
+	  (if (i32.lt_u (local.get $lineNum)(local.get $numLines))
+	    (br $lineLoop))
+	)
+	(call $printwlf (local.get $horizPos))
+	(call $printwlf (local.get $depth))
+  )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
 	;; (local $buffer i32)
@@ -1920,5 +1972,8 @@
   (data (i32.const 3900) "Advent1!\00")		(global $gAdvent1! i32 (i32.const 3900))
   (data (i32.const 3910) "\00")				(global $gEmptyString i32 (i32.const 3910))
   (data (i32.const 3915) "123\00")			(global $g123text i32 (i32.const 3915))
+  (data (i32.const 3920) "forward\00")		(global $gforward i32 (i32.const 3920))
+  (data (i32.const 3930) "up\00")			(global $gup i32 (i32.const 3930))
+  (data (i32.const 3935) "down\00")			(global $gdown i32 (i32.const 3935))
   (data (i32.const 4000) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
 )
