@@ -1897,12 +1897,12 @@
 	(call $printwlf (local.get $numLines))
 	(local.set $lineNum (i32.const 0))
 	(local.set $line (call $i32list.get@(local.get $lines) (i32.const 0)))
-	(call $printwlf (local.get $line))
+	;;(call $printwlf (local.get $line))
 	(local.set $bitLength (call $str.getByteLen (local.get $line)))
-	(call $printwlf (local.get $bitLength))
+	;;(call $printwlf (local.get $bitLength))
 	(local.set $bitCounts (call $i32list.mk))
 	(local.set $bitPos (i32.const 0))
-	(loop $bitloop0
+	(loop $bitloop0  ;; create list to hold the bit counts
 	  (call $i32list.push (local.get $bitCounts) (i32.const 0))
 	  (local.set $bitPos (i32.add (local.get $bitPos)(i32.const 1)))
 	  (if (i32.lt_u (local.get $bitPos)(local.get $bitLength))
@@ -1912,21 +1912,44 @@
 	(local.set $lineNum (i32.const 0))
 	(loop $lineLoop
 	  (local.set $line (call $i32list.get@(local.get $lines)(local.get $lineNum)))
+	  ;;(call $printwlf (local.get $line))
+	  (local.set $bitPos (i32.const 0))
 	  (loop $bitloop1
-		(local.set $bitPos (i32.add (local.get $bitPos)(i32.const 1)))
-		(if (call $i32list.get@(local.get $line)(local.get $bitPos))
+		;;(call $printwsp (call $str.getByte (local.get $line)(local.get $bitPos)))
+		(if (i32.eq
+		  (call $str.getByte (local.get $line)(local.get $bitPos))
+		  (global.get $one))
 		  (call $i32list.set@
 			(local.get $bitCounts)
-			(i32.add (i32list.get@ (local.get $bitCounts)(local.get $bitPos))(i32.const 1)))
+			(local.get $bitPos)
+			(i32.add 
+			  (call $i32list.get@
+				(local.get $bitCounts)
+				(local.get $bitPos)
+			  )
+			  (i32.const 1)
+			)
+		  )
 		)
+		;;(call $printwlf (local.get $bitCounts))
+		(local.set $bitPos (i32.add (local.get $bitPos)(i32.const 1)))
 		(if (i32.lt_u (local.get $bitPos)(local.get $bitLength))
-		  (br $bitloop0))
+		  (br $bitloop1))
 	  )
 	  (local.set $lineNum (i32.add (local.get $lineNum)(i32.const 1)))
 	  (if (i32.lt_u (local.get $lineNum)(local.get $numLines))
 	    (br $lineLoop))
 	)
+	(local.set $gamma (call $i32list.mk))
+	(local.set $epsilon (call $i32list.mk))
+	(local.set $bitPos (i32.const 0))
+	(loop $bitloop2
 	  
+	  (local.set $bitPos (i32.add (local.get $bitPos)(i32.const 1)))
+	  (if (i32.lt_u (local.get $bitPos)(local.get $bitLength))
+		(br $bitloop2))
+	)
+	(call $printwlf (local.get $bitCounts))
   )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
@@ -1978,6 +2001,7 @@
   (global $LPAREN i32 (i32.const 0x28))			;; U+0028   Left Parenthesis (
   (global $RPAREN i32 (i32.const 0x29))			;; U+0029   Right Parenthesis )
   (global $zero   i32 (i32.const 0x30))			;; U+0030 	Digit Zero 0
+  (global $one	  i32 (i32.const 0x31))			;; U+0031	Digit One 1
   (global $ASTERISK i32 (i32.const 0x2A))		;; U+002A	Asterisk *
   (global $COMMA  i32 (i32.const 0x2C))			;; U+002C	Comma ,
   (global $COLON  i32 (i32.const 0x3A))			;; U+003A	Colon :
