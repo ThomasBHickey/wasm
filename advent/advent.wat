@@ -1800,7 +1800,7 @@
 	(local.set $lines (call $readFileSlow))
 	(local.set $numLines (call $i32list.getCurLen (local.get $lines)))
 	(call $printwlf (local.get $numLines))
-	(call $printwlf (local.get $str.forward))
+	;;(call $printwlf (local.get $str.forward))
 	;;(local.set $line (call $i32list.get@ (local.get $lines)(i32.const 0)))
 	;;(call $printwlf (local.get $line))
 	;;(call $printwlf (call $str.Csplit (local.get $line)(global.get $SP)))
@@ -1809,12 +1809,12 @@
 	  (local.set $line (call $i32list.get@(local.get $lines)(local.get $lineNum)))
 	  ;;(call $printwlf (local.get $line))
 	  (local.set $splitLine (call $str.Csplit (local.get $line)(global.get $SP)))
-	  (call $printwlf (local.get $splitLine))
+	  ;;(call $printwlf (local.get $splitLine))
 	  (local.set $command
 		(call $i32list.get@ (local.get $splitLine)(i32.const 0)))
 	  (local.set $param
 		(call $str.toI32 (call $i32list.get@ (local.get $splitLine)(i32.const 1))))
-	  (call $print (local.get $param))
+	  ;;(call $print (local.get $param))
 	  (if 
 		(call $str.compare (local.get $str.forward) (local.get $command))
 		(local.set $horizPos 
@@ -1823,20 +1823,24 @@
 	  (if 
 		(call $str.compare (local.get $str.down) (local.get $command))
 		(local.set $depth 
-			  (i32.sub (local.get $depth)(local.get $param)))
+			  (i32.add (local.get $depth)(local.get $param)))
 	  )
 	  (if 
 		(call $str.compare (local.get $str.up) (local.get $command))
 		(local.set $depth 
-			  (i32.add (local.get $depth)(local.get $param)))
+			  (i32.sub (local.get $depth)(local.get $param)))
 	  )
-	  ;;(call $printlf)(call $printwlf (local.get $horizPos))(call $printlf)
+	  ;; (call $printlf)
+	    ;; (call $printwsp (local.get $horizPos))
+		;; (call $printwsp (local.get $depth))
+	  ;; (call $printlf)
 	  (local.set $lineNum (i32.add (local.get $lineNum)(i32.const 1)))
 	  (if (i32.lt_u (local.get $lineNum)(local.get $numLines))
 	    (br $lineLoop))
 	)
 	(call $printwlf (local.get $horizPos))
 	(call $printwlf (local.get $depth))
+	(call $printwlf (i32.mul (local.get $depth)(local.get $horizPos)))
   )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
