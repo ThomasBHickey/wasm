@@ -1786,7 +1786,7 @@
 	)
 	(call $printwlf (local.get $greaterCount))
   )
-  (func $day2 (export "_day2")
+  (func $day2s (export "_day2a")
 	(local $lines i32) (local $numLines i32)(local $line i32)
 	(local $lineNum i32) (local $splitLine i32)
 	(local $horizPos i32) (local $depth i32)
@@ -1800,10 +1800,6 @@
 	(local.set $lines (call $readFileSlow))
 	(local.set $numLines (call $i32list.getCurLen (local.get $lines)))
 	(call $printwlf (local.get $numLines))
-	;;(call $printwlf (local.get $str.forward))
-	;;(local.set $line (call $i32list.get@ (local.get $lines)(i32.const 0)))
-	;;(call $printwlf (local.get $line))
-	;;(call $printwlf (call $str.Csplit (local.get $line)(global.get $SP)))
 	(local.set $lineNum (i32.const 0))
 	(loop $lineLoop  ;; expects at least one line
 	  (local.set $line (call $i32list.get@(local.get $lines)(local.get $lineNum)))
@@ -1814,7 +1810,6 @@
 		(call $i32list.get@ (local.get $splitLine)(i32.const 0)))
 	  (local.set $param
 		(call $str.toI32 (call $i32list.get@ (local.get $splitLine)(i32.const 1))))
-	  ;;(call $print (local.get $param))
 	  (if 
 		(call $str.compare (local.get $str.forward) (local.get $command))
 		(local.set $horizPos 
@@ -1830,10 +1825,57 @@
 		(local.set $depth 
 			  (i32.sub (local.get $depth)(local.get $param)))
 	  )
-	  ;; (call $printlf)
-	    ;; (call $printwsp (local.get $horizPos))
-		;; (call $printwsp (local.get $depth))
-	  ;; (call $printlf)
+	  (local.set $lineNum (i32.add (local.get $lineNum)(i32.const 1)))
+	  (if (i32.lt_u (local.get $lineNum)(local.get $numLines))
+	    (br $lineLoop))
+	)
+	(call $printwlf (local.get $horizPos))
+	(call $printwlf (local.get $depth))
+	(call $printwlf (i32.mul (local.get $depth)(local.get $horizPos)))
+  )
+  (func $day2b (export "_day2b")
+	(local $lines i32) (local $numLines i32)(local $line i32)
+	(local $lineNum i32) (local $splitLine i32)
+	(local $horizPos i32) (local $depth i32)(local $aim i32)
+	(local $command i32) (local $param i32)
+	(local $str.forward i32)(local $str.down i32)(local $str.up i32)
+	(local.set $str.forward (call $str.mkdata (global.get $gforward)))
+	(local.set $str.down (call $str.mkdata (global.get $gdown)))
+	(local.set $str.up (call $str.mkdata (global.get $gup)))
+	(local.set $horizPos (i32.const 0))
+	(local.set $depth (i32.const 0))
+	(local.set $aim (i32.const 0))
+	(local.set $lines (call $readFileSlow))
+	(local.set $numLines (call $i32list.getCurLen (local.get $lines)))
+	(call $printwlf (local.get $numLines))
+	(local.set $lineNum (i32.const 0))
+	(loop $lineLoop  ;; expects at least one line
+	  (local.set $line (call $i32list.get@(local.get $lines)(local.get $lineNum)))
+	  ;;(call $printwlf (local.get $line))
+	  (local.set $splitLine (call $str.Csplit (local.get $line)(global.get $SP)))
+	  (local.set $command
+		(call $i32list.get@ (local.get $splitLine)(i32.const 0)))
+	  (local.set $param
+		(call $str.toI32 (call $i32list.get@ (local.get $splitLine)(i32.const 1))))
+	  (if 
+		(call $str.compare (local.get $str.forward) (local.get $command))
+		(then
+		  (local.set $horizPos (i32.add (local.get $horizPos)(local.get $param)))
+		  (local.set
+			$depth (i32.add (local.get $depth)
+						   (i32.mul (local.get $param)(local.get $aim))))
+		)
+	  )
+	  (if 
+		(call $str.compare (local.get $str.down) (local.get $command))
+		(local.set $aim 
+			  (i32.add (local.get $aim)(local.get $param)))
+	  )
+	  (if 
+		(call $str.compare (local.get $str.up) (local.get $command))
+		(local.set $aim 
+			  (i32.sub (local.get $aim)(local.get $param)))
+	  )
 	  (local.set $lineNum (i32.add (local.get $lineNum)(i32.const 1)))
 	  (if (i32.lt_u (local.get $lineNum)(local.get $numLines))
 	    (br $lineLoop))
