@@ -1887,6 +1887,7 @@
   (func $day3 (export "_day3")
 	(local $lines i32)(local $numLines i32)(local $line i32)
 	(local $lineNum i32)(local $bitLength i32)(local $bitPos i32)
+	(local $halfNumLines i32)
 	(local $gamma i32)(local $epsilon i32)
 	(local $1count i32) (local $0count i32)
 	(local $bitCounts i32)
@@ -1894,7 +1895,8 @@
 	(local.set $epsilon (i32.const 0))
 	(local.set $lines (call $readFileSlow))
 	(local.set $numLines (call $i32list.getCurLen (local.get $lines)))
-	(call $printwlf (local.get $numLines))
+	(local.set $halfNumLines (i32.shr_u (local.get $numLines)(i32.const 1)))
+	(call $printwsp (local.get $numLines)) (call $printwlf (local.get $halfNumLines))
 	(local.set $lineNum (i32.const 0))
 	(local.set $line (call $i32list.get@(local.get $lines) (i32.const 0)))
 	;;(call $printwlf (local.get $line))
@@ -1940,16 +1942,34 @@
 	  (if (i32.lt_u (local.get $lineNum)(local.get $numLines))
 	    (br $lineLoop))
 	)
-	(local.set $gamma (call $i32list.mk))
-	(local.set $epsilon (call $i32list.mk))
+	(call $printwlf (local.get $bitCounts))
+	(local.set $gamma (i32.const 0))
+	(local.set $epsilon (i32.const 0))
 	(local.set $bitPos (i32.const 0))
 	(loop $bitloop2
-	  
+	  (local.set $gamma (i32.shl (local.get $gamma)(i32.const 1)))
+	  (local.set $epsilon (i32.shl (local.get $epsilon)(i32.const 1)))
+	  (if
+		(i32.ge_u
+			(call $i32list.get@ (local.get $bitCounts)(local.get $bitPos))
+			(local.get $halfNumLines))
+		(then
+			(local.set $gamma
+				(i32.or (local.get $gamma)(i32.const 1))
+				  
+			)
+		)
+		(else
+		  (local.set $epsilon
+			(i32.or (local.get $epsilon)(i32.const 1)))
+		)
+	  )
 	  (local.set $bitPos (i32.add (local.get $bitPos)(i32.const 1)))
 	  (if (i32.lt_u (local.get $bitPos)(local.get $bitLength))
 		(br $bitloop2))
 	)
-	(call $printwlf (local.get $bitCounts))
+	(call $printwlf (local.get $gamma))
+	(call $printwlf (local.get $epsilon))
   )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
