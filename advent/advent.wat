@@ -1899,9 +1899,7 @@
 	(call $printwsp (local.get $numLines)) (call $printwlf (local.get $halfNumLines))
 	(local.set $lineNum (i32.const 0))
 	(local.set $line (call $i32list.get@(local.get $lines) (i32.const 0)))
-	;;(call $printwlf (local.get $line))
 	(local.set $bitLength (call $str.getByteLen (local.get $line)))
-	;;(call $printwlf (local.get $bitLength))
 	(local.set $bitCounts (call $i32list.mk))
 	(local.set $bitPos (i32.const 0))
 	(loop $bitloop0  ;; create list to hold the bit counts
@@ -1910,14 +1908,11 @@
 	  (if (i32.lt_u (local.get $bitPos)(local.get $bitLength))
 		(br $bitloop0))
 	)
-	;;(call $printwlf (local.get $bitCounts))
 	(local.set $lineNum (i32.const 0))
 	(loop $lineLoop
 	  (local.set $line (call $i32list.get@(local.get $lines)(local.get $lineNum)))
-	  ;;(call $printwlf (local.get $line))
 	  (local.set $bitPos (i32.const 0))
 	  (loop $bitloop1
-		;;(call $printwsp (call $str.getByte (local.get $line)(local.get $bitPos)))
 		(if (i32.eq
 		  (call $str.getByte (local.get $line)(local.get $bitPos))
 		  (global.get $one))
@@ -1933,7 +1928,6 @@
 			)
 		  )
 		)
-		;;(call $printwlf (local.get $bitCounts))
 		(local.set $bitPos (i32.add (local.get $bitPos)(i32.const 1)))
 		(if (i32.lt_u (local.get $bitPos)(local.get $bitLength))
 		  (br $bitloop1))
@@ -1942,7 +1936,6 @@
 	  (if (i32.lt_u (local.get $lineNum)(local.get $numLines))
 	    (br $lineLoop))
 	)
-	(call $printwlf (local.get $bitCounts))
 	(local.set $gamma (i32.const 0))
 	(local.set $epsilon (i32.const 0))
 	(local.set $bitPos (i32.const 0))
@@ -1970,6 +1963,7 @@
 	)
 	(call $printwlf (local.get $gamma))
 	(call $printwlf (local.get $epsilon))
+	(call $printwlf (i32.mul (local.get $gamma)(local.get $epsilon)))
   )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
