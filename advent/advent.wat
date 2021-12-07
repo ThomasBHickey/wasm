@@ -560,6 +560,7 @@
 	  (local.get $lstPtr)
 	  (i32.sub (local.get $curLen)(i32.const 1)))
   )
+  ;; Add element to the end of the list
   (func $i32list.push (param $lstPtr i32)(param $val i32)
 	(local $maxLen i32) (local $curLen i32);;(local $dataOffset i32)
 	(local.set $curLen (call $i32list.getCurLen(local.get $lstPtr)))
@@ -1892,7 +1893,6 @@
 	(local $bitCounts i32)
 	(local $bitLength i32)
 	(local $lineNum i32)
-	
   )
   ;; Accepts an array of lines of 'bits'
   ;; returns an array of bitCounts, one count for each bit position
@@ -1943,16 +1943,28 @@
 	(local.get $bitCounts)
   )
   ;; Accepts an array of lines of 'bits'  ('0' and '1') plus a bit position and target value
-  ;; Returns only those lines that satisfy the criteria
-  (func $filterLinesByBit (param $lines)(param $bitPos)(param $targValue)(result i32)
-    (local $line i32)(local $lineNum i32)(local $numLines i32)
+  ;; Returns only those lines that satisfy the criteria (matching $targ)
+  (func $filterLinesByBit (param $lines i32)(param $bitPos i32)(param $targ i32)(result i32)
+    (local $line i32)(local $lineNum i32)(local $numLines i32)(local $bit i32)
 	(local $filteredLines i32)
-	
+	(local.set $filteredLines (call $i32list.mk))
+	(local.set $numLines (call $i32list.getCurLen (local.get $lines)))
+	(local.set $lineNum (i32.const 0))
+	(loop $lineLoop
+	  (local.set $line (call $i32list.get@(local.get $lines)(local.get $lineNum)))
+	  (local.set $bit (call $str.getByte(local.get $line)(local.get $bitPos)))
+	  (if (i32.eq (local.get $bit)(local.get $targ))
+		(call $i32list.push (local.get $filteredLines)(local.get $line)))
+	  (local.set $lineNum (i32.add (local.get $lineNum)(i32.const 1)))
+	  (if (i32.lt_u (local.get $lineNum)(local.get $numLines))
+	    (br $lineLoop))
+	)
+	(local.get $filteredLines)
   )
   (func $day3 (export "_day3")
-	(local $lines i32)(local $numLines i32)(local $line i32)
+	(local $lines i32)(local $numLines i32)(local $line i32)(local $targ i32)
 	(local $bitLength i32)(local $bitPos i32)
-	(local $halfNumLines i32)
+	(local $halfNumLines i32)(local $filteredLines i32)
 	(local $gamma i32)(local $epsilon i32)(local $O2genRating i32)(local $CO2scrubRating i32)
 	(local $1count i32) (local $0count i32)
 	(local $bitCounts i32)
@@ -1991,7 +2003,28 @@
 	(call $printwlf (local.get $gamma))
 	(call $printwlf (local.get $epsilon))
 	(call $printwlf (i32.mul (local.get $gamma)(local.get $epsilon)))
-	
+	(local.set $filteredLines (local.get $lines))
+	(local.set $bitPos (i32.const 0))
+	(loop $filterLoop
+	  (call $printwsp (local.get $bitPos))
+	  (call $printwlf (call $i32list.getCurLen (local.get $filteredLines)))
+	  (local.set $numLines (call $i32list.getCurLen(local.get $filteredLines)))
+	  (local.set $halfNumLines (i32.shr_u (local.get $numLines)(i32.const 1)))
+	  (local.set $bitCounts (call $countBits (local.get $filteredLines)))
+	  (if
+		(i32.ge_u
+			(call $i32list.get@ (local.get $bitCounts)(local.get $bitPos))
+			(local.get $halfNumLines))
+		(then
+		  (local.set $targ (global.get $one)))
+		(else (local.set $targ (global.get $zero))))
+	  (local.set $filteredLines
+		(call $filterLinesByBit (local.get $filteredLines)(local.get $bitPos)(local.get $targ)))
+	  (local.set $bitPos (i32.add (local.get $bitPos)(i32.const 1)))
+	  (if (i32.gt_u (call $i32list.getCurLen (local.get $filteredLines))(i32.const 1))
+		(br $filterLoop))
+	)
+	(call $printwlf (local.get $filteredLines))
   )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
