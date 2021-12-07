@@ -1942,6 +1942,13 @@
 	)
 	(local.get $bitCounts)
   )
+  ;; Accepts an array of lines of 'bits'  ('0' and '1') plus a bit position and target value
+  ;; Returns only those lines that satisfy the criteria
+  (func $filterLinesByBit (param $lines)(param $bitPos)(param $targValue)(result i32)
+    (local $line i32)(local $lineNum i32)(local $numLines i32)
+	(local $filteredLines i32)
+	
+  )
   (func $day3 (export "_day3")
 	(local $lines i32)(local $numLines i32)(local $line i32)
 	(local $bitLength i32)(local $bitPos i32)
