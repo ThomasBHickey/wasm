@@ -51,8 +51,9 @@
 	$i32list.pop.test		;;23
 	$misc.test				;;24
 	$str.toI32.test			;;25
+	$i32list.set@.test		;;26
   )
-  (global $numTests i32 (i32.const 25)) ;; should match # tests in table
+  (global $numTests i32 (i32.const 26)) ;; should match # tests in table
   (global $firstTestOffset 	i32 (i32.const 4))
   (global $strCompareOffset i32 (i32.const 0))
   (global $strToStrOffset	i32 (i32.const 1))
@@ -66,9 +67,9 @@
   (global $writeIOVsOff4 	i32 (i32.const 2304))
   (global $writeBuffOff 	i32 (i32.const 2400))
   (global $writeBufLen 		i32 (i32.const 512))
-  (global $nextFreeMem (mut i32)(i32.const 4096))
-  (global $firstFreeMem 	i32 (i32.const 4096))
-  (global $maxFreeMem  (mut i32)(i32.const 4096)) ;; same as initial $firstFreeMem
+  (global $nextFreeMem (mut i32)(i32.const 6000))
+  (global $firstFreeMem 	i32 (i32.const 6000))
+  (global $maxFreeMem  (mut i32)(i32.const 6000)) ;; same as initial $firstFreeMem
   (global $memReclaimed(mut i32)(i32.const 0))
   (global $memReclamations (mut i32)(i32.const 0))
   (global $debugW2W 	(mut i32)(i32.const 0))
@@ -161,6 +162,13 @@
   )
   (func $error3 (param $err i32)
 	(call $i32.print (local.get $err))
+	(call $error2)
+  )
+  (func $typeError (param $typeFound i32)(param $typeExpected i32)
+    (call $printwsp (global.get $gExpectedType))
+	(call $printwlf (call $typeNum.toStr (local.get $typeExpected)))
+	(call $printwsp (global.get $gFound:))
+	(call $printwlf (call $typeNum.toStr (local.get $typeFound)))
 	(call $error2)
   )
   (func $print (param $ptr i32)
@@ -540,6 +548,14 @@
 	;; Needs bounds tests
     (local $dataOff i32)
 	(local $dataOffOff i32)
+	(if (i32.ne 
+		  (call $getTypeNum (local.get $lstPtr))
+		  (global.get $i32L))
+		(call $typeError
+			(call $getTypeNum (local.get $lstPtr))
+			(global.get $i32L)
+		)
+	)
 	(local.set $dataOff (call $i32list.getDataOff (local.get $lstPtr)))
 	(local.set $dataOffOff
 		(i32.add (local.get $dataOff)
@@ -551,6 +567,12 @@
 	(i32.load
 		(i32.add (call $i32list.getDataOff (local.get $lstPtr))
 				 (i32.mul (i32.const 4) (local.get $pos))))
+  )
+  (func $i32list.set@.test (param $testNum i32)(result i32)
+    (local $listPtr i32)
+	(local.set $listPtr (call $i32list.mk))
+	(call $i32list.set@ (local.get $listPtr)(i32.const 0)(i32.const 33)) ;; should fail
+	(i32.const 0)
   )
   (func $i32list.tail (param $lstPtr i32)(result i32)
 	(local $curLen i32)
@@ -707,14 +729,21 @@
 			(br $bloop))))		
   )
   (func $str.catStr.test (param $testNum i32)(result i32)
-    (local $AAA i32)(local $ZZZ i32)
+    (local $AAA i32)(local $ZZZ i32)(local $aaa i32)
 	(local.set $AAA (call $str.mkdata (global.get $gAAA)))
 	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
-	(call $str.catStr (local.get $AAA)(local.get $ZZZ))
+	(call $printwlf (local.get $AAA))
+	(call $printwlf (local.get $ZZZ))
+	(local.set $aaa (call $str.mk))
+	(call $str.catStr (local.get $aaa)(local.get $AAA))
+	(call $str.catStr (local.get $aaa)(local.get $ZZZ))
 	;; $AAA string now has $ZZZ concatenated onto it!
+	(call $printwlf (local.get $AAA))
+	(call $printwlf (local.get $ZZZ))
+	(call $printwlf (local.get $aaa))
 	(i32.eqz
 	  (call $str.compare
-		(local.get $AAA) 
+		(local.get $aaa) 
 		(call $str.mkdata (global.get $gAAAZZZ))))
   )
   (func $str.cat2Strings (param $s1Ptr i32)(param $s2Ptr i32)(result i32)
@@ -830,23 +859,35 @@
 	(i32.const 0) ;; Success
   )
   (func $str.mkdata (param $dataOffset i32) (result i32)
+	;; Modified 1021-12-08 to not point to the original data
+	;; Slower, but concatenation, etc. should now be safe
     ;; Make a string from null-terminated chunk of memory
 	;; null terminator is not counted as part of string
 	;; Should work with UTF-8?
-	(local $length i32) (local $curByte i32)(local $strPtr i32)
-	(local.set $length (i32.const 0))
-	(loop $cLoop
-		(local.set $curByte (i32.load8_u (i32.add (local.get $length)(local.get $dataOffset))))
-		(if (i32.ne (i32.const 0)(local.get $curByte)) ;; checking for null
-		  (then
-		    (local.set $length (i32.add (local.get $length)(i32.const 1)))
-			(br $cLoop)
-	)))
-	(local.set $strPtr (call $getMem (i32.const 16)))  ;; just room for pointer info
-	(call $setTypeNum (local.get $strPtr)(global.get $BStr))
-	(call $str.setByteLen (local.get $strPtr)(local.get $length))
-	(call $str.setMaxLen (local.get $strPtr)(local.get $length))
-	(call $str.setDataOff (local.get $strPtr)(local.get $dataOffset))
+	;;(local $length i32)
+	(local $curByte i32)(local $strPtr i32)
+	;;(local.set $length (i32.const 0))
+	;; (loop $cLoop
+		;; (local.set $curByte (i32.load8_u (i32.add (local.get $length)(local.get $dataOffset))))
+		;; (if (i32.ne (i32.const 0)(local.get $curByte)) ;; checking for null
+		  ;; (then
+		    ;; (local.set $length (i32.add (local.get $length)(i32.const 1)))
+			;; (br $cLoop)
+	;; )))
+	;; (local.set $strPtr (call $getMem (i32.const 16)))  ;; just room for pointer info
+	;; (call $setTypeNum (local.get $strPtr)(global.get $BStr))
+	;; (call $str.setByteLen (local.get $strPtr)(local.get $length))
+	;; (call $str.setMaxLen (local.get $strPtr)(local.get $length))
+	;; (call $str.setDataOff (local.get $strPtr)(local.get $dataOffset))
+	(local.set $strPtr (call $str.mk))
+	(loop $bLoop
+	  (local.set $curByte (i32.load8_u (local.get $dataOffset)))
+	  (if (local.get $curByte)
+		(then
+		  (call $str.catByte (local.get $strPtr)(local.get $curByte))
+		  (local.set $dataOffset (i32.add (local.get $dataOffset)(i32.const 1)))
+		  (br $bLoop)))
+	)
 	(local.get $strPtr)
   )
   (func $str.mkdata.test (param $testNum i32)(result i32)
@@ -2181,5 +2222,8 @@
   (data (i32.const 3970) "G:\00")			(global $gG i32 (i32.const 3970))
   (data (i32.const 3975) "H:\00")			(global $gH i32 (i32.const 3975))
   (data (i32.const 3980) "Looking for:\00")	(global $gLookingFor i32 (i32.const 3980))
-  (data (i32.const 4200) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 4000)) ;;KEEP LAST
+  (data (i32.const 3995) "Type error. Expected:\00")
+											(global $gExpectedType i32 (i32.const 3995))
+  (data (i32.const 4020) "Found:\00")		(global $gFound: i32 (i32.const 4020))
+  (data (i32.const 5900) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 5900)) ;;KEEP LAST & BELOW $maxFreeMem
 )
