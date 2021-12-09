@@ -563,7 +563,7 @@
     (i32.store (local.get $dataOffOff) (local.get $val))
   )
   (func $i32list.get@ (param $lstPtr i32)(param $pos i32)(result i32)
-	;; Needs bounds test
+	;; Needs bounds test  ;; needs typecheck
 	(i32.load
 		(i32.add (call $i32list.getDataOff (local.get $lstPtr))
 				 (i32.mul (i32.const 4) (local.get $pos))))
@@ -1279,6 +1279,27 @@
 	  (return (i32.const 2)))
     (i32.const 0)
   )
+  ;; Expects a string made up of '1' and '0' characters
+  (func $str.binToI32 (param $strPtr i32)(result i32)
+    (local $bitPos i32)
+    (local $strLen i32)
+	(local $accum i32)
+    (local.set $strLen (call $str.getByteLen (local.get $strPtr)))
+    (local.set $bitPos (i32.const 0))
+	(local.set $accum (i32.const 0))
+	(if (i32.eqz (local.get $strLen)) (return (i32.const 0)))
+    (loop $bLoop
+	  (local.set $accum (i32.shl (local.get $accum)(i32.const 1)))
+	  (if (i32.eq
+			(call $str.getByte (local.get $strPtr)(local.get $bitPos))
+			(global.get $one))
+		  (local.set $accum (i32.or (local.get $accum)(i32.const 1))))
+	  (local.set $bitPos (i32.add (local.get $bitPos)(i32.const 1)))
+	  (if (i32.lt_u (local.get $bitPos)(local.get $strLen))
+	    (br $bLoop))
+	)
+	(local.get $accum)
+  )
   (func $str.find (param $string i32)(param $pat i32)(result i32)
     ;; returns position where found, otherwise -1
 	(local $cpos i32)(local $lastPos i32)
@@ -1988,7 +2009,8 @@
   (func $filterLinesByBit (param $lines i32)(param $bitPos i32)(param $targ i32)(result i32)
     (local $line i32)(local $lineNum i32)(local $numLines i32)(local $bit i32)
 	(local $filteredLines i32)
-	(call $printwsp (global.get $gLookingFor))(call $printwlf (local.get $targ))
+	(call $printwsp (global.get $gLookingFor))(call $C.print (local.get $targ))(call $printlf)
+	(call $printwsp (global.get $gbitPos))(call $printwlf (local.get $bitPos))
 	(local.set $filteredLines (call $i32list.mk))
 	(local.set $numLines (call $i32list.getCurLen (local.get $lines)))
 	(local.set $lineNum (i32.const 0))
@@ -2048,19 +2070,23 @@
 	(local.set $filteredLines (local.get $lines))
 	(local.set $bitPos (i32.const 0))
 	(loop $filterLoop
-	  (call $printwsp (global.get $gC))(call $printwsp (local.get $bitPos))
+	  (call $printwsp (global.get $gFloop))
+	  (call $printwsp (global.get $gbitPos))
+	  (call $printwsp (local.get $bitPos))
 	  (call $printwlf (call $i32list.getCurLen (local.get $filteredLines)))
 	  (local.set $numLines (call $i32list.getCurLen(local.get $filteredLines)))
-	  (local.set $halfNumLines (i32.shr_u (local.get $numLines)(i32.const 1)))
+	  (local.set $halfNumLines (i32.shr_u (i32.add (local.get $numLines)(i32.const 1))(i32.const 1)))
 	  (local.set $bitCounts (call $countBits (local.get $filteredLines)))
 	  (call $printwlf (local.get $bitCounts))
+	  (call $printwsp (global.get $gHalf#))(call $printwlf (local.get $halfNumLines))
+	  (call $printwlf (call $i32list.get@ (local.get $bitCounts)(local.get $bitPos)))
 	  (if
 		(i32.ge_u
 			(call $i32list.get@ (local.get $bitCounts)(local.get $bitPos))
 			(local.get $halfNumLines))
 		(then
 		  (local.set $targ (global.get $one))
-		  (call $printwlf (global.get $gB))
+		  ;;(call $print (global.get $gB))(call $C.print (local.get $targ))(call $printlf)
 		)
 		(else 
 		  (local.set $targ (global.get $zero))
@@ -2075,6 +2101,7 @@
 		(br $filterLoop))
 	)
 	(call $printwsp (global.get $gH))(call $printwlf (local.get $filteredLines))
+	(call $print (call $str.binToI32 (call $i32list.pop (local.get $filteredLines))))
   )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
@@ -2225,5 +2252,9 @@
   (data (i32.const 3995) "Type error. Expected:\00")
 											(global $gExpectedType i32 (i32.const 3995))
   (data (i32.const 4020) "Found:\00")		(global $gFound: i32 (i32.const 4020))
-  (data (i32.const 5900) "ZZZ\00")			(global $gZZZ 	i32 (i32.const 5900)) ;;KEEP LAST & BELOW $maxFreeMem
+  (data (i32.const 4030) "Floop\00")		(global $gFloop i32 (i32.const 4030))
+  (data (i32.const 4040) "Filter\00")		(global $gFilter i32 (i32.const 4040))
+  (data (i32.const 4050) "Half#\00")		(global $gHalf# i32  (i32.const 4050))
+  (data (i32.const 4060) "bitPos\00")		(global $gbitPos i32 (i32.const 4060))
+  (data (i32.const 5900) "ZZZ\00")			(global $gZZZ 	i32  (i32.const 5900)) ;;KEEP LAST & BELOW $maxFreeMem
 )
