@@ -1169,6 +1169,7 @@
 	(local $spAAA i32)(local $spAAA2 i32) (local $spZZZ i32)
 	(local.set $spAAA (call $str.mkdata (global.get $gAAA)))
 	(local.set $spAAA2 (call $str.mk))
+	;;(call $print (local.get $testNum))(call $printwlf (global.get $gFloop))
 	(call $str.catByte (local.get $spAAA2)(i32.const 65))
 	(call $str.catByte (local.get $spAAA2)(i32.const 65))
 	(call $str.catByte (local.get $spAAA2)(i32.const 65))
@@ -1185,37 +1186,82 @@
 	;; pass string, char, return list of strings split on char
 	;; Not UTF-8 safe (split character needs to be a single byte long
 	;; and needs a test for that!
-	(local $splitList i32) (local $strCum i32) (local $bpos i32)
+	(local $splitList i32) (local $strCum i32) (local $bpos i32)(local $inSplit i32)
 	(local $byte i32) (local $strLen i32)
+	(call $C.print (local.get $splitC))(call $printlf)
+	(call $printwlf (local.get $toSplit))
 	(local.set $splitList (call $i32list.mk))
 	(local.set $strCum (call $str.mk)) ;; accumulates chars
 	(local.set $bpos (i32.const 0))
 	(local.set $strLen (call $str.getByteLen (local.get $toSplit)))
+	(local.set $inSplit (i32.const 0))  ;; last character was not the split char
 	(loop $bloop
+	  (call $printwlf (local.get $bpos))
 	  (if (i32.lt_u (local.get $bpos)(local.get $strLen))
 	    (then
 		  (local.set $byte (call $str.getByte (local.get $toSplit)(local.get $bpos)))
-		  ;;(call $i32.print (local.get $byte))
-		  (if (i32.eq (local.get $splitC)(local.get $byte))
-			(then
-			  (call $i32list.push (local.get $splitList)(local.get $strCum))
-			  (local.set $strCum (call $str.mk)))
-			(else
-			  (call $str.catByte (local.get $strCum)(local.get $byte))))
+		  (if (i32.ne (local.get $byte)(local.get $splitC))
+		    (then
+			  (call $str.catByte (local.get $strCum)(local.get $byte))
+			)
+			(else ;; break char
+			  (if (call $str.getByteLen (local.get $strCum))
+				(then
+				  (call $i32list.push (local.get $splitList)(local.get $strCum))
+				  (local.set $strCum (call $str.mk))
+				)
+			  )
+			)
+		  )
 		  (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
-		  (br $bloop))))
-	(if (call $str.getByteLen (local.get $strCum));; skip empty last $strCum
-	  (then (call $i32list.push (local.get $splitList)(local.get $strCum))))
+		  (br $bloop)
+		)
+	  )
+	)
+	(if (call $str.getByteLen (local.get $strCum))
+	  (call $i32list.push (local.get $splitList)(local.get $strCum)))
 	(local.get $splitList)
   )
+	
+	    ;; (then
+		  ;; (local.set $byte (call $str.getByte (local.get $toSplit)(local.get $bpos)))
+		  ;; (call $printwsp (local.get $bpos))
+		  ;; (call $C.print (local.get $byte))(call $printsp)
+		  ;; (call $printwsp (local.get $strCum))
+		  ;; (call $printwsp (local.get $splitList))
+		  ;; (call $printwlf (local.get $inSplit))
+		  ;; (if (i32.eq (local.get $splitC)(local.get $byte))
+			;; (then
+			  ;; (if (call $i32list.getCurLen (local.get $strCum))  ;; anything to add?
+				;; (then
+				  ;; (call $i32list.push (local.get $splitList)(local.get $strCum)))
+				  ;; (local.set $strCum (call $str.mk))
+			  ;; )
+			  ;; (local.set $inSplit (i32.const 1)) ;; splitting (this byte was split byte)
+			;; )
+			;; (else  ;; any other byte value
+			  ;; (call $str.catByte (local.get $strCum)(local.get $byte))
+			  ;; (local.set $inSplit (i32.const 0)) ;; not splitting
+			;; )
+		  ;; )
+		  ;; (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
+		  ;; (br $bloop))))
+	;; (if (call $str.getByteLen (local.get $strCum));; anything to add?
+	  ;; (call $i32list.push (local.get $splitList)(local.get $strCum)))
+	;; ;;(call $printwlf (local.get $splitList))
+	;; (local.get $splitList)
+  ;; )
   (func $str.Csplit.test (param $testNum i32)(result i32)
 	;; The split character is not part of the split pieces
-	(local $AbCDbE i32)(local $listPtr i32)(local $strptr0 i32)
+	(local $AbCDbE i32)(local $AbCDbbE i32)(local $listPtr i32)(local $strptr0 i32)
 	(local.set $AbCDbE (call $str.mkdata (global.get $gAbCDbE)))
+	(local.set $AbCDbbE (call $str.mkdata (global.get $gAbCDbbE)))
 	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 98)))  ;; 'b'
+	(call $printwlf (local.get $listPtr))
 	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 3))
 	  (return (i32.const 1)))
-	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 45)))  ;; 'E'
+	  ;;(call $print (local.get $listPtr)))
+	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 69)))  ;; 'E'
 	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 1))
 	  (return (i32.const 2)))
 	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 122)))  ;; 'z'
@@ -1225,6 +1271,12 @@
 			(call $i32list.get@ (local.get $listPtr)(i32.const 0))
 			(local.get $AbCDbE)))
 	  (return (i32.const 3)))
+	(local.set $listPtr (call $str.Csplit (local.get $AbCDbbE)(i32.const 98))) ;; split on'b'
+	;; test to make sure multiple split characters are treated as a single split
+	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 3))
+	  ;;(return (i32.const 4))
+	  (call $printwlf (local.get $listPtr))
+	  )
 	(i32.const 0) ;; success
   )
   (func $str.startsAt (param $str i32)(param $pat i32)(param $startPos i32)(result i32)
@@ -2146,22 +2198,21 @@
 	(local.get $numList)
   )
   (func $board.mk (param $lines i32)(param $boardSize i32)(param $linePos i32)(result i32)
-    (local $board i32)(local $lineOff i32)(local $intList i32)
+    (local $board i32)(local $lineOff i32)(local $intList i32)(local $strList i32)
 	(local.set $lineOff (i32.const 0))
 	(local.set $board (call $i32list.mk))
 	(call $printwlf (global.get $gB))
 	(loop $lineLoop
-	  (call $printwlf (call $i32list.get@ (local.get $lines)(i32.add (local.get $linePos)(local.get $lineOff))))
-	  (local.set $intList
-		(call $strList2intList
+	  (local.set $strList
+		(call $str.Csplit 
 		  (call $i32list.get@
-			(local.get $lines)
-			(i32.add (local.get $linePos)(local.get $lineOff))
-		  )
-		)
-	  )
-	  ;; (call $printwlf (local.get $intList))
-	  ;; (call $i32list.push (local.get $board)(local.get $intList))
+		    (local.get $lines)(i32.add (local.get $linePos)(local.get $lineOff)))
+			(global.get $SP)))
+	  (call $printwlf (local.get $strList))
+	  (local.set $intList (call $strList2intList (local.get $strList)))
+	  (call $printwlf (local.get $intList))
+	  (call $printwlf (local.get $intList))
+	  (call $i32list.push (local.get $board)(local.get $intList))
 	  (local.set $lineOff (i32.add (local.get $lineOff)(i32.const 1)))
 	  (if (i32.lt_u (local.get $lineOff)(local.get $boardSize))
 		(br $lineLoop))
@@ -2343,5 +2394,6 @@
   (data (i32.const 4040) "Filter\00")		(global $gFilter i32 (i32.const 4040))
   (data (i32.const 4050) "Half#\00")		(global $gHalf# i32  (i32.const 4050))
   (data (i32.const 4060) "bitPos\00")		(global $gbitPos i32 (i32.const 4060))
+  (data (i32.const 4070) "AbCDbbE\00")		(global $gAbCDbbE i32 (i32.const 4070))
   (data (i32.const 5900) "ZZZ\00")			(global $gZZZ 	i32  (i32.const 5900)) ;;KEEP LAST & BELOW $maxFreeMem
 )
