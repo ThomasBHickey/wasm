@@ -1188,15 +1188,13 @@
 	;; and needs a test for that!
 	(local $splitList i32) (local $strCum i32) (local $bpos i32)(local $inSplit i32)
 	(local $byte i32) (local $strLen i32)
-	(call $C.print (local.get $splitC))(call $printlf)
-	(call $printwlf (local.get $toSplit))
+	;;(call $printwlf (local.get $toSplit))
 	(local.set $splitList (call $i32list.mk))
 	(local.set $strCum (call $str.mk)) ;; accumulates chars
 	(local.set $bpos (i32.const 0))
 	(local.set $strLen (call $str.getByteLen (local.get $toSplit)))
 	(local.set $inSplit (i32.const 0))  ;; last character was not the split char
 	(loop $bloop
-	  (call $printwlf (local.get $bpos))
 	  (if (i32.lt_u (local.get $bpos)(local.get $strLen))
 	    (then
 		  (local.set $byte (call $str.getByte (local.get $toSplit)(local.get $bpos)))
@@ -1257,7 +1255,7 @@
 	(local.set $AbCDbE (call $str.mkdata (global.get $gAbCDbE)))
 	(local.set $AbCDbbE (call $str.mkdata (global.get $gAbCDbbE)))
 	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 98)))  ;; 'b'
-	(call $printwlf (local.get $listPtr))
+	;;(call $printwlf (local.get $listPtr))
 	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 3))
 	  (return (i32.const 1)))
 	  ;;(call $print (local.get $listPtr)))
@@ -1274,8 +1272,8 @@
 	(local.set $listPtr (call $str.Csplit (local.get $AbCDbbE)(i32.const 98))) ;; split on'b'
 	;; test to make sure multiple split characters are treated as a single split
 	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 3))
-	  ;;(return (i32.const 4))
-	  (call $printwlf (local.get $listPtr))
+	  (return (i32.const 4))
+	  ;;(call $printwlf (local.get $listPtr))
 	  )
 	(i32.const 0) ;; success
   )
