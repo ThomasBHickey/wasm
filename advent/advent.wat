@@ -732,15 +732,15 @@
     (local $AAA i32)(local $ZZZ i32)(local $aaa i32)
 	(local.set $AAA (call $str.mkdata (global.get $gAAA)))
 	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
-	(call $printwlf (local.get $AAA))
-	(call $printwlf (local.get $ZZZ))
+	;; (call $printwlf (local.get $AAA))
+	;; (call $printwlf (local.get $ZZZ))
 	(local.set $aaa (call $str.mk))
 	(call $str.catStr (local.get $aaa)(local.get $AAA))
 	(call $str.catStr (local.get $aaa)(local.get $ZZZ))
 	;; $AAA string now has $ZZZ concatenated onto it!
-	(call $printwlf (local.get $AAA))
-	(call $printwlf (local.get $ZZZ))
-	(call $printwlf (local.get $aaa))
+	;; (call $printwlf (local.get $AAA))
+	;; (call $printwlf (local.get $ZZZ))
+	;; (call $printwlf (local.get $aaa))
 	(i32.eqz
 	  (call $str.compare
 		(local.get $aaa) 
@@ -1186,9 +1186,9 @@
 	;; pass string, char, return list of strings split on char
 	;; Not UTF-8 safe (split character needs to be a single byte long
 	;; and needs a test for that!
+	;; 2021.12.11 Multiple break characters in a row are collapsed
 	(local $splitList i32) (local $strCum i32) (local $bpos i32)(local $inSplit i32)
 	(local $byte i32) (local $strLen i32)
-	;;(call $printwlf (local.get $toSplit))
 	(local.set $splitList (call $i32list.mk))
 	(local.set $strCum (call $str.mk)) ;; accumulates chars
 	(local.set $bpos (i32.const 0))
@@ -1220,35 +1220,6 @@
 	  (call $i32list.push (local.get $splitList)(local.get $strCum)))
 	(local.get $splitList)
   )
-	
-	    ;; (then
-		  ;; (local.set $byte (call $str.getByte (local.get $toSplit)(local.get $bpos)))
-		  ;; (call $printwsp (local.get $bpos))
-		  ;; (call $C.print (local.get $byte))(call $printsp)
-		  ;; (call $printwsp (local.get $strCum))
-		  ;; (call $printwsp (local.get $splitList))
-		  ;; (call $printwlf (local.get $inSplit))
-		  ;; (if (i32.eq (local.get $splitC)(local.get $byte))
-			;; (then
-			  ;; (if (call $i32list.getCurLen (local.get $strCum))  ;; anything to add?
-				;; (then
-				  ;; (call $i32list.push (local.get $splitList)(local.get $strCum)))
-				  ;; (local.set $strCum (call $str.mk))
-			  ;; )
-			  ;; (local.set $inSplit (i32.const 1)) ;; splitting (this byte was split byte)
-			;; )
-			;; (else  ;; any other byte value
-			  ;; (call $str.catByte (local.get $strCum)(local.get $byte))
-			  ;; (local.set $inSplit (i32.const 0)) ;; not splitting
-			;; )
-		  ;; )
-		  ;; (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
-		  ;; (br $bloop))))
-	;; (if (call $str.getByteLen (local.get $strCum));; anything to add?
-	  ;; (call $i32list.push (local.get $splitList)(local.get $strCum)))
-	;; ;;(call $printwlf (local.get $splitList))
-	;; (local.get $splitList)
-  ;; )
   (func $str.Csplit.test (param $testNum i32)(result i32)
 	;; The split character is not part of the split pieces
 	(local $AbCDbE i32)(local $AbCDbbE i32)(local $listPtr i32)(local $strptr0 i32)
@@ -2199,17 +2170,17 @@
     (local $board i32)(local $lineOff i32)(local $intList i32)(local $strList i32)
 	(local.set $lineOff (i32.const 0))
 	(local.set $board (call $i32list.mk))
-	(call $printwlf (global.get $gB))
+	;;(call $printwlf (global.get $gB))
 	(loop $lineLoop
 	  (local.set $strList
 		(call $str.Csplit 
 		  (call $i32list.get@
 		    (local.get $lines)(i32.add (local.get $linePos)(local.get $lineOff)))
 			(global.get $SP)))
-	  (call $printwlf (local.get $strList))
+	  ;;(call $printwlf (local.get $strList))
 	  (local.set $intList (call $strList2intList (local.get $strList)))
-	  (call $printwlf (local.get $intList))
-	  (call $printwlf (local.get $intList))
+	  ;;(call $printwlf (local.get $intList))
+	  ;;(call $printwlf (local.get $intList))
 	  (call $i32list.push (local.get $board)(local.get $intList))
 	  (local.set $lineOff (i32.add (local.get $lineOff)(i32.const 1)))
 	  (if (i32.lt_u (local.get $lineOff)(local.get $boardSize))
@@ -2217,27 +2188,81 @@
 	)
 	(local.get $board)
   )
+  ;; returns 1 if row or column is fill after marking this row/col
+  (func $markNcheckBoard (param $board i32)(param $randNum i32)(result i32)
+    (local $rowNum i32)(local $colNum i32)(local $boardSize i32)
+	(local $row i32)(local $col i32)(local $rowcolVal i32)
+	(local.set $boardSize (call $i32list.getCurLen (local.get $board)))  ;; #cols == board size
+	(local.set $rowNum (i32.const 0))
+	(loop $rLoop
+	  (local.set $row (call $i32list.get@ (local.get $board)(local.get $rowNum)))
+	  (local.set $colNum (i32.const 0)) 
+	  (loop $cLoop
+		(local.set $rowcolVal 
+		  (call $i32list.get@(local.get $row)(local.get $colNum)))
+		(local.set $col (i32.add (local.get $col)(i32.const 1)))
+		(if (i32.le_u (local.get $col)(local.get $boardSize))
+		  (br $cLoop))
+	  )
+	  (local.set $rowNum (i32.add (local.get $rowNum)(i32.const 1)))
+	  (if (i32.le_u (local.get $row)(local.get $boardSize))
+		(br $rLoop))
+	)
+	(i32.const 0)
+  )
+  (func $dummy (param $p1 i32)(param $randNum i32)(result i32)
+   (i32.const 1)
+   )
   (func $day4 (export "_day4")
 	(local $boards i32)(local $boardSize i32)(local $linePos i32)
-	(local $firstLine i32)(local $numLines i32)
-	(local $ranNums i32)(local $lines i32)
-	(local $newBoard i32)
+	(local $firstLine i32)(local $numLines i32)(local $boardNum i32)
+	(local $ranNums i32)(local $lines i32)(local $bingo i32)(local $ranNum i32)
+	(local $board i32)(local $ranPos i32)(local $numBoards i32)
 	(local.set $boardSize (i32.const 5))
 	(local.set $lines (call $readFileSlow))
 	(local.set $firstLine (call $i32list.get@ (local.get $lines)(i32.const 0)))
 	(local.set $numLines (call $i32list.getCurLen (local.get $lines)))
+	(local.set $boards (call $i32list.mk))
 	(call $printwlf (local.get $firstLine))
 	(local.set $ranNums (call $str.Csplit (local.get $firstLine)(global.get $COMMA)))
 	(local.set $ranNums (call $strList2intList (local.get $ranNums)))
-	(call $printwlf (local.get $ranNums))
+	;;(call $printwlf (local.get $ranNums))
 	(local.set $linePos (i32.const 2))  ;; first boards starts at the third line (offset==2)
-	(loop $boardLoop
-	  (local.set $newBoard (call $board.mk (local.get $lines)(local.get $boardSize)(local.get $linePos)))
-	  (call $printwlf (local.get $newBoard))
+	(loop $boardLoop0
+	  (local.set $board (call $board.mk (local.get $lines)(local.get $boardSize)(local.get $linePos)))
+	  (call $printwlf (local.get $board))
+	  (call $i32list.push (local.get $boards)(local.get $board))
 	  (local.set $linePos (i32.add (local.get $linePos)(i32.add (local.get $boardSize)(i32.const 1))))
-	  (if (i32.lt_u (local.get $linePos)(local.get $numLines))(br $boardLoop))
+	  (if (i32.lt_u (local.get $linePos)(local.get $numLines))
+	    (br $boardLoop0))
 	)
-	
+	(call $printwlf (local.get $boards))
+	(local.set $numBoards (call $i32list.getCurLen (local.get $boards)))
+	(local.set $ranPos (i32.const 0))
+	(loop $ranLoop
+	  (local.set $ranPos (i32.add (local.get $ranPos)(i32.const 1)))
+	  (local.set $ranNum (call $i32list.get@ (local.get $ranNums)(local.get $ranPos)))
+	  (local.set $boardNum (i32.const 0))
+	  (loop $boardLoop1
+		(local.set $board (call $i32list.get@ (local.get $boards)(local.get $boardNum)))
+	    (local.set $bingo
+		  (call $markNcheckBoard
+			(call $i32list.get@
+			  (local.get $boards)
+			  (local.get $boardNum))
+			(local.get $ranNum)))
+		(local.set $bingo (call $dummy            (i32.const 1)                        (i32.const 2)))
+		(if (local.get $bingo)
+		  (then
+			(call $printwsp (global.get $gBingo!))
+			))
+		(local.set $boardNum (i32.add (local.get $boardNum)(i32.const 1)))
+		(if (i32.lt_u (local.get $boardNum)(local.get $numBoards))
+		  (br $boardLoop1))
+	  )
+	  (if (i32.lt_u (local.get $ranPos)(call $i32list.getCurLen (local.get $ranNums)))
+	      (br $ranLoop))
+	)
   )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
@@ -2393,5 +2418,6 @@
   (data (i32.const 4050) "Half#\00")		(global $gHalf# i32  (i32.const 4050))
   (data (i32.const 4060) "bitPos\00")		(global $gbitPos i32 (i32.const 4060))
   (data (i32.const 4070) "AbCDbbE\00")		(global $gAbCDbbE i32 (i32.const 4070))
+  (data (i32.const 4080) "Bingo!\00")		(global $gBingo! i32 (i32.const 4080))
   (data (i32.const 5900) "ZZZ\00")			(global $gZZZ 	i32  (i32.const 5900)) ;;KEEP LAST & BELOW $maxFreeMem
 )
