@@ -319,15 +319,12 @@
 	(local.get $strPtr)
   )
   (func $i32.toStrHelper(param $strPtr i32)(param $N i32)
-	(call $printwlf (global.get $gA))
     (if (i32.eq (local.get $N)(global.get $maxNeg))
 	  (then
-	    (call $printwlf (global.get $gB))
 		(call $str.catStr (local.get $strPtr)(call $str.mkdata (global.get $gMaxNegAsString)))
 		 return))
 	(if (i32.lt_s (local.get $N)(i32.const 0))
 	  (then
-		(call $printwlf (global.get $gC))
 		(call $str.catByte(local.get $strPtr)(i32.const 45))
 		(call $i32.toStrHelper (local.get $strPtr)(i32.sub (i32.const 0)(local.get $N)))
 		return))
@@ -2267,9 +2264,22 @@
 	)
 	(i32.const 0)
   )
-  (func $dummy (param $p1 i32)(param $randNum i32)(result i32)
-   (i32.const 1)
-   )
+  (func $bingoScore (param $board i32) (result i32)
+	(local $row $i32)(local $col $i32)(local $score $i32)(local i32 $boardSize)
+    (call $printwlf (local.get $board))
+	(local.set $boardSize 
+	(local.set $row (i32.const 0))
+	(local.set $col (i32.const 0))
+	(local.set $score (i32.const 0))
+	(loop $rowLoop
+	  (loop $colLoop
+	  )
+	  (local.set $row (i32.add (local.get $row)(i32.const 1)))
+	  (if (i32.lt_u (local.get $row)(local.get $boardSize))
+	    (br $rowLoop))
+	)
+	
+  )
   (func $day4 (export "_day4")
 	(local $boards i32)(local $boardSize i32)(local $linePos i32)
 	(local $firstLine i32)(local $numLines i32)(local $boardNum i32)
@@ -2315,7 +2325,10 @@
 			  (local.get $ranNum)))
 		(if (local.get $bingo)
 		  (then
-			(call $printwsp (global.get $gBingo!))
+			(call $printwlf (global.get $gBingo!))
+			(call $printwlf (local.get $board))
+			(call $bingoScore (local.get $board))
+			(return)
 			))
 		(local.set $boardNum (i32.add (local.get $boardNum)(i32.const 1)))
 		(if (i32.lt_u (local.get $boardNum)(local.get $numBoards))
