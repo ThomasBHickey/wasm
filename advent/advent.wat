@@ -289,27 +289,7 @@
 		  (br $ploop))))
   )
   (func $i32.print (param $N i32)
-    ;;(call $printwsp (global.get $gB))
-	(call $print (call $i32.toStr (local.get $N)))
-  ;; Still doesn't recognize negatives
-    ;; (if (i32.eq (global.get $maxNeg)(local.get $N))
-	  ;; (then
-	    ;; (call $print (global.get $gMaxNegAsString))
-	    ;; return
-	  ;; ))
-    ;; ;;(if (i32.lt_s (local.get $N)(i32.const 0))
-	  ;; (if (i32.and (local.get $N)(global.get $maxNeg))
-	  ;; (then
-		;; (call $byte.print (i32.const 45))
-		;; (call $i32.print (i32.sub (i32.const 0)(local.get $N)))
-		;; return
-	  ;; ))
-	;; (if (i32.ge_u (local.get $N)(i32.const 10))
-	  ;; (then (call $i32.print (i32.div_u (local.get $N)(i32.const 10)))))
-	;; (call $byte.print
-	  ;; (i32.add
-		;; (i32.rem_u (local.get $N)(i32.const 10))
-		;; (global.get $zero)))
+	(call $str.print (call $i32.toStr (local.get $N)))
   )
   (func $i32.toStr (param $N i32)(result i32)
 	;; return a string representing an i32
@@ -325,7 +305,7 @@
 		 return))
 	(if (i32.lt_s (local.get $N)(i32.const 0))
 	  (then
-		(call $str.catByte(local.get $strPtr)(i32.const 45))
+		(call $str.catByte(local.get $strPtr)(i32.const 45))  ;; hyphen
 		(call $i32.toStrHelper (local.get $strPtr)(i32.sub (i32.const 0)(local.get $N)))
 		return))
     (if (i32.ge_u (local.get $N)(i32.const 10))
@@ -2193,17 +2173,13 @@
     (local $board i32)(local $lineOff i32)(local $intList i32)(local $strList i32)
 	(local.set $lineOff (i32.const 0))
 	(local.set $board (call $i32list.mk))
-	;;(call $printwlf (global.get $gB))
 	(loop $lineLoop
 	  (local.set $strList
 		(call $str.Csplit 
 		  (call $i32list.get@
 		    (local.get $lines)(i32.add (local.get $linePos)(local.get $lineOff)))
 			(global.get $SP)))
-	  ;;(call $printwlf (local.get $strList))
 	  (local.set $intList (call $strList2intList (local.get $strList)))
-	  ;;(call $printwlf (local.get $intList))
-	  ;;(call $printwlf (local.get $intList))
 	  (call $i32list.push (local.get $board)(local.get $intList))
 	  (local.set $lineOff (i32.add (local.get $lineOff)(i32.const 1)))
 	  (if (i32.lt_u (local.get $lineOff)(local.get $boardSize))
@@ -2231,24 +2207,22 @@
     (local $rowNum i32)(local $colNum i32)(local $boardSize i32)
 	(local $row i32)(local $rowcolVal i32)
 	(local.set $boardSize (call $i32list.getCurLen (local.get $board)))  ;; #cols == board size
-	(call $printwsp (global.get $gLookingFor))
-	(call $printwsp (local.get $randNum))
-	(call $printwlf (local.get $board))
 	(local.set $rowNum (i32.const 0))
 	(loop $rLoop
 	  (local.set $row (call $i32list.get@ (local.get $board)(local.get $rowNum)))
-	  (call $printwlf (local.get $row))
+	  ;;(call $printwlf (local.get $row))
 	  (local.set $colNum (i32.const 0)) 
 	  (loop $cLoop
 		(local.set $rowcolVal (call $i32list.get@ (local.get $row)(local.get $colNum)))
-		(call $printwsp (local.get $colNum))(call $printwlf (local.get $rowcolVal))
+		;;(call $printwsp (local.get $colNum))(call $printwlf (local.get $rowcolVal))
 		(if (i32.eq (local.get $randNum)(local.get $rowcolVal)) ;; found it!
 		  (then
-			(call $printwsp (global.get $gFound))
-			(call $printwsp (local.get $randNum))
-			(call $printwsp (local.get $row)(call $printwlf (local.get $colNum)))
+			;; (call $printwsp (global.get $gFound))
+			;; (call $printwsp (local.get $randNum))
+			;; (call $printwsp (local.get $row))
+			;; (call $printwlf (local.get $colNum))
 			(call $i32list.set@ (local.get $row)(local.get $colNum)(i32.sub (i32.const 0)(local.get $randNum)))
-			(call $printwlf (local.get $row))
+			;;(call $printwlf (local.get $row))
 			(if (call $allNegative (local.get $row))
 			  (return (i32.const 1))  ;; Bingo!
 			)
@@ -2268,7 +2242,7 @@
 	(local $row i32);;(local $col i32)
 	(local $rowNum i32)(local $colNum i32)(local $colVal i32)
 	(local $score i32)(local $boardSize i32)
-    (call $printwlf (local.get $board))
+    ;;(call $printwlf (local.get $board))
 	(local.set $score (i32.const 0))
 	(local.set $boardSize (call $i32list.getCurLen (local.get $board)))
 	(local.set $score (i32.const 0))
@@ -2286,7 +2260,7 @@
 		(if (i32.lt_u (local.get $colNum)(local.get $boardSize))
 		  (br $colLoop))
 	  )
-	  (call $printwlf (local.get $score))
+	  ;;(call $printwlf (local.get $score))
 	  (local.set $rowNum (i32.add (local.get $rowNum)(i32.const 1)))
 	  (if (i32.lt_u (local.get $rowNum)(local.get $boardSize))
 	    (br $rowLoop))
@@ -2300,11 +2274,6 @@
 	(local $board i32)(local $ranPos i32)(local $numBoards i32)
 	(local $boardScore i32)
 	(local $temp i32)
-	;; ;;(call $printwlf (i32.const 99))
-	;; ;;(call $printwlf (global.get $maxNeg))
-	;; (call $printwlf (i32.const  7))
-	;; (call $print (i32.const  -7))
-	;; (return)
 	(local.set $boardSize (i32.const 5))
 	(local.set $lines (call $readFileSlow))
 	(local.set $firstLine (call $i32list.get@ (local.get $lines)(i32.const 0)))
@@ -2312,9 +2281,9 @@
 	(local.set $boards (call $i32list.mk))
 	;;(call $printwlf (local.get $firstLine))
 	(local.set $ranNums (call $str.Csplit (local.get $firstLine)(global.get $COMMA)))
-	;;(call $printwlf (local.get $ranNums))
-	(local.set $ranNums (call $strList2intList (local.get $ranNums)))
 	(call $printwlf (local.get $ranNums))
+	(local.set $ranNums (call $strList2intList (local.get $ranNums)))
+	;;(call $printwlf (local.get $ranNums))
 	(local.set $linePos (i32.const 2))  ;; first boards starts at the third line (offset==2)
 	(loop $boardLoop0
 	  (local.set $board (call $board.mk (local.get $lines)(local.get $boardSize)(local.get $linePos)))
@@ -2324,11 +2293,13 @@
 	  (if (i32.lt_u (local.get $linePos)(local.get $numLines))
 	    (br $boardLoop0))
 	)
-	(call $printwlf (local.get $boards))
+	;;(call $printwlf (local.get $boards))
 	(local.set $numBoards (call $i32list.getCurLen (local.get $boards)))
 	(local.set $ranPos (i32.const 0))
 	(loop $ranLoop
 	  (local.set $ranNum (call $i32list.get@ (local.get $ranNums)(local.get $ranPos)))
+	  (if (i32.eq (local.get $ranNum)(i32.const 0))
+	    (call $printwlf (call $str.mkdata(global.get $gExpectedType))))  ;; bogus message to indicate problem!!
 	  (local.set $boardNum (i32.const 0))
 	  (loop $boardLoop1
 		(local.set $board (call $i32list.get@ (local.get $boards)(local.get $boardNum)))
@@ -2345,12 +2316,12 @@
 			(local.set $boardScore (call $bingoScore (local.get $board)))
 			(call $printwlf (local.get $boardScore))
 			(call $printwlf (local.get $ranNum))
-			(call $printwsp (global.get $gC))
-			;;(call $printwlf (i32.mul (local.get $ranNum)(local.get $boardScore)))
-			(local.set $temp (i32.mul (local.get $ranNum)(local.get $boardScore)))
-			(call $printwlf (local.get $temp))
-			(call $printwlf (global.get $gD))
-			(call $printlf)
+			;;(call $printwsp (global.get $gC))
+			(call $i32.print (i32.mul (local.get $ranNum)(local.get $boardScore)))
+			;;(local.set $temp (i32.mul (local.get $ranNum)(local.get $boardScore)))
+			;;(call $printwlf (local.get $temp))
+			;;(call $printwlf (global.get $gD))
+			;;(call $printlf)
 			(return)
 			))
 		(local.set $boardNum (i32.add (local.get $boardNum)(i32.const 1)))
