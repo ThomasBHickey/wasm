@@ -2188,13 +2188,13 @@
 	(local.get $board)
   )
   ;; return 1 if all members of list are < 0
-  (func $allNegative (param $list i32)(result i32)
+  (func $allMaxNegative (param $list i32)(result i32)
 	(local $pos i32)(local $listLen i32)
 	(local.set $pos (i32.const 0))
 	(local.set $listLen (call $i32list.getCurLen (local.get $list)))
 	(loop $mloop
-	  (if (i32.ge_s (call $i32list.get@ (local.get $list)(local.get $pos))(i32.const 0))
-	    (return (i32.const 0))  ;; Failed, something's not negative
+	  (if (i32.ne (call $i32list.get@ (local.get $list)(local.get $pos))(global.get $maxNeg))
+	    (return (i32.const 0))  ;; Failed, something's not max negative
 	  )
 	  (local.set $pos (i32.add (local.get $pos)(i32.const 1)))
 	  (if (i32.lt_u (local.get $pos)(local.get $listLen))
@@ -2202,11 +2202,26 @@
 	)
 	(i32.const 1) ;; Bingo!
   )
+  ;; returns 1 if column is fully marked
+  (func $checkCol (param $board i32)(param $colNum i32)(result i32)
+	(local $rowNum i32)(local $row i32)(local $boardSize i32)
+	(local.set $boardSize (call $i32list.getCurLen (local.get $board)))  ;; #rows == board size
+	(local.set $rowNum (i32.const 0))
+	(loop $rLoop
+	  (local.set $row (call $i32list.get@ (local.get $board)(local.get $rowNum)))
+	  (if (i32.ne (call $i32list.get@ (local.get $row)(local.get $colNum))(global.get $maxNeg))
+		(return (i32.const 0))) ;; Nope!
+	  (local.set $rowNum (i32.add (local.get $rowNum)(i32.const 1)))
+	  (if (i32.lt_u (local.get $rowNum)(local.get $boardSize))
+		(br $rLoop))
+	)
+	(i32.const 1)  ;; Bingo!
+  )
   ;; returns 1 if row or column is fill after marking this row/col
   (func $markNcheckBoard (param $board i32)(param $randNum i32)(result i32)
     (local $rowNum i32)(local $colNum i32)(local $boardSize i32)
 	(local $row i32)(local $rowcolVal i32)
-	(local.set $boardSize (call $i32list.getCurLen (local.get $board)))  ;; #cols == board size
+	(local.set $boardSize (call $i32list.getCurLen (local.get $board)))  ;; #rows == board size
 	(local.set $rowNum (i32.const 0))
 	(loop $rLoop
 	  (local.set $row (call $i32list.get@ (local.get $board)(local.get $rowNum)))
@@ -2217,15 +2232,11 @@
 		;;(call $printwsp (local.get $colNum))(call $printwlf (local.get $rowcolVal))
 		(if (i32.eq (local.get $randNum)(local.get $rowcolVal)) ;; found it!
 		  (then
-			;; (call $printwsp (global.get $gFound))
-			;; (call $printwsp (local.get $randNum))
-			;; (call $printwsp (local.get $row))
-			;; (call $printwlf (local.get $colNum))
-			(call $i32list.set@ (local.get $row)(local.get $colNum)(i32.sub (i32.const 0)(local.get $randNum)))
-			;;(call $printwlf (local.get $row))
-			(if (call $allNegative (local.get $row))
-			  (return (i32.const 1))  ;; Bingo!
-			)
+			(call $i32list.set@ (local.get $row)(local.get $colNum)(global.get $maxNeg))
+			(if (call $allMaxNegative (local.get $row))
+			  (return (i32.const 1)))  ;; Bingo!
+			(if (call $checkCol (local.get $board)(local.get $colNum))
+			  (return (i32.const 1)))  ;; Bingo!
 		  )
 		)
 		(local.set $colNum (i32.add (local.get $colNum)(i32.const 1)))
@@ -2254,7 +2265,7 @@
 	  (loop $colLoop
 		(local.set $colVal (call $i32list.get@ (local.get $row)(local.get $colNum)))
 		;;(call $printwsp (local.get $colNum))(call $printwlf (local.get $colVal))
-		(if (i32.ge_s (local.get $colVal)(i32.const 0))
+		(if (i32.ne (local.get $colVal)(global.get $maxNeg))
 		  (local.set $score (i32.add (local.get $score)(local.get $colVal))))
 		(local.set $colNum (i32.add (local.get $colNum)(i32.const 1)))
 		(if (i32.lt_u (local.get $colNum)(local.get $boardSize))
@@ -2293,13 +2304,15 @@
 	  (if (i32.lt_u (local.get $linePos)(local.get $numLines))
 	    (br $boardLoop0))
 	)
-	;;(call $printwlf (local.get $boards))
+	(call $printwlf (call $i32list.get@ (local.get $boards)(i32.const 0)))
+	(call $printwlf (call $i32list.get@ (local.get $boards)
+			(i32.sub (call $i32list.getCurLen(local.get $boards))(i32.const 1))))
+	
 	(local.set $numBoards (call $i32list.getCurLen (local.get $boards)))
 	(local.set $ranPos (i32.const 0))
 	(loop $ranLoop
 	  (local.set $ranNum (call $i32list.get@ (local.get $ranNums)(local.get $ranPos)))
-	  (if (i32.eq (local.get $ranNum)(i32.const 0))
-	    (call $printwlf (call $str.mkdata(global.get $gExpectedType))))  ;; bogus message to indicate problem!!
+	  (call $printwlf (local.get $ranNum))
 	  (local.set $boardNum (i32.const 0))
 	  (loop $boardLoop1
 		(local.set $board (call $i32list.get@ (local.get $boards)(local.get $boardNum)))
