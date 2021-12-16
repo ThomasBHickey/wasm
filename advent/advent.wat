@@ -2417,10 +2417,12 @@
 	(loop $cLoop
 		(call $str.catByte (local.get $blankRow)(i32.const 46)) ;; period
 		(local.set $colNum (i32.add (local.get $colNum)(i32.const 1)))
+		(if (i32.lt_u (call $str.getByteLen (local.get $blankRow))(local.get $numCols))
+		  (br $cLoop))
 	)
-	(call $str.catStr (local.get $row)(local.get $blankRow))
 	(call $printwlf (local.get $blankRow))
 	(local.set $rowNum (i32.const 0))
+	(local.set $chart (call $i32list.mk))
 	(loop $rloop
 	  (local.set $row (call $str.mk))
 	  (call $str.catStr (local.get $row)(local.get $blankRow))
