@@ -2368,7 +2368,7 @@
 	(local $x i32) (local $y i32)
 	;; (call $printwlf (local.get $txtRep))
 	(local.set $xyReps (call $str.Csplit (local.get $txtRep)(global.get $COMMA)))
-	(call $printwlf (local.get $xyReps))
+	;;(call $printwlf (local.get $xyReps))
 	(local.set $x (call $str.toI32(call $i32list.get@(local.get $xyReps)(i32.const 0))))
 	(local.set $y (call $str.toI32(call $i32list.get@(local.get $xyReps)(i32.const 1))))
 	(local.set $pt (call $point.mk (local.get $x)(local.get $y)))
@@ -2396,7 +2396,7 @@
 	(local.set $arrowPos (call $str.find (local.get $txtRep)(local.get $arrowStr)))
 	(local.set $pt1Txt (call $str.mkslice (local.get $txtRep)(i32.const 0)(local.get $arrowPos)))
 	(local.set $pt1 (call $point.txtmk (local.get $pt1Txt)))
-	(call $printwsp (global.get $gF))(call $printwlf (local.get $pt1))
+	;;(call $printwsp (global.get $gF))(call $printwlf (local.get $pt1))
 	(local.set $pt2Txt 
 	  (call $str.mkslice
 	    (local.get $txtRep)
@@ -2406,8 +2406,7 @@
 	(local.set $seg (call $i32list.mk))
 	(call $i32list.push (local.get $seg)(local.get $pt1))
 	(call $i32list.push (local.get $seg)(local.get $pt2))
-	(call $printwsp (global.get $gD))(call $printwlf (local.get $seg))
-	(call $printwsp (global.get $gD))(call $printwlf (local.get $seg))
+	;;(call $printwsp (global.get $gD))(call $printwlf (local.get $seg))
 	(local.get $seg)
   )
   (func $mkRow (param $numCols i32)(result i32)
@@ -2443,10 +2442,17 @@
   (func $chart.print (param $chart i32)
 	(local $rowNum i32)	(local $numRows i32)
 	(local.set $numRows (call $i32list.getCurLen (local.get $chart)))
+	;; (local.set $rowNum (local.get $numRows))
+	;; (loop $rLoop
+	  ;; (local.set $rowNum (i32.sub (local.get $rowNum)(i32.const 1)))
+	  ;; (if (i32.ge_s (local.get $rowNum)(i32.const 0))
+	    ;; (then
+		  ;; (call $printwlf (call $i32list.get@ (local.get $chart)(local.get $rowNum)))
+		  ;; (br $rLoop))))
 	(local.set $rowNum (i32.const 0))
 	(loop $rLoop
 	  (if (i32.lt_u (local.get $rowNum)(local.get $numRows))
-	    (then
+		(then
 		  (call $printwlf (call $i32list.get@ (local.get $chart)(local.get $rowNum)))
 		  (local.set $rowNum (i32.add (local.get $rowNum)(i32.const 1)))
 		  (if (i32.lt_u (local.get $rowNum)(local.get $numRows))
@@ -2463,15 +2469,21 @@
   (func $chart.addSeg (param $chart i32)(param $lineSeg i32)
 	(local $pt1 i32)(local $pt2 i32)(local $x i32)(local $y i32)
 	(local $y1 i32)(local $y2 i32)(local $x1 i32)(local $x2 i32)
+	(local $temp i32)
 	(local.set $pt1 (call $i32list.get@ (local.get $lineSeg)(i32.const 0)))
 	(local.set $pt2 (call $i32list.get@ (local.get $lineSeg)(i32.const 1)))
 	(if (i32.eq
-		  (call $point.get (local.get $pt1))
+		  (call $point.getX (local.get $pt1))
 		  (call $point.getX (local.get $pt2)))
 	  (then  ;; vertical line
 		(local.set $x  (call $point.getX (local.get $pt1)))
 		(local.set $y1 (call $point.getY (local.get $pt1)))
 		(local.set $y2 (call $point.getY (local.get $pt2)))
+		(if (i32.lt_s (local.get $y2)(local.get $y1))
+		  (then  ;; Swap the y's 
+			(local.set $temp (local.get $y1))
+			(local.set $y1 (local.get $y2))
+			(local.set $y2 (local.get $y1))))
 		(call $printwsp (global.get $gA))
 		(call $printwsp (local.get $x))
 		(call $printwsp (local.get $y1))
@@ -2488,8 +2500,13 @@
 		(call $printwlf (global.get $gB))
 		(local.set $x1 (call $point.getX (local.get $pt1)))
 		(local.set $x2 (call $point.getX (local.get $pt2)))
+		(if (i32.lt_s (local.get $x2)(local.get $x1))
+		  (then ;; swap the x's
+			(local.set $temp (local.get $x1))
+			(local.set $x1 (local.get $x2))
+			(local.set $x2 (local.get $temp))))
 		(local.set $x (local.get $x1))
-		(local.set $y (call $point.getX (local.get $pt1)))
+		(local.set $y (call $point.getY (local.get $pt1)))
 		(loop $xloop
 		  (call $chart.addPoint (local.get $chart)(call $point.mk (local.get $x)(local.get $y)))
 		  (local.set $x (i32.add (local.get $x)(i32.const 1)))
@@ -2498,7 +2515,7 @@
 		)
 	  )
 	)
-	(call $chart.print(local.get $chart))
+	(call $chart.print(local.get $chart))(call $printlf)
   )
   (func $day5 (export "_day5")
     (local $lines i32)(local $chart i32)(local $lineSegs i32)
@@ -2525,8 +2542,10 @@
 	  (local.set $lineNum (i32.add (local.get $lineNum)(i32.const 1)))
 	  (if (i32.lt_u(local.get $lineNum)(local.get $numLines))
 		(br $lineLoop))
+	  ;; (if (i32.lt_u(local.get $lineNum)(i32.const 2))
+		;; (br $lineLoop))
 	)
-	(call $printwlf (local.get $chart))
+	(call $chart.print (local.get $chart))(call $printlf)
   )
   (func $main (export "_start")
 	;; Generate .wasm with: wat2wasm --enable-bulk-memory strings/string1.wat
