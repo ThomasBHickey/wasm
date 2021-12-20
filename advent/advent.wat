@@ -9,7 +9,7 @@
   (import "wasi_unstable" "fd_write"
 	(func $fd_write (param i32 i32 i32 i32) (result i32)))
 
-  (memory 16)
+  (memory 256)
   (export "memory" (memory 0))
 
   ;; test function signatures
@@ -170,6 +170,12 @@
 	(call $printwlf (call $typeNum.toStr (local.get $typeExpected)))
 	(call $printwsp (global.get $gFound:))
 	(call $printwlf (call $typeNum.toStr (local.get $typeFound)))
+	(call $error2)
+  )
+  (func $boundsError (param $pos i32)(param $max i32)
+    (call $printwsp (global.get $gBoundsError))
+	(call $printwsp (local.get $pos))
+	(call $printwlf (local.get $max))
 	(call $error2)
   )
   (func $print (param $ptr i32)
@@ -577,7 +583,17 @@
     (i32.store (local.get $dataOffOff) (local.get $val))
   )
   (func $i32list.get@ (param $lstPtr i32)(param $pos i32)(result i32)
-	;; Needs bounds test  ;; needs typecheck
+	;; Needs bounds test  ;; added typecheck 2021-12-19
+	(if (i32.ne 
+		  (call $getTypeNum (local.get $lstPtr))
+		  (global.get $i32L))
+		(call $typeError
+			(call $getTypeNum (local.get $lstPtr))
+			(global.get $i32L)
+		)
+	)
+	(if (i32.ge_u (local.get $pos)(call $i32list.getCurLen (local.get $lstPtr)))
+	  (call $boundsError (local.get $pos)(call $i32list.getCurLen (local.get $lstPtr))))
 	(i32.load
 		(i32.add (call $i32list.getDataOff (local.get $lstPtr))
 				 (i32.mul (i32.const 4) (local.get $pos))))
@@ -2104,9 +2120,6 @@
 	  (if (i32.lt_u (local.get $bitPos)(local.get $bitLength))
 		(br $bitloop2))
 	)
-	;;(call $printwlf (local.get $gamma))
-	;;(call $printwlf (local.get $epsilon))
-	;;(call $printwlf (i32.mul (local.get $gamma)(local.get $epsilon)))
 	(local.set $filteredLines (local.get $lines))
 	(local.set $bitPos (i32.const 0))
 	(loop $filterLoop1
@@ -2122,7 +2135,6 @@
 		)
 		(else 
 		  (local.set $targ (global.get $zero))
-		  ;;(call $printwlf (global.get $gA))
 		)
 	  )
 	  (local.set $filteredLines
@@ -2151,7 +2163,6 @@
 		)
 		(else 
 		  (local.set $targ (global.get $zero))
-		  ;;(call $printwlf (global.get $gA))
 		)
 	  )
 	  ;;(call $C.print (local.get $targ))(call $printlf)
@@ -2420,6 +2431,7 @@
     (local $colNum i32)(local $row i32)
 	(local.set $row (call $i32list.mk))
 	(local.set $colNum (i32.const 0))
+	;;(call $printwsp (global.get $gE))(call $printwlf (local.get $numCols))
 	(loop $cLoop
 		(if (i32.lt_s (local.get $colNum)(local.get $numCols))
 		  (then
@@ -2435,6 +2447,7 @@
 	(local.set $rowNum (i32.const 0))
 	(local.set $chart (call $i32list.mk))
 	(loop $rloop
+	  ;;(call $printwlf (local.get $rowNum))
 	  (local.set $row (call $mkRow (local.get $numCols)))
 	  (call $i32list.push (local.get $chart)(local.get $row))
 	  (local.set $rowNum (i32.add (local.get $rowNum)(i32.const 1)))
@@ -2476,15 +2489,18 @@
 	(local.get $score)
   )
   (func $chart.getRow (param $chart i32)(param $rowNum i32)(result i32)
+	;;(call $printwsp (global.get $gD))(call $printwlf (local.get $rowNum))
     (call $i32list.get@ (local.get $chart)(local.get $rowNum))
   )
   (func $chart.print (param $chart i32)
-	(local $rowNum i32)	(local $numRows i32)
+	(local $rowNum i32)	(local $numRows i32)(local $row i32)
 	(local.set $numRows (call $i32list.getCurLen (local.get $chart)))
 	(local.set $rowNum (i32.const 0))
 	(loop $rLoop
 	  (if (i32.lt_u (local.get $rowNum)(local.get $numRows))
 		(then
+		  (local.set $row (call $i32list.get@ (local.get $chart)(local.get $rowNum)))
+		  (call $printwlf (local.get $row))
 		  (local.set $rowNum (i32.add (local.get $rowNum)(i32.const 1)))
 		  (if (i32.lt_u (local.get $rowNum)(local.get $numRows))
 			(br $rLoop)))))
@@ -2492,8 +2508,11 @@
   (func $chart.addPoint (param $chart i32)(param $point i32)
     (local $row i32)(local $oldVal i32)(local $xPos i32)
 	(local.set $row (call $chart.getRow (local.get $chart)(call $point.getY (local.get $point))))
+	;;(call $printwsp (global.get $gA))(call $printwlf (local.get $row))
 	(local.set $xPos (call $point.getX (local.get $point)))
+	;;(call $printwsp (global.get $gB))(call $printwlf (local.get $xPos))
 	(local.set $oldVal (call $i32list.get@ (local.get $row)(local.get $xPos)))
+	;;(call $printwsp (global.get $gC))(call $printwlf (local.get $oldVal))
 	(call $i32list.set@ (local.get $row)(local.get $xPos)(i32.add (local.get $oldVal)(i32.const 1)))
   )
   (func $chart.addSeg (param $chart i32)(param $lineSeg i32)
@@ -2558,13 +2577,16 @@
 	(call $printwlf (local.get $numLines))
 	(loop $lineLoop
 	  (local.set $line (call $i32list.get@(local.get $lines)(local.get $lineNum)))
+	  ;;(call $printwlf (local.get $line))
 	  (local.set $lineSeg (call $lineSeg.mk(call $i32list.get@(local.get $lines)(local.get $lineNum))))
+	  ;;(call $printwlf (local.get $lineSeg))
 	  (call $chart.addSeg (local.get $chart)(local.get $lineSeg))
+	  ;;(call $chart.print (local.get $chart))(call $printlf)
 	  (local.set $lineNum (i32.add (local.get $lineNum)(i32.const 1)))
 	  (if (i32.lt_u(local.get $lineNum)(local.get $numLines))
 		(br $lineLoop))
 	)
-	;;(call $chart.print (local.get $chart))(call $printlf)
+	(call $chart.print (local.get $chart))(call $printlf)
 	(call $printwsp (global.get $gS))(call $printwlf (call $chart.score (local.get $chart)))
 	(call $showMemUsed)
   )
@@ -2729,5 +2751,6 @@
   (data (i32.const 5015) "P:\00")			(global $gP i32 (i32.const 5015))
   (data (i32.const 5020) "Seg:\00")			(global $gSeg i32 (i32.const 5020))
   (data (i32.const 5025) "S:\00")			(global $gS i32 (i32.const 5025))
+  (data (i32.const 5030) "Bounds Error!\00")(global $gBoundsError i32 (i32.const 5030))
   (data (i32.const 5900) "ZZZ\00")			(global $gZZZ 	i32  (i32.const 5900)) ;;KEEP LAST & BELOW $maxFreeMem
 )
