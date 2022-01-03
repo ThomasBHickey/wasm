@@ -2560,7 +2560,7 @@
 	(local $line i32)(local $lineNum i32)(local $lineSeg i32)(local $chartScore i32)
 	(local $chartNumRows i32)(local $chartNumCols i32)
 	(local $numLines i32)(local $chartSize i32)
-	(local.set $chartSize (i32.const 1000)) ;; square
+	(local.set $chartSize (i32.const 10)) ;; square
 	(local.set $chartNumRows (local.get $chartSize))
 	(local.set $chartNumCols (local.get $chartSize))  
 	(local.set $chart (call $chart.mk (local.get $chartNumRows)(local.get $chartNumCols)))
