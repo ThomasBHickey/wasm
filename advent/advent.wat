@@ -52,9 +52,10 @@
 	$misc.test				;;24
 	$str.toI32.test			;;25
 	$i32list.set@.test		;;26
-	;;$i64list.mk.test		;;27
+	$i64list.mk.test		;;27
+	$i64list.push.test		;;28
   )
-  (global $numTests i32 (i32.const 27)) ;; should match # tests in table
+  (global $numTests i32 (i32.const 28));; should match # tests in table
   (global $firstTestOffset 	i32 (i32.const 4))
   (global $strCompareOffset i32 (i32.const 0))
   (global $strToStrOffset	i32 (i32.const 1))
@@ -715,7 +716,7 @@
 	(local.set $lstPtr (call $getMem (i32.const 96))) ;; 80 +16
 	(call $setTypeNum (local.get $lstPtr)(global.get $i64L))
 	(call $i64list.setCurLen (local.get $lstPtr) (i32.const 0))
-	(call $i64list.setMaxLen (local.get $lstPtr)(i32.const 8))
+	(call $i64list.setMaxLen (local.get $lstPtr)(i32.const 10))
 	(call $i64list.setDataOff(local.get $lstPtr)
 		(i32.add(local.get $lstPtr)(i32.const 16))) ;; 16 bytes for header info
 	(local.get $lstPtr)  ;; return ptr to the new list
@@ -760,9 +761,42 @@
 		  ;;(call $i64list.extend (local.get $lstPtr))
 		  ;;(local.set $maxLen (call $i64list.getMaxLen(local.get $lstPtr)))
 		))
-	;; ;;(call $i64list.set@ (local.get $lstPtr)(local.get $curLen)(local.get $val))
+	(call $i64list.set@ (local.get $lstPtr)(local.get $curLen)(local.get $val))
 	(call $i64list.setCurLen (local.get $lstPtr)
 		(i32.add (local.get $curLen)(i32.const 1)))
+  )
+  (func $i64list.push.test (param $testNum i32)(result i32)
+    (local $lstPtr i32)
+	(local $temp i64)
+	(local.set $lstPtr (call $i64list.mk))
+	(call $i64list.push (local.get $lstPtr) (i64.const 3))
+	(if (i32.ne
+	  (i32.const 1)
+	  (call $i64list.getCurLen (local.get $lstPtr)))
+	  (return (i32.const 1)))
+	(local.set $temp (call $i64list.pop (local.get $lstPtr)))
+	(if (i64.ne (i64.const 3) (local.get $temp))
+	  (return (i32.const 2)))
+	(if (i32.ne
+	  (i32.const 0)
+	  (call $i32list.getCurLen (local.get $lstPtr)))
+	  (return (i32.const 3)))
+	(i32.const 0) ;; passed
+  )
+  (func $i64list.pop (param $lstPtr i32)(result i64)
+    (local $curLen i32)
+	(local $lastPos i32)
+	(local $popped i64)
+    (local.set $curLen (call $i64list.getCurLen(local.get $lstPtr)))
+	(if (i32.eqz (local.get $curLen))
+	  (call $error2))
+	(local.set $lastPos (i32.sub (local.get $curLen)(i32.const 1)))
+	(local.set $popped (call $i64list.get@
+	    (local.get $lstPtr)(local.get $lastPos)))
+	(call $i64list.setCurLen
+	  (local.get $lstPtr)
+	  (local.get $lastPos))
+	(local.get $popped)
   )
   (func $i64list.set@ (param $lstPtr i32)(param $pos i32)(param $val i64)
 	;; Needs bounds tests
