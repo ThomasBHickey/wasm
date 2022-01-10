@@ -3005,12 +3005,16 @@
 	(local.set $listLen (call $i32list.getCurLen (local.get $listPtr)))
 	(loop $costLoop  ;; assumes list isn't empty
 	  (local.set $hVal (call $i32list.get@ (local.get $listPtr)(local.get $listPos)))
+	  ;;(call $i32.print (local.get $cost))(call $printlf)
+	  ;;(call $i32.print (local.get $hVal))(call $printlf)
+	  ;;(call $printwsp (global.get $gE))(call $i32.print (i32.sub (local.get $guess)(local.get $hVal)))(call $printlf)
+	  ;;(call $printwsp (global.get $gF))(call $i32.print (i32.sub (local.get $hVal)(local.get $guess)))(call $printlf)
 	  (if (i32.lt_s (local.get $hVal)(local.get $guess))
 		(local.set $cost (i32.add (local.get $cost)(i32.sub (local.get $guess)(local.get $hVal))))
 	  (else
 		(local.set $cost (i32.add (local.get $cost)(i32.sub (local.get $hVal)(local.get $guess))))
 	  ))
-	  (call $i32.print (local.get $hVal)(call $printsp)(call $i32.print (local.get $cost)))
+	  ;;(call $i32.print (local.get $hVal)(call $printsp)(call $i32.print (local.get $cost)))(call $printlf)
 	  (local.set $listPos (i32.add (local.get $listPos) (i32.const 1)))
 	  (if (i32.lt_s (local.get $listPos) (local.get $listLen))
 		(br $costLoop)
@@ -3029,7 +3033,18 @@
 	(call $printwlf (local.get $horizontals))
 	(local.set $guessPos (i32.shr_u (call $i32list.getCurLen (local.get $horizontals))(i32.const 1)))
 	(call $printwlf (local.get $guessPos))
+
+	(local.set $guess (call $i32list.get@ (local.get $horizontals)(i32.sub (local.get $guessPos)(i32.const 1))))
+	(call $printwsp (global.get $gG)) (call $i32.print (local.get $guess))(call $printlf)
+	(call $printwsp (global.get $gC))
+	(call $i32.print (call $day7FuelCost (local.get $horizontals)(local.get $guess)))(call $printlf)
+
 	(local.set $guess (call $i32list.get@ (local.get $horizontals)(local.get $guessPos)))
+	(call $printwsp (global.get $gG)) (call $i32.print (local.get $guess))(call $printlf)
+	(call $printwsp (global.get $gC))
+	(call $i32.print (call $day7FuelCost (local.get $horizontals)(local.get $guess)))(call $printlf)
+
+	(local.set $guess (call $i32list.get@ (local.get $horizontals)(i32.add (local.get $guessPos)(i32.const 1))))
 	(call $printwsp (global.get $gG)) (call $i32.print (local.get $guess))(call $printlf)
 	(call $printwsp (global.get $gC))
 	(call $i32.print (call $day7FuelCost (local.get $horizontals)(local.get $guess)))(call $printlf)
