@@ -352,12 +352,14 @@
 		(global.get $zero)))
   )
   ;; from www.geeksforgeeks.org/quick-sort
+  ;; fixed by using StackOverflow examp by BartoszKP
   (func $i32list.qsort (param $listPtr i32)(param $low i32)(param $high i32)
     (local $pi i32)  ;; partitioning index
-	;;(call $printwsp (global.get $gS))
-	;;(call $i32.print (local.get $low))(call $printsp)
-	;;(call $i32.print (local.get $high))(call $printlf)
-	(if (i32.lt_u (local.get $low)(local.get $high))
+	;; (call $printwsp (local.get $listPtr))
+	;; (call $printwsp (global.get $gS))
+	;; (call $i32.print (local.get $low))(call $printsp)
+	;; (call $i32.print (local.get $high))(call $printlf)
+	(if (i32.lt_s (local.get $low)(local.get $high))
 	  (then
 		(local.set $pi (call $i32list.partition (local.get $listPtr)(local.get $low)(local.get $high)))
 		;;(call $printwsp (global.get $gP))(call $i32.print (local.get $pi))(call $printlf)
@@ -367,13 +369,13 @@
 	)
   )
   (func $i32list.partition (param $listPtr i32)(param $low i32)(param $high i32)(result i32)
-	(local $pivot i32)(local $i i32)(local $j i32)(local $highMinus1 i32)
+	(local $pivot i32)(local $i i32)(local $j i32);;(local $highMinus1 i32)
 	(local.set $pivot (call $i32list.get@ (local.get $listPtr)(local.get $high)))
 	(local.set $i (i32.sub (local.get $low)(i32.const 1)))
-	(local.set $highMinus1 (i32.sub (local.get $high)(i32.const 1)))
+	;;(local.set $highMinus1 (i32.sub (local.get $high)(i32.const 1)))
 	(local.set $j (local.get $low))
 	(loop $swapLoop
-	  (if (i32.le_s (local.get $j)(local.get $highMinus1))
+	  (if (i32.le_s (local.get $j)(local.get $high))  ;; was highMinu1 instead of just $high
 		(then
 		  (if (i32.lt_s (call $i32list.get@ (local.get $listPtr)(local.get $j))(local.get $pivot))
 			(then
@@ -3001,7 +3003,7 @@
 	(local $file i32)
 	(local.set $file (call $readFileSlow))
 	(local.set $initialList (call $splitLineToInt32s (call $i32list.get@ (local.get $file)(i32.const 0))))
-	(call $printwlf (local.get $initialList))
+	(call $i32.print (call $i32list.getCurLen (local.get $initialList)))(call $printlf)
 	(local.set $listLen (call $i32list.getCurLen (local.get $initialList)))
 	(call $i32list.qsort (local.get $initialList)(i32.const 0)(i32.sub (local.get $listLen)(i32.const 1)))
 	(call $printwlf (local.get $initialList))
