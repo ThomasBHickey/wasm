@@ -8,11 +8,12 @@ define(`_module', `(module
   (export "memory" (memory 0)))')dnl
 define(`_endmodule', `)')dnl
 define(`_CHAR',`(i32.const eval(32+index(` !"#$%& ()*+,-./0123456789:;<=>?@ABCDEFGHIJKOMNOPQRSTUVWXYZ[\]^_ abcdefghijklmnopqrstuvwxyz{|}~',$1)))')dnl
-define(`_LEFTQ',(i32.const 39))
-define(`_TAB',(i32.const 9))
-define(`_CR',(i32.const 13))
-define(`_LF',(i32.const 10))
-define(`_SP',`_CHAR(` ')')
+define(`_LEFTQ',(i32.const 39))dnl
+define(`_TAB',(i32.const 9))dnl
+define(`_CR',(i32.const 13))dnl
+define(`_LF',(i32.const 10))dnl
+define(`_SP',`_CHAR(` ')')dnl
+define(`_SINGQUOTE',(i32.const 39))dnl
 A: _CHAR(`A')
 Z:_CHAR(`Z')
 #: _CHAR(`#')
@@ -24,3 +25,15 @@ a: _CHAR(a)
 LEFTQUOTE: _LEFTQ
 (i32.const format(`0x%0x', _CHAR(`!')))
 space:_SP
+single quote: _SINGQUOTE
+define(`provided', `0')
+ifdef(`__unix__', `define(`provided', incr(provided))')
+`provided:'provided
+define(`_globalPos', `3000')dnl
+first gpos:_globalPos
+define(`_newGlobalPos2', `define(`_globalPos',eval(_globalPos+1+len($1)))')dnl
+define(`_data',`(data (i32.const _globalPos) "$1\00")	(global $g$1 (i32 $_globalPos))_newGlobalPos2($1)')dnl
+_data(AAA)
+_data(BB)
+_data(CC)
+undivert
