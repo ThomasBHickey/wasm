@@ -32,8 +32,10 @@ ifdef(`__unix__', `define(`provided', incr(provided))')
 define(`_globalPos', `3000')dnl
 first gpos:_globalPos
 define(`_newGlobalPos2', `define(`_globalPos',eval(_globalPos+1+len($1)))')dnl
-define(`_data',`(data (i32.const _globalPos) "$1\00")	(global $g$1 (i32 $_globalPos))_newGlobalPos2($1)')dnl
+define(`_data',`divert(`1')(data (i32.const _globalPos) "$1\00")	(global $g$1 (i32 $_globalPos))_newGlobalPos2($1)
+divert')dnl
 _data(AAA)
+Unrelated text between global definitions
 _data(BB)
 _data(CC)
-undivert
+undivert(`1')
