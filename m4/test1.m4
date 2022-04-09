@@ -26,16 +26,12 @@ LEFTQUOTE: _LEFTQ
 (i32.const format(`0x%0x', _CHAR(`!')))
 space:_SP
 single quote: _SINGQUOTE
-define(`provided', `0')
-ifdef(`__unix__', `define(`provided', incr(provided))')
-`provided:'provided
 define(`_globalPos', `3000')dnl
 first gpos:_globalPos
-define(`_newGlobalPos2', `define(`_globalPos',eval(_globalPos+1+len($1)))')dnl
-define(`_data',`divert(`1')(data (i32.const _globalPos) "$1\00")	(global $g$1 (i32 $_globalPos))_newGlobalPos2($1)
+define(`_newGlobalPos2', `define(global.get $g$1)`_globalPos',eval(_globalPos+1+len($1)))')dnl
+define(`_data',`(global.get $g$1)divert(`1')(data (i32.const _globalPos) "$1\00")	(global $g$1 (i32 $_globalPos))_newGlobalPos2($1)
 divert')dnl
 _data(AAA)
-Unrelated text between global definitions
 _data(BB)
 _data(CC)
 undivert(`1')
