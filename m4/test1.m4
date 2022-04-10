@@ -28,10 +28,11 @@ space:_SP
 single quote: _SINGQUOTE
 define(`_globalPos', `3000')dnl
 first gpos:_globalPos
-define(`_newGlobalPos2', `define(global.get $g$1)`_globalPos',eval(_globalPos+1+len($1)))')dnl
-define(`_data',`(global.get $g$1)divert(`1')(data (i32.const _globalPos) "$1\00")	(global $g$1 (i32 $_globalPos))_newGlobalPos2($1)
-divert')dnl
-_data(AAA)
-_data(BB)
-_data(CC)
+define(`_newGlobalPos2', `define(`_globalPos',eval(_globalPos+1+len($1)))')dnl
+;;define(`_data',`(global.get $1)divert(`1')(data (i32.const _globalPos) "$2\00")	(global $1 (i32 _globalPos)) _newGlobalPos2($2)'divert')dnl
+define(`_gdef', `(global.get $$1)divert(`1')(data (i32.const _globalPos) "$2\00") (global $$1 (i32.const _globalPos)))
+divert _newGlobalPos2($1)')
+testing AAA: _gdef(gAAA, AAA)
+_gdef(gBB, BB)
+_gdef(gCC, CC)
 undivert(`1')
