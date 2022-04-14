@@ -3,9 +3,9 @@
   ;;(memory (global.get $memChunks))
   (memory 1024)
   (export "memory" (memory 0))
-  (global $curMemUsed (mut i32)(i32.const 0))
-  (global $maxMemUsed (mut i32)(i32.const 0))
-  (global $memSize i32 (i32.const 0))
+  (global $curMemUsed (mut i32)(i32.const 100)) ;; First 100 bytes reserved
+  (global $maxMemUsed (mut i32)(i32.const 100)) ;; e..g. I/O buffers in io.m4
+  (global $memSize i32 (i32.const 1048576))  ;; 1024*1024
   (global $memReclaimed (mut i32)(i32.const 0))
   (global $memReclamations (mut i32)(i32.const 0))
   
