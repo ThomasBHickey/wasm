@@ -13,4 +13,4 @@ define(`_globalPos', `100')dnl
 define(`_newGlobalPos', `define(`_globalPos',eval(_globalPos+1+len($1)))')dnl
 define(`_gdef', `(global.get $$1)divert(`1')(data (i32.const _globalPos) "$2\00") (global $$1 (i32.const _globalPos)))dnl
 divert _newGlobalPos($1)')dnl
-define(`_i32ConstGlob', `(global $$1 (i32.const $2))')dnl
+define(`_i32ConstGlob', `(global $$1 i32 (i32.const $2))')dnl
