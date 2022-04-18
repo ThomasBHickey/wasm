@@ -11,5 +11,7 @@ define(`_SINGQUOTE',(i32.const 39(;SINGQUOTE;)))dnl
 ;; Global defines
 define(`_globalPos', `100')dnl
 define(`_newGlobalPos', `define(`_globalPos',eval(_globalPos+1+len($1)))')dnl
-define(`_gdef', `divert(`1')(data (i32.const _globalPos) "$2\00") (global $$1 (i32.const _globalPos)))divert _newGlobalPos($1)')dnl
+define(`_gdef', `divert(`1')  (data (i32.const _globalPos) "$2\00") (global $$1 i32 (i32.const _globalPos))
+divert _newGlobalPos($1)')dnl
 define(`_i32ConstGlob', `(global $$1 i32 (i32.const $2))')dnl
+define(`_incrLocal', (local.set $1 (i32.add(local.get $1)(i32.const 1))))

@@ -13,3 +13,10 @@
   (global $i32L	  	i32	(i32.const 0x6933324C)) ;; 'i32L' type# for i32 lists
   (global $i64L		i32 (i32.const 0x6936344C)) ;; 'i64L' type# for i64 lists
   (global $BStr		i32	(i32.const 0x42537472))	;; 'BStr' type# for byte strings
+  _gdef(`gMaxNegAsString',`-2147483648')
+  _gdef(`gGlobalA', `GlobalA')
+  _gdef(`gGlobalB', `GlobalB')
+;; needs to be after all _gdef's
+  (global $curMemUsed (mut i32)(i32.const _globalPos))
+  (global $maxMemUsed (mut i32)(i32.const _globalPos))
+  
