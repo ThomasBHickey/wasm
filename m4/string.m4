@@ -135,3 +135,6 @@
 		  (br $bLoop)))
 	)
   )
+  (func $strdata.printwlf (param $global i32)
+    (call $printwlf (call $str.mkdata (local.get $global)))
+  )

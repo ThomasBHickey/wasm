@@ -16,7 +16,6 @@
 	drop
 	(global.set $bytesWritten (i32.add (global.get $bytesWritten)(i32.const 1)))
   )
-
   (func $byte.read (result i32)
 	(local $nread i32)(local $rbyte i32)
 	(i32.store (global.get $readIOVsOff0) (global.get $readBuffOff))
@@ -32,6 +31,19 @@
 	(if (i32.eqz (local.get $nread))
 	  (return (global.get $maxNeg)))
 	(return (i32.load8_u (global.get $readBuffOff)))
+  )
+  (func $print (param $ptr i32)
+    ;; 'Universal' print function
+	(local $nextFreeMem i32)
+	(local.set $nextFreeMem (global.get $curMemUsed))
+    ;;(call $str.print (call $toStr (local.get $ptr)))
+    (call $str.print (local.get $ptr))  ;; needs to call $toStr first!!!!
+ 	;;(call $reclaimMem (local.get $nextFreeMem))
+ )
+  (func $printlf (call $byte.print (_LF)))
+  (func $printwlf (param $ptr i32)
+	(call $print (local.get $ptr))
+	(call $printlf)
   )
   (func $str.read (result i32)
 	(local $strPtr i32)

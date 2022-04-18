@@ -8,6 +8,11 @@
 	(call $strdata.print (global.get $curMemUsed:))
 	  (call $i32.print (global.get $curMemUsed))
 	  (call $byte.print (_LF))
+	(call $strdata.printwlf (global.get $curMemUsed:))
+	(call $strdata.print (global.get $curMemUsed:))
+	  (call $i32.print (global.get $curMemUsed))
+	  (call $byte.print (_LF))
+	
 	;; (local.set $byte (call $byte.read))
 	;; (call $strdata.print (global.get $gRead:))
 	;; (call $i32.print (global.get $maxMemUsed))
@@ -24,5 +29,7 @@
 	(call $str.catStr(local.get $strPtr1)(local.get $strPtr2))
 	(call $str.print (local.get $strPtr1))(call $byte.print (_LF))
 	(call $strdata.print (global.get $curMemUsed:)) (call $i32.print (global.get $curMemUsed))(call $byte.print (_LF))
+	(call $str.print (local.get $strPtr2))
+	(call $printwlf (local.get $strPtr1))
+	(call $printwlf (call $str.mkdata (global.get $curMemUsed:)))
   )
-  
