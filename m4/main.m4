@@ -8,7 +8,7 @@
 	(call $strdata.print (global.get $curMemUsed:))
 	  (call $i32.print (global.get $curMemUsed))
 	  (call $byte.print (_LF))
-	(call $strdata.printwlf (global.get $curMemUsed:))
+	(call $strdata.print (global.get $curMemUsed:))
 	(call $strdata.print (global.get $curMemUsed:))
 	  (call $i32.print (global.get $curMemUsed))
 	  (call $byte.print (_LF))

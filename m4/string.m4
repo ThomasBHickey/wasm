@@ -30,6 +30,31 @@
 	(call $str.setByteLen(local.get $strPtr)
 	  (i32.add (local.get $byteLen)(i32.const 1)))
   )
+  _gdef(`gABCDEF', `ABCDEF')
+  (func $str.catByte.test (param $testNum i32)(result i32)
+	(local $sp i32)
+	(local $memsp i32)
+	(local.set $sp
+	  (call $str.mk))
+	(local.set $memsp 
+	  (call $str.mkdata
+		(global.get $gABCDEF)))
+	(call $str.catByte (local.get $sp) (i32.const 65))
+	(call $str.catByte (local.get $sp) (i32.const 66))
+	(call $str.catByte (local.get $sp) (i32.const 67))
+	(call $str.catByte (local.get $sp) (i32.const 68))
+	(call $str.catByte (local.get $sp) (i32.const 69))
+	(call $str.catByte (local.get $sp) (i32.const 70))
+	(if
+	  (i32.eqz
+		(call $str.compare
+		  (local.get $sp)
+		  (local.get $memsp)))
+	  (then
+		(return (i32.const 1))))  ;; Failure
+	;; Test UTF-8 compliance a bit
+	(return (i32.const 0))
+  )
   (func $str.catStr (param $s1Ptr i32)(param $s2Ptr i32)
 	;; Modify s1 by concatenating another string to it
 	(local $s2pos i32)
@@ -43,6 +68,26 @@
 			  (call $str.getByte (local.get $s2Ptr)(local.get $s2pos)))
 			(local.set $s2pos (i32.add (local.get $s2pos)(i32.const 1)))
 			(br $bloop))))		
+  )
+  (func $str.compare (type $keyCompSig)
+	(local $s1ptr i32)(local $s2ptr i32)
+	(local $s2len i32)(local $cpos i32)
+	(local.set $s1ptr (local.get 0))
+	(local.set $s2ptr (local.get 1))
+	(local.set $s2len (call $str.getByteLen (local.get $s2ptr)))
+	(if (i32.ne (call $str.getByteLen (local.get $s1ptr))(local.get $s2len))
+	  (return (i32.const 0)))
+	(local.set $cpos (i32.const 0))
+	(loop $cloop
+	  (if (i32.lt_u (local.get $cpos)(local.get $s2len))
+		(then
+			(if (i32.ne (call $str.getByte (local.get $s1ptr)(local.get $cpos))
+						(call $str.getByte (local.get $s2ptr)(local.get $cpos)))
+			  (return (i32.const 0)))
+			(local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
+			(br $cloop)
+		)))
+	(i32.const 1) ;; success
   )
   (func $str.extend(param $strPtr i32)
 	;; double the space available for characters

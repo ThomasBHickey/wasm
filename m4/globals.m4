@@ -19,4 +19,6 @@
 ;; needs to be after all _gdef's
   (global $curMemUsed (mut i32)(i32.const _globalPos))
   (global $maxMemUsed (mut i32)(i32.const _globalPos))
-  
+  ;; comparison func signatures used by map
+  (type $keyCompSig (func (param i32)(param i32)(result i32)))
+  (type $keytoStrSig (func (param i32)(result i32)))

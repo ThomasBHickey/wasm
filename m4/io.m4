@@ -42,7 +42,7 @@
  )
   (func $printlf (call $byte.print (_LF)))
   (func $printwlf (param $ptr i32)
-	(call $print (local.get $ptr))
+	(call $str.print (local.get $ptr))  ;; was just $print
 	(call $printlf)
   )
   (func $str.read (result i32)
