@@ -3,8 +3,8 @@
   (type $testSig (func (param i32)(result i32)))
   
   ;; comparison func signatures used by map
-  (type $keyCompSig (func (param i32)(param i32)(result i32)))
-  (type $keytoStrSig (func (param i32)(result i32)))
+  ;;(type $keyCompSig (func (param i32)(param i32)(result i32)))
+  ;;(type $keytoStrSig (func (param i32)(result i32)))
 define(`_tableLength',`0')dnl
 define(`_incrTableLength',`define(`_tableLength',eval(_tableLength+1))')dnl
 define(`_addToTable', `divert(`2')  (;_tableLength;) $1
@@ -16,7 +16,7 @@ undivert(`2'))')dnl
   _addToTable($str.toStr)
   _addToTable($i32.compare)
   _addToTable($i32.toStr)
-  _gdef(`gFirstTestOffset',_tableLength)
+  ;;_gdef(`gFirstTestOffset',_tableLength)
   _addToTable($str.catByte.test)
   _finishTable
   

@@ -1,2 +1,5 @@
 ;; moduleTail.m4
-undivert) ;; end of module
+undivert
+  (global $curMemUsed (mut i32)(i32.const _globalPos))
+  (global $maxMemUsed (mut i32)(i32.const _globalPos))
+) ;; end of module

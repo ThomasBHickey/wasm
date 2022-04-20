@@ -1,5 +1,8 @@
 ;; i32.m4
 
+  (func $i32.compare (param $i1 i32)(param $i2 i32)(result i32)
+	(i32.eq (local.get $i1)(local.get $i2))
+  )
   (func $i32.printOLD (param $N i32)	;; change this to more like the simple $i32.print below !!
 										;; this avoids storage allocations while printing an i32
 	(call $str.print (call $i32.toStr (local.get $N)))
