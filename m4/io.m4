@@ -40,7 +40,7 @@
     (call $str.print (local.get $ptr))  ;; needs to call $toStr first!!!!
  	;;(call $reclaimMem (local.get $nextFreeMem))
  )
-  (func $printlf (call $byte.print (_LF)))
+  (func $printlf (call $byte.print _LF))
   (func $printwlf (param $ptr i32)
 	(call $str.print (local.get $ptr))  ;; was just $print
 	(call $printlf)
@@ -53,7 +53,7 @@
 	  (local.set $byte (call $byte.read))
 	  (if (i32.ge_s (local.get $byte)(i32.const 0))
 		(then
-		  (if (i32.eq (local.get $byte)(_LF))
+		  (if (i32.eq (local.get $byte) _LF)
 			(return (local.get $strPtr)))
 		  (call $str.catByte(local.get $strPtr)(local.get $byte))
 		  (br $bloop)
