@@ -46,8 +46,17 @@
 	(call $str.print (local.get $ptr))  ;; was just $print
 	(call $printlf)
   )
-  (func $byte.hexprint (param $N i32)
-	(call $i32.hexprintsup (local.get $N))
+  (func $nibble.hexprint (param $nibble i32)
+	(if (i32.lt_u (local.get $nibble)(i32.const 10))
+	  (then
+		(call $byte.print (i32.add _CHAR(`0')(local.get $nibble))))
+	  (else
+		(call $byte.print(i32.add (i32.const 55)(local.get $nibble))))) ;; 55=='A'-10
+  )
+  (func $byte.hexprint (param $byte i32)
+	(call $nibble.hexprint (i32.shr_u (local.get $byte)(i32.const 4)))
+	(call $nibble.hexprint (i32.and (i32.const 0xF)(local.get $byte)))
+	(call $printsp)
   )
   ;; needs to pad to 8 bytes with 0's
   (func $i32.hexprint (param $N i32)
