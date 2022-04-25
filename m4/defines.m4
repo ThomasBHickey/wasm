@@ -18,3 +18,4 @@ define(`_gdef', `divert(`1')  (data (i32.const _globalPos) "$2\00") (global $$1 
 divert _newGlobalPos($2)')dnl
 define(`_i32ConstGlob', `(global $$1 i32 (i32.const $2))')dnl
 define(`_incrLocal', (local.set $1 (i32.add(local.get $1)_1)))
+define(`_testString', `_gdef($1,$2)(call $str.printwlf(call $str.mkdata (global.get $$1)))')dnl
