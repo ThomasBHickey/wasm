@@ -40,10 +40,42 @@
     (call $str.print (local.get $ptr))  ;; needs to call $toStr first!!!!
  	;;(call $reclaimMem (local.get $nextFreeMem))
  )
+  (func $printsp (call $byte.print _SP))
   (func $printlf (call $byte.print _LF))
   (func $printwlf (param $ptr i32)
 	(call $str.print (local.get $ptr))  ;; was just $print
 	(call $printlf)
+  )
+  (func $byte.hexprint (param $N i32)
+	(call $i32.hexprintsup (local.get $N))
+  )
+  ;; needs to pad to 8 bytes with 0's
+  (func $i32.hexprint (param $N i32)
+	;;(call $strdata.print(global.get $gGlobalB))
+	(call $byte.print _CHAR(`0'))
+	(call $byte.print (i32.const 120)) ;; 'x'
+	(call $i32.hexprintsup (local.get $N))
+	(call $byte.print _SP)  ;; space
+  )
+  (func $i32.hexprintsup (param $N i32)
+    ;; support for $i32.hexprint
+    (local $rem i32)
+	;;(call $strdata.print(global.get $gGlobalA))
+	(call $i32.print (local.get $N))(call $printlf)
+	(if (i32.ge_u (local.get $N)(i32.const 16))
+	  (then (call $i32.hexprintsup (i32.div_u (local.get $N)(i32.const 16)))))
+	(local.set $rem (i32.rem_u (local.get $N)(i32.const 16)))
+	(if (i32.lt_s (local.get $rem) (i32.const 10))
+	  (then
+		(call $byte.print
+		  (i32.add
+			(local.get $rem)
+			_CHAR(`0'))))
+	  (else
+		(call $byte.print
+		  (i32.add
+			(local.get $rem)
+			(i32.const 55)))))  ;; 'A'-10
   )
   (func $str.read (result i32)
 	(local $strPtr i32)

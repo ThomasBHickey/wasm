@@ -16,6 +16,8 @@
   _gdef(`gMaxNegAsString',`-2147483648')
   _gdef(`gGlobalA', `GlobalA')
   _gdef(`gGlobalB', `GlobalB')
+  _gdef(`gGlobalC', `GlobalC')
+  _gdef(`gDumpLine', `DumpLine')
 ;; needs to be after all _gdef's
   ;;(global $curMemUsed (mut i32)(i32.const _globalPos))
   ;;(global $maxMemUsed (mut i32)(i32.const _globalPos))
