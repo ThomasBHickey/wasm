@@ -42,7 +42,6 @@
 	  (if (i32.lt_u (local.get $ctr)(i32.const 16))
 		(br $byteLoop2)))
 	(call $printlf)
- 	;;_testString(`exitingdumpline',`exiting dumpline')
   )
   (func $mem.dump
     (local $memPtr i32)(local $nCols i32)(local $col i32)(local $row i32)(local $byte i32)
@@ -54,7 +53,6 @@
 	(local.set $memPtr _0)
 	(local.set $row _0)
 	(loop $rowLoop
-	;;(call $strdata.print (global.get $curMemUsed:))
 	  (call $mem.dumpline (local.get $memPtr))
 	  (local.set $memPtr (i32.add (local.get $memPtr)(i32.const 16)))
 	  (if (i32.lt_u (local.get $memPtr)(global.get $curMemUsed))

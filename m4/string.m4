@@ -172,9 +172,6 @@
 	;; This is used by map routines to dump a key that is a string
 	(local.get $strPtr)
   )
-;;  (func $strdata.print (param $global i32)
-;;    (call $str.print (call $str.mkdata (local.get $global)))
-;;  )
   (func $strdata.print (param $dataOffset i32)
     ;; Print a null-terminated string
 	;; avoiding data allocations
