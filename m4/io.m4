@@ -46,17 +46,6 @@
 	(call $str.print (local.get $ptr))  ;; was just $print
 	(call $printlf)
   )
-  (func $nibble.hexprint (param $nibble i32)
-	(if (i32.lt_u (local.get $nibble)(i32.const 10))
-	  (then
-		(call $byte.print (i32.add _CHAR(`0')(local.get $nibble))))
-	  (else
-		(call $byte.print(i32.add (i32.const 55)(local.get $nibble))))) ;; 55=='A'-10
-  )
-  (func $byte.hexprint (param $byte i32)
-	(call $nibble.hexprint (i32.shr_u (local.get $byte)(i32.const 4)))
-	(call $nibble.hexprint (i32.and (i32.const 0xF)(local.get $byte)))
-  )
   ;; print out ASCII of byte or a period if not printable
   (func $isASCII (param $byte i32)(result i32)
 	(if (i32.ge_u (local.get $byte) _SP)
@@ -64,13 +53,12 @@
 	    (then (return _1)))))
 	(return _0)
   )
-  (func $byte.dump (param $byte i32)
+  (func $byte.dump (param $byte i32)  ;; display memory as text
     (local.set $byte (i32.and (local.get $byte)(i32.const 0xFF)))
 	(if (call $isASCII (local.get $byte))
 	  (then	(call $byte.print (local.get $byte)))
 	  (else	(call $byte.print _CHAR(`.'))))
   )
-  ;; needs to pad to 8 bytes with 0's
   (func $i32.hexprint (param $N i32)
 	(call $byte.print _CHAR(`0'))
 	(call $byte.print _CHAR(`x')) ;; 'x'
@@ -82,6 +70,19 @@
     (call $byte.hexprint (i32.shr_u (local.get $n)(i32.const 16)))
     (call $byte.hexprint (i32.shr_u (local.get $n)(i32.const 8)))
     (call $byte.hexprint (local.get $n))
+  )
+  (func $byte.hexprint (param $byte i32)
+    (local.set $byte (i32.and (local.get $byte)(i32.const 0xff)))
+	(call $nibble.hexprint (i32.shr_u (local.get $byte)(i32.const 4)))
+	(call $nibble.hexprint (i32.and (i32.const 0xF)(local.get $byte)))
+  )
+  (func $nibble.hexprint (param $nibble i32)
+	(local.set $nibble (i32.and (local.get $nibble)(i32.const 0xf)))
+	(if (i32.lt_u (local.get $nibble)(i32.const 10))
+	  (then
+		(call $byte.print (i32.add _CHAR(`0')(local.get $nibble))))
+	  (else
+		(call $byte.print(i32.add (i32.const 55)(local.get $nibble))))) ;; 55=='A'-10
   )
   (func $str.read (result i32)
 	(local $strPtr i32)

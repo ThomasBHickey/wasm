@@ -10,15 +10,16 @@
   (global $memReclamations (mut i32)(i32.const 0))
   
   (func $roundUpTo4 (param $size i32)(result i32)
-	(i32.and (i32.add (local.get $size)(i32.const 3))(i32.const 0xfffffff4))
+	(i32.and (i32.add (local.get $size)(i32.const 3))(i32.const 0xfffffffc))
   )
   (func $mem.get (param $size i32)(result i32)
-	;; Simple memory allocation done in 4-byte chunks
+	;; Simple memory allocation done in 32-bit boundaries
 	;; Should this get cleared first?
-	(local $size4 i32)
-	(local.set $size4 (call $roundUpTo4 (local.get $size)))  ;; make sure size divisble by 4
+	(call $i32.print (global.get $curMemUsed))(call $printlf)
+	(global.set $curMemUsed (call $roundUpTo4 (global.get $curMemUsed)))
+	(call $i32.print (global.get $curMemUsed))(call $printlf)
 	(global.get $curMemUsed) ;; on stack to return
-	(global.set $curMemUsed (i32.add (global.get $curMemUsed)(local.get $size4)))
+	(global.set $curMemUsed (i32.add (global.get $curMemUsed)(local.get $size)))
 	(if (i32.gt_u (global.get $curMemUsed)(global.get $maxMemUsed))
 	  (global.set $maxMemUsed (global.get $curMemUsed)))
   )

@@ -20,6 +20,7 @@
 	(local.set $strPtr2 (call $str.read))
 	(call $i32.print(local.get $strPtr2))(call $printlf)
 	(local.set $ctr (i32.const 2))
+	;;(i32.store (i32.const 34)(i32.const 0xffffffff))
 	(call $mem.dump)
 	;;(call $strdata.print (global.get $curMemUsed:))
 	;; (loop $catloop
@@ -42,6 +43,9 @@
 	  ;; )
 	;;)
 	(call $str.catStr(local.get $strPtr1) (local.get $strPtr2))
+	(call $mem.dump)
 	(call $str.printwlf (local.get $strPtr1))
-	(call $i32.print(global.get $curMemUsed))(call $printlf)
+	(call $str.catStr(local.get $strPtr1) (local.get $strPtr2))	
+	(call $mem.dump)
+	(call $str.printwlf (local.get $strPtr1))
   )

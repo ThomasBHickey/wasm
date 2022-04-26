@@ -695,7 +695,8 @@
 		  (then
 			(call $str.catByte(local.get $s1Ptr)
 			  (call $str.getByte (local.get $s2Ptr)(local.get $s2pos)))
-			(local.set $s2pos (i32.add (local.get $s2pos)(i32.const 1)))
+			;;(local.set $s2pos (i32.add (local.get $s2pos)(i32.const 1)))
+			_incrLocal($s2pos)
 			(br $bloop))))		
   )
   (func $str.catStr.test (param $testNum i32)(result i32)
