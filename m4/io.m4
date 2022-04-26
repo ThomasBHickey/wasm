@@ -56,35 +56,32 @@
   (func $byte.hexprint (param $byte i32)
 	(call $nibble.hexprint (i32.shr_u (local.get $byte)(i32.const 4)))
 	(call $nibble.hexprint (i32.and (i32.const 0xF)(local.get $byte)))
-	(call $printsp)
+  )
+  ;; print out ASCII of byte or a period if not printable
+  (func $isASCII (param $byte i32)(result i32)
+	(if (i32.ge_u (local.get $byte) _SP)
+	  (then (if (i32.le_u (local.get $byte)_CHAR(`~'))
+	    (then (return _1)))))
+	(return _0)
+  )
+  (func $byte.dump (param $byte i32)
+    (local.set $byte (i32.and (local.get $byte)(i32.const 0xFF)))
+	(if (call $isASCII (local.get $byte))
+	  (then	(call $byte.print (local.get $byte)))
+	  (else	(call $byte.print _CHAR(`.'))))
   )
   ;; needs to pad to 8 bytes with 0's
   (func $i32.hexprint (param $N i32)
-	;;(call $strdata.print(global.get $gGlobalB))
 	(call $byte.print _CHAR(`0'))
-	(call $byte.print (i32.const 120)) ;; 'x'
+	(call $byte.print _CHAR(`x')) ;; 'x'
 	(call $i32.hexprintsup (local.get $N))
 	(call $byte.print _SP)  ;; space
   )
-  (func $i32.hexprintsup (param $N i32)
-    ;; support for $i32.hexprint
-    (local $rem i32)
-	;;(call $strdata.print(global.get $gGlobalA))
-	(call $i32.print (local.get $N))(call $printlf)
-	(if (i32.ge_u (local.get $N)(i32.const 16))
-	  (then (call $i32.hexprintsup (i32.div_u (local.get $N)(i32.const 16)))))
-	(local.set $rem (i32.rem_u (local.get $N)(i32.const 16)))
-	(if (i32.lt_s (local.get $rem) (i32.const 10))
-	  (then
-		(call $byte.print
-		  (i32.add
-			(local.get $rem)
-			_CHAR(`0'))))
-	  (else
-		(call $byte.print
-		  (i32.add
-			(local.get $rem)
-			(i32.const 55)))))  ;; 'A'-10
+  (func $i32.hexprintsup (param $n i32)
+    (call $byte.hexprint (i32.shr_u (local.get $n)(i32.const 24)))
+    (call $byte.hexprint (i32.shr_u (local.get $n)(i32.const 16)))
+    (call $byte.hexprint (i32.shr_u (local.get $n)(i32.const 8)))
+    (call $byte.hexprint (local.get $n))
   )
   (func $str.read (result i32)
 	(local $strPtr i32)
