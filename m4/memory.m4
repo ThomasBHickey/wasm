@@ -15,9 +15,9 @@
   (func $mem.get (param $size i32)(result i32)
 	;; Simple memory allocation done in 32-bit boundaries
 	;; Should this get cleared first?
-	(call $i32.print (global.get $curMemUsed))(call $printlf)
+	;;(call $i32.print (global.get $curMemUsed))(call $printlf)
 	(global.set $curMemUsed (call $roundUpTo4 (global.get $curMemUsed)))
-	(call $i32.print (global.get $curMemUsed))(call $printlf)
+	;;(call $i32.print (global.get $curMemUsed))(call $printlf)
 	(global.get $curMemUsed) ;; on stack to return
 	(global.set $curMemUsed (i32.add (global.get $curMemUsed)(local.get $size)))
 	(if (i32.gt_u (global.get $curMemUsed)(global.get $maxMemUsed))

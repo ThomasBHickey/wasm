@@ -83,11 +83,14 @@
 		(then
 			(if (i32.ne (call $str.getByte (local.get $s1ptr)(local.get $cpos))
 						(call $str.getByte (local.get $s2ptr)(local.get $cpos)))
-			  (return (i32.const 0)))
-			(local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
+			  ;;(return (i32.const 0)))
+			  (return _0))  ;; Failure
+			;;(local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
+			_incrLocal($cpos)
 			(br $cloop)
 		)))
-	(i32.const 1) ;; success
+	_1  ;; Success
+	;;(i32.const 1) ;; success
   )
   (func $str.extend(param $strPtr i32)
 	;; double the space available for characters
