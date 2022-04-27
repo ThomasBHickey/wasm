@@ -23,6 +23,72 @@
 	(if (i32.gt_u (global.get $curMemUsed)(global.get $maxMemUsed))
 	  (global.set $maxMemUsed (global.get $curMemUsed)))
   )
+  (func $reclaimMem (param $newCurMemUsed i32)
+  ;; A simple way to reclaim memory
+  ;; Resets where new mem is allocated and clears the reclaimed words
+  ;; WARNING: It's possible that a string in the remaining memory could
+  ;; point to string data in the reclaimed section
+    (local $reclaimedBytes i32)
+	(local $reclaimedWords i32)
+	(local $wordToClear i32)
+	(local $oldCurMemUsed i32)
+    ;;(return)
+	(if (i32.gt_u (local.get $newCurMemUsed)(global.get $curMemUsed))
+		(call $error2))
+	;; check for i32 word alignment
+	(if (i32.and (local.get $newCurMemUsed)(i32.const 3))
+	  (call $error3 (i32.const 32)))
+	(local.set $oldCurMemUsed (global.get $curMemUsed))
+	(if (i32.and (local.get $oldCurMemUsed)(i32.const 3))
+	  (call $error3 (i32.const 33)))
+	(local.set $reclaimedBytes
+	  (i32.sub (global.get $curMemUsed)(local.get $newCurMemUsed)))
+	(global.set $memReclaimed
+	  (i32.add (global.get $memReclaimed)(local.get $reclaimedBytes)))
+	(local.set $wordToClear (local.get $newCurMemUsed))
+	(loop $clearLoop
+	  (if (i32.lt_u
+		(local.get $wordToClear)
+		(local.get $oldCurMemUsed))
+		(then
+		  (i32.store (local.get $wordToClear)(i32.const 0))
+		  (local.set $wordToClear (i32.add (local.get $wordToClear)(i32.const 4)))
+		  (br $clearLoop))))
+	(global.set $curMemUsed (local.get $newCurMemUsed))
+	(global.set $memReclamations (i32.add (global.get $memReclamations)(i32.const 1)))
+  )
+  (func $showMemUsedHelper (param $numBytes i32)(param $msg i32)
+    (call $str.print (local.get $msg))
+	(call $i32.print (local.get $numBytes))(call $printsp)
+	(call $byte.print _LPAREN)
+	(call $i32.print
+	  (i32.shr_u (local.get $numBytes)(i32.const 10)))
+	(call $byte.print _CHAR(`K'))
+	(call $byte.print _RPAREN)
+	(call $printlf)
+  )
+  _gdef(`gMemReclaimed:',`Mem Reclaimed: ')
+  _gdef(`gMemReclamations:', `Mem Reclamations: ')
+  _gdef(`gMaxUsedMsg:', `Max mem used: ')
+  (func $showMemUsed 
+	(local $memUsedMsg i32)
+	(local $maxUsedMsg i32)
+	(local $memReclaimedMsg i32)
+	(local $memReclamationsMsg i32)
+	;;(local $maxUsed i32)
+	(local.set $memUsedMsg (call $str.mkdata (global.get $curMemUsed)))
+	(local.set $maxUsedMsg (call $str.mkdata (global.get $maxMemUsed)))
+	(local.set $memReclaimedMsg (call $str.mkdata (global.get $gMemReclaimed:)))
+	(local.set $memReclamationsMsg (call $str.mkdata (global.get $gMemReclamations:)))
+	(call $showMemUsedHelper (global.get $curMemUsed)(local.get $memUsedMsg))
+	(local.set $bytesUsed
+	  (i32.sub
+		(global.get $maxMemUsed)
+		(global.get $firstFreeMem)))
+	(call $showMemUsedHelper (local.get $bytesUsed)(local.get $maxUsedMsg))
+	(call $showMemUsedHelper (global.get $memReclaimed)(local.get $memReclaimedMsg))
+	(call $showMemUsedHelper (global.get $memReclamations)(local.get $memReclamationsMsg))
+  )
   (func $mem.dumpline (param $memPtr i32)
 	(local $ctr i32)
 	;;_testString(`indumpline',`starting dumpline')

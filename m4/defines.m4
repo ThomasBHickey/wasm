@@ -8,6 +8,8 @@ define(`_CR',(i32.const 13(;CR;)))dnl
 define(`_LF',(i32.const 10(;LF;)))dnl
 ;;define(`_SP',`_CHAR(` '(;SP;))')dnl
 define(`_SP', (i32.const 32))dnl
+define(`_LPAREN', (i32.const 40))dnl
+define(`_RPAREN', (i32.const 41))dnl
 define(`_SINGQUOTE',(i32.const 39(;SINGQUOTE;)))dnl
 define(`_0',`(i32.const 0)')dnl
 define(`_1',`(i32.const 1)')dnl

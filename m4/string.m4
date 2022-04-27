@@ -69,6 +69,18 @@
 			(local.set $s2pos (i32.add (local.get $s2pos)(i32.const 1)))
 			(br $bloop))))		
   )
+  (func $str.catStr.test (param $testNum i32)(result i32)
+    (local $AAA i32)(local $ZZZ i32)(local $aaa i32)
+	(local.set $AAA (call $str.mkdata (global.get $gAAA)))
+	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
+	(local.set $aaa (call $str.mk))
+	(call $str.catStr (local.get $aaa)(local.get $AAA))
+	(call $str.catStr (local.get $aaa)(local.get $ZZZ))
+	(i32.eqz
+	  (call $str.compare
+		(local.get $aaa) 
+		(call $str.mkdata (global.get $gAAAZZZ))))
+  )
   (func $str.compare (type $keyCompSig)
 	(local $s1ptr i32)(local $s2ptr i32)
 	(local $s2len i32)(local $cpos i32)

@@ -2,17 +2,17 @@
   ;; test function signatures
   (type $testSig (func (param i32)(result i32)))
   
-  ;; comparison func signatures used by map
+  ;; comparison func signatures used by map (now in globals.m4
   ;;(type $keyCompSig (func (param i32)(param i32)(result i32)))
   ;;(type $keytoStrSig (func (param i32)(result i32)))
 define(`_tableLength',`0')dnl
 define(`_incrTableLength',`define(`_tableLength',eval(_tableLength+1))')dnl
-define(`_addToTable', `divert(`2')  (;_tableLength;) $1
+define(`_addToTable', `divert(`2')    (;_tableLength;) $1
 divert _incrTableLength')dnl
-define(`_finishTable', `(table _tableLength funcref)
+define(`_finishTable',`(table _tableLength funcref)
+  (elem (i32.const 0)
+undivert(`2')  )')dnl
 
- (elem (i32.const 0)
-undivert(`2'))')dnl
   _addToTable($str.compare)
   _addToTable($str.toStr)
   _addToTable($i32.compare)
@@ -20,14 +20,16 @@ undivert(`2'))')dnl
   divert(`1')  (global $gFirstTestOffset i32 (i32.const _tableLength))
 divert
   _addToTable($str.catByte.test)
+  _addToTable($str.catStr.test)
   _finishTable
   divert(`1')  (global $tableLength  i32 (i32.const _tableLength))
 divert
-
   (func $test (export "_test")
 	;; Run tests: wasmtime run XXX.wat --invoke _test
 	(local $testOff i32)
+	(local $oldCurMemUsed i32)
 	(local.set $testOff (global.get $gFirstTestOffset))
+	(local.set $oldCurMemUsed (global.get $curMemUsed))
 	(loop $testLoop
 	  (if (i32.lt_u (local.get $testOff)(global.get $tableLength))
 	    (then
@@ -42,8 +44,8 @@ divert
 		)
 	  )
 	)
-	;;(call $reclaimMem (local.get $nextFreeMem))
-	;;(call $showMemUsed)
+	(call $reclaimMem (local.get $oldCurMemUsed))
+	(call $showMemUsed)
   )
   (func $Test.show (param $testNum i32)(param $testResult i32)
 	(if (local.get $testResult)

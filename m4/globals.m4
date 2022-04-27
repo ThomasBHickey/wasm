@@ -16,13 +16,12 @@
   (global $i64L		i32 (i32.const 0x4C343669)) ;; 'i64L' type# for i64 lists
   ;;(global $BStr		i32	(i32.const 0x42537472))	;; 'BStr' type# for byte strings
   (global $BStr		i32	(i32.const 0x72745342))	;; 'BStr' type# for byte strings
+  _gdef(`gAAA',`AAA')
+  _gdef(`gAAAZZZ',`AAAZZZ')
   _gdef(`gMaxNegAsString',`-2147483648')
   _gdef(`gGlobalA', `GlobalA')
   _gdef(`gGlobalB', `GlobalB')
   _gdef(`gGlobalC', `GlobalC')
-;; needs to be after all _gdef's
-  ;;(global $curMemUsed (mut i32)(i32.const _globalPos))
-  ;;(global $maxMemUsed (mut i32)(i32.const _globalPos))
   ;; comparison func signatures used by map
-  (type $keyCompSig (func (param i32)(param i32)(result i32)))
-  (type $keytoStrSig (func (param i32)(result i32)))
+  ;;(type $keyCompSig (func (param i32)(param i32)(result i32)))
+  ;;(type $keytoStrSig (func (param i32)(result i32)))
