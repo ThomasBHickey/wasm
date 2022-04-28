@@ -1,4 +1,5 @@
 ;; string.m4
+  (global $BStr		i32	(i32.const 0x72745342))	;; 'BStr' type# for byte strings
   (func $str.mk (result i32)
 	;; returns a memory offset for a string pointer:
 	;; 	 TypeNum (BStr), byteLength, maxLength, dataOffset
@@ -69,6 +70,8 @@
 			(local.set $s2pos (i32.add (local.get $s2pos)(i32.const 1)))
 			(br $bloop))))		
   )
+  _gdef(`gAAA',`AAA')
+  _gdef(`gAAAZZZ',`AAAZZZ')
   (func $str.catStr.test (param $testNum i32)(result i32)
     (local $AAA i32)(local $ZZZ i32)(local $aaa i32)
 	(local.set $AAA (call $str.mkdata (global.get $gAAA)))
