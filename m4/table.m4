@@ -1,12 +1,8 @@
 ;; table.m4
   ;; test function signatures
   (type $testSig (func (param i32)(result i32)))
-  
-  ;; comparison func signatures used by map
-  ;;(type $keyCompSig (func (param i32)(param i32)(result i32)))
-  ;;(type $keytoStrSig (func (param i32)(result i32)))
 define(`_tableLength',`0')dnl
-define(`_incrTableLength',`define(`_tableLength',eval(_tableLength+1))')dnl
+define(`_incrTableLength',`define(`_tableLength',eval(_tableLength+1))dnl')dnl
 define(`_addToTable', `divert(`2')    (;_tableLength;) $1
 divert _incrTableLength')dnl
 define(`_finishTable',`(table _tableLength funcref)
@@ -22,7 +18,7 @@ divert
   _addToTable($str.catByte.test)
   _addToTable($str.catStr.test)
   _finishTable
-  divert(`1')  (global $tableLength  i32 (i32.const _tableLength))
+divert(`1')  (global $tableLength  i32 (i32.const _tableLength))
 divert
   (func $test (export "_test")
 	;; Run tests: wasmtime run XXX.wat --invoke _test
