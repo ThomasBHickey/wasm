@@ -23,5 +23,5 @@
   _gdef(`gGlobalB', `GlobalB')
   _gdef(`gGlobalC', `GlobalC')
   ;; comparison func signatures used by map
-  ;;(type $keyCompSig (func (param i32)(param i32)(result i32)))
-  ;;(type $keytoStrSig (func (param i32)(result i32)))
+  (type $keyCompSig (func (param i32)(param i32)(result i32)))
+  (type $keytoStrSig (func (param i32)(result i32)))

@@ -2,7 +2,7 @@
   ;; test function signatures
   (type $testSig (func (param i32)(result i32)))
   
-  ;; comparison func signatures used by map (now in globals.m4
+  ;; comparison func signatures used by map
   ;;(type $keyCompSig (func (param i32)(param i32)(result i32)))
   ;;(type $keytoStrSig (func (param i32)(result i32)))
 define(`_tableLength',`0')dnl
