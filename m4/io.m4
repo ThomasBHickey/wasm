@@ -1,4 +1,14 @@
 ;; io.m4
+  _i32GlobalConst(`$readIOVsOff0',`0')
+  (global $readIOVsOff4 	i32 (i32.const 4))
+  (global $readBuffOff 		i32 (i32.const 8))
+  (global $readBuffLen 		i32 (i32.const 4))
+  (global $writeIOVsOff0 	i32 (i32.const 16))
+  (global $writeIOVsOff4 	i32 (i32.const 20))
+  (global $writeBuffOff 	i32 (i32.const 24))
+  (global $writeBufLen 		i32 (i32.const 4))
+  (global $bytesRead		i32 (i32.const 4))
+  (global $bytesWritten		(mut i32) (i32.const 0))
   (func $io.initialize
   )
   (func $byte.print (param $B i32)

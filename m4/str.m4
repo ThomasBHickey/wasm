@@ -1,5 +1,6 @@
 ;; string.m4
   (global $BStr		i32	(i32.const 0x72745342))	;; 'BStr' type# for byte strings
+  (type $keyCompSig (func (param i32)(param i32)(result i32)))
   (func $str.mk (result i32)
 	;; returns a memory offset for a string pointer:
 	;; 	 TypeNum (BStr), byteLength, maxLength, dataOffset

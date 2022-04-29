@@ -1,5 +1,6 @@
 ;; i32.m4
   _gdef(`gMaxNegAsString',`-2147483648')
+  _i32ConstGlob(maxNeg, 0x80000000)
 
   (func $i32.compare (param $i1 i32)(param $i2 i32)(result i32)
 	(i32.eq (local.get $i1)(local.get $i2))
