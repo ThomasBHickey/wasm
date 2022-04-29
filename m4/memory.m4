@@ -3,9 +3,7 @@
   ;;(memory (global.get $memChunks))
   (memory 4096)
   (export "memory" (memory 0))
-  ;;(global $curMemUsed (mut i32)(i32.const 300)) ;; This is now done in moduleTail
-  ;;(global $maxMemUsed (mut i32)(i32.const 300)) ;; As is this
-  (global $memSize i32 (i32.const 1048576))  ;; 1024*1024
+  ;;(global $memSize i32 (i32.const 1048576))  ;; 1024*1024 (currently $memSize not used)
   (global $memReclaimed (mut i32)(i32.const 0))
   (global $memReclamations (mut i32)(i32.const 0))
   
@@ -15,13 +13,13 @@
   (func $mem.get (param $size i32)(result i32)
 	;; Simple memory allocation done in 32-bit boundaries
 	;; Should this get cleared first?
-	;;(call $i32.print (global.get $curMemUsed))(call $printlf)
 	(global.set $curMemUsed (call $roundUpTo4 (global.get $curMemUsed)))
-	;;(call $i32.print (global.get $curMemUsed))(call $printlf)
 	(global.get $curMemUsed) ;; on stack to return
 	(global.set $curMemUsed (i32.add (global.get $curMemUsed)(local.get $size)))
 	(if (i32.gt_u (global.get $curMemUsed)(global.get $maxMemUsed))
 	  (global.set $maxMemUsed (global.get $curMemUsed)))
+;;	(loop $tloop          ;; a little tight loop!
+;;	  (br $tloop))
   )
   (func $reclaimMem (param $newCurMemUsed i32)
   ;; A simple way to reclaim memory
@@ -128,3 +126,8 @@
 	  (if (i32.lt_u (local.get $memPtr)(global.get $curMemUsed))
 	    (br $rowLoop)))
 	)
+  (func $showMemory
+	(call $strdata.print (global.get $curMemUsed:))
+	  (call $i32.print (global.get $curMemUsed))
+	  (call $printlf)
+  )

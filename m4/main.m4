@@ -1,12 +1,4 @@
 ;; main.m4
-;;  _gdef(`gRead:', `Read:')dnl
-;;  _gdef(`gWrote:', `Wrote:')dnl
-;;  _gdef(`curMemUsed:', `curMemUsed: ')
-  (func $showMemory
-	(call $strdata.print (global.get $curMemUsed:))
-	  (call $i32.print (global.get $curMemUsed))
-	  (call $printlf)
-  )
   (func $main (export "_start")
 	(local $byte i32)(local $strPtr1 i32)(local $strPtr2 i32)(local $ctr i32)
 	(call $io.initialize)
