@@ -3,8 +3,8 @@
   ;;(memory (global.get $memChunks))
   (memory 4096)
   (export "memory" (memory 0))
-  ;;(global $curMemUsed (mut i32)(i32.const 200)) ;; First 100 bytes reserved
-  ;;(global $maxMemUsed (mut i32)(i32.const 200)) ;; e..g. I/O buffers in io.m4
+  ;;(global $curMemUsed (mut i32)(i32.const 300)) ;; This is now done in moduleTail
+  ;;(global $maxMemUsed (mut i32)(i32.const 300)) ;; As is this
   (global $memSize i32 (i32.const 1048576))  ;; 1024*1024
   (global $memReclaimed (mut i32)(i32.const 0))
   (global $memReclamations (mut i32)(i32.const 0))
@@ -112,6 +112,7 @@
 		(br $byteLoop2)))
 	(call $printlf)
   )
+  _gdef(`curMemUsed:', `curMemused:')
   (func $mem.dump
     (local $memPtr i32)(local $nCols i32)(local $col i32)(local $row i32)(local $byte i32)
 	(local.set $nCols (i32.const 100))

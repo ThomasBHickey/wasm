@@ -1,7 +1,7 @@
 ;; main.m4
-  _gdef(`gRead:', `Read:')dnl
-  _gdef(`gWrote:', `Wrote:')dnl
-  _gdef(`curMemUsed:', `curMemUsed: ')
+;;  _gdef(`gRead:', `Read:')dnl
+;;  _gdef(`gWrote:', `Wrote:')dnl
+;;  _gdef(`curMemUsed:', `curMemUsed: ')
   (func $showMemory
 	(call $strdata.print (global.get $curMemUsed:))
 	  (call $i32.print (global.get $curMemUsed))
