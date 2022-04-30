@@ -11,7 +11,6 @@
 	;; As they grow beyond their data allocation it doubles.
 	;; !!!As of now (20210511) some routines are not prepared for UTF-8
 	(local $strPtr i32)
-	;;(call $byte.print _CHAR(`<'))
 	(local.set $strPtr (call $mem.get (i32.const 20)))
 	(call $setTypeNum (local.get $strPtr) (global.get $BStr))
 	(call $str.setByteLen (local.get $strPtr) (i32.const 0))
@@ -40,14 +39,14 @@
 	(local.set $memsp 
 	  (call $str.mkdata
 		(global.get $gABCDEF)))
-	(call $str.print(local.get $memsp))(call $printlf)
-	(call $str.catByte (local.get $sp) (i32.const 65))
-	(call $str.catByte (local.get $sp) (i32.const 66))
-	(call $str.catByte (local.get $sp) (i32.const 67))
-	(call $str.catByte (local.get $sp) (i32.const 68))
-	(call $str.catByte (local.get $sp) (i32.const 69))
-	(call $str.catByte (local.get $sp) (i32.const 70))
-	(call $str.print(local.get $sp))(call $printlf)
+	;;(call $str.print(local.get $memsp))(call $printlf)
+	(call $str.catByte (local.get $sp) _CHAR(`A'))
+	(call $str.catByte (local.get $sp) _CHAR(`B'))
+	(call $str.catByte (local.get $sp) _CHAR(`C'))
+	(call $str.catByte (local.get $sp) _CHAR(`D'))
+	(call $str.catByte (local.get $sp) _CHAR(`E'))
+	(call $str.catByte (local.get $sp) _CHAR(`F'))
+	;;(call $str.print(local.get $sp))(call $printlf)
 	(if
 	  (i32.eqz
 		(call $str.compare
@@ -76,12 +75,12 @@
   _gdef(`gAAAZZZ',`AAAZZZ')
   (func $str.catStr.test (param $testNum i32)(result i32)
     (local $AAA i32)(local $ZZZ i32)(local $aaa i32)
-	(call $mem.dump)
-	(local.set $AAA (call $str.mkdata (global.get $gAAA))) (call $str.print(local.get $AAA))(call $printlf)
-	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ))) (call $str.print(local.get $ZZZ))(call $printlf)
+	;;(call $mem.dump)
+	(local.set $AAA (call $str.mkdata (global.get $gAAA)));; (call $str.print(local.get $AAA))(call $printlf)
+	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)));; (call $str.print(local.get $ZZZ))(call $printlf)
 	(local.set $aaa (call $str.mk))
-	(call $str.catStr (local.get $aaa)(local.get $AAA))(call $str.print(local.get $aaa))(call $printlf)
-	(call $str.catStr (local.get $aaa)(local.get $ZZZ))(call $str.print(local.get $aaa))(call $printlf)
+	(call $str.catStr (local.get $aaa)(local.get $AAA));;(call $str.print(local.get $aaa))(call $printlf)
+	(call $str.catStr (local.get $aaa)(local.get $ZZZ));;(call $str.print(local.get $aaa))(call $printlf)
 	(i32.eqz
 	  (call $str.compare
 		(local.get $aaa) 
@@ -93,8 +92,8 @@
 	(local.set $s1ptr (local.get 0))
 	(local.set $s2ptr (local.get 1))
 	(local.set $s2len (call $str.getByteLen (local.get $s2ptr)))
-	(call $str.print (local.get $s1ptr))(call $printlf)
-	(call $str.print (local.get $s2ptr))(call $printlf)
+	;;(call $str.print (local.get $s1ptr))(call $printlf)
+	;;(call $str.print (local.get $s2ptr))(call $printlf)
 	(if (i32.ne (call $str.getByteLen (local.get $s1ptr))(local.get $s2len))
 	  (return (i32.const 0)))
 	(local.set $cpos (i32.const 0))
