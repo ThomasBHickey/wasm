@@ -13,6 +13,10 @@ define(`_RPAREN', (i32.const 41))dnl
 define(`_SINGQUOTE',(i32.const 39(;SINGQUOTE;)))dnl
 define(`_0',`(i32.const 0)')dnl
 define(`_1',`(i32.const 1)')dnl
+define(`_2',`(i32.const 2)')dnl
+define(`_4',`(i32.const 4)')dnl
+define(`_8',`(i32.const 8)')dnl
+define(`_16',`(i32.const 16)')dnl
 ;; Global defines
 define(`_globalPos', `100')dnl
 define(`_newGlobalPos', `define(`_globalPos',eval(_globalPos+1+len($1)))')dnl

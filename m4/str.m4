@@ -13,9 +13,9 @@
 	(local $strPtr i32)
 	(local.set $strPtr (call $mem.get (i32.const 20)))
 	(call $setTypeNum (local.get $strPtr) (global.get $BStr))
-	(call $str.setByteLen (local.get $strPtr) (i32.const 0))
-	(call $str.setMaxLen (local.get $strPtr)(i32.const 4))
-	(call $str.setDataOff (local.get $strPtr)(i32.add(local.get $strPtr)(i32.const 16)))
+	(call $str.setByteLen (local.get $strPtr) _0)
+	(call $str.setMaxLen (local.get $strPtr) _4)
+	(call $str.setDataOff (local.get $strPtr)(i32.add(local.get $strPtr)_16))
 	(local.get $strPtr)
   )
   (func $str.catByte (param $strPtr i32)(param $byte i32)
@@ -28,7 +28,7 @@
 	  (i32.add (local.get $byteLen)(call $str.getDataOff (local.get $strPtr)))
 	  (local.get $byte))
 	(call $str.setByteLen(local.get $strPtr)
-	  (i32.add (local.get $byteLen)(i32.const 1)))
+	  (i32.add (local.get $byteLen) _1))
   )
   _gdef(`gABCDEF', `ABCDEF')
   (func $str.catByte.test (param $testNum i32)(result i32)
@@ -53,22 +53,23 @@
 		  (local.get $sp)
 		  (local.get $memsp)))
 	  (then
-		(return (i32.const 1))))  ;; Failure
+		(return _1)))  ;; Failure
 	;; Test UTF-8 compliance a bit
-	(return (i32.const 0))
+	_0 ;; success
   )
   (func $str.catStr (param $s1Ptr i32)(param $s2Ptr i32)
 	;; Modify s1 by concatenating another string to it
 	(local $s2pos i32)
 	(local $s2ByteLen i32)
-	(local.set $s2pos (i32.const 0))
+	(local.set $s2pos _0)
 	(local.set $s2ByteLen (call $str.getByteLen (local.get $s2Ptr)))
 	(loop $bloop
 		(if (i32.lt_u (local.get $s2pos)(local.get $s2ByteLen))
 		  (then
 			(call $str.catByte(local.get $s1Ptr)
 			  (call $str.getByte (local.get $s2Ptr)(local.get $s2pos)))
-			(local.set $s2pos (i32.add (local.get $s2pos)(i32.const 1)))
+			_incrLocal($s2pos)
+			;;(local.set $s2pos (i32.add (local.get $s2pos)(i32.const 1)))
 			(br $bloop))))		
   )
   _gdef(`gAAA',`AAA')
@@ -95,8 +96,8 @@
 	;;(call $str.print (local.get $s1ptr))(call $printlf)
 	;;(call $str.print (local.get $s2ptr))(call $printlf)
 	(if (i32.ne (call $str.getByteLen (local.get $s1ptr))(local.get $s2len))
-	  (return (i32.const 0)))
-	(local.set $cpos (i32.const 0))
+	  (return _0))
+	(local.set $cpos _0)
 	(loop $cloop
 	  (if (i32.lt_u (local.get $cpos)(local.get $s2len))
 		(then
@@ -107,7 +108,6 @@
 			(br $cloop)
 		)))
 	_1  ;; Success
-	;;(i32.const 1) ;; success
   )
   (func $str.extend(param $strPtr i32)
 	;; double the space available for characters
@@ -121,7 +121,7 @@
 	(local.set $curLen (call $str.getByteLen (local.get $strPtr)))
 	(local.set $maxLen (call $str.getMaxLen (local.get $strPtr)))
 	(local.set $dataOff   (call $str.getDataOff (local.get $strPtr)))
-	(local.set $newMaxLen (i32.mul (local.get $maxLen)(i32.const 2)))
+	(local.set $newMaxLen (i32.mul (local.get $maxLen) _2))
 	(local.set $newDataOff (call $mem.get (local.get $newMaxLen)))
 	(call $str.setMaxLen(local.get $strPtr)(local.get $newMaxLen))
 	(call $str.setDataOff(local.get $strPtr)(local.get $newDataOff))
@@ -135,20 +135,20 @@
 		(i32.load8_u (i32.add (call $str.getDataOff
 		  (local.get $strPtr))(local.get $bytePos)))
 	  )
-	  (else (i32.const 0))
+	  (else _0)
 	)
   )
   (func $str.getByteLen (param $strPtr i32)(result i32)
-	(i32.load (i32.add (local.get $strPtr)(i32.const 4)))
+	(i32.load (i32.add (local.get $strPtr) _4))
   )
   (func $str.setByteLen(param $strPtr i32)(param $newLen i32)
-	(i32.store (i32.add (local.get $strPtr)(i32.const 4)) (local.get $newLen))
+	(i32.store (i32.add (local.get $strPtr) _4) (local.get $newLen))
   )
   (func $str.getMaxLen (param $strPtr i32)(result i32)
-	(i32.load (i32.add (local.get $strPtr)(i32.const 8)))
+	(i32.load (i32.add (local.get $strPtr) _8))
   )
   (func $str.setMaxLen(param $strPtr i32)(param $newMaxLen i32)
-	(i32.store (i32.add(local.get $strPtr)(i32.const 8))(local.get $newMaxLen))
+	(i32.store (i32.add(local.get $strPtr) _8)(local.get $newMaxLen))
   )
   (func $str.getDataOff (param $strPtr i32)(result i32)
 	(i32.load (i32.add (local.get $strPtr)(i32.const 12)))
@@ -164,7 +164,7 @@
 	  (if (local.get $curByte)
 		(then
 		  (call $str.catByte (local.get $strPtr)(local.get $curByte))
-		  (local.set $dataOffset (i32.add (local.get $dataOffset)(i32.const 1)))
+		  (local.set $dataOffset (i32.add (local.get $dataOffset) _1))
 		  (br $bLoop)))
 	)
 	(local.get $strPtr)
@@ -174,14 +174,14 @@
 	(local $dataOffset i32)  ;; offset to string data
 	(local $cpos i32)  ;; steps through character positions
 	(local.set $curLength (call $str.getByteLen(local.get $strPtr)))
-	(local.set $cpos (i32.const 0))
+	(local.set $cpos _0)
 	(local.set $dataOffset (call $str.getDataOff (local.get $strPtr)))
 	(loop $cLoop
 	  (if (i32.lt_u (local.get $cpos)(local.get $curLength))
 		(then
 		 (i32.load8_u (i32.add (local.get $dataOffset)(local.get $cpos)))
 		 (call $byte.print)   
-	     (local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
+	     (local.set $cpos (i32.add (local.get $cpos) _1))
 	     (br $cLoop))))
   )
   (func $str.printwlf (param $strPtr i32)
