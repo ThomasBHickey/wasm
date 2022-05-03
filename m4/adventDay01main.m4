@@ -1,11 +1,11 @@
-;; main.m4
+;; adventDay01main.m4
   (func $main (export "_start")
 	(local $byte i32)(local $strPtr1 i32)(local $strPtr2 i32)(local $ctr i32)
 	(call $io.initialize)
 	(call $byte.print _CHAR(`>'))
 	(local.set $strPtr1 (call $str.read))
 	(call $i32.print(local.get $strPtr1))
-	(call $str.printwlf (local.get $strPtr1))
+	(call $str.printwlf (local.get $strPtr1))mv 
 	(call $byte.print _CHAR(`>'))
 	(local.set $strPtr2 (call $str.read))
 	(call $i32.print(local.get $strPtr2))(call $printlf)

@@ -10,7 +10,7 @@
 	(func $fd_write (param i32 i32 i32 i32) (result i32)))
 
   (memory 1024)
-  (export "memory" (memory 0))
+  (export "memory" (memory 1024))
 
   ;; test function signatures
   (type $testSig (func (param i32)(result i32)))
@@ -79,11 +79,11 @@
   (func $showMemUsedHelper (param $numBytes i32)(param $msg i32)
     (call $str.print (local.get $msg))
 	(call $i32.print (local.get $numBytes))(call $printsp)
-	(call $byte.print (global.get $LPAREN))
+	(call $byte.print _LPAREN)
 	(call $i32.print
-	  (i32.shr_u (local.get $numBytes) (global.get $LF)))
+	  (i32.shr_u (local.get $numBytes) (global.get $LF)));;??????
 	(call $C.print (i32.const 75)) ;; K
-	(call $C.print (global.get $RPAREN))
+	(call $C.print _RPAREN
 	(call $C.print (global.get $LF))
   )
   (func $showMemUsed 

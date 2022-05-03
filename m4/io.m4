@@ -100,7 +100,7 @@
 	(local.set $strPtr (call $str.mk))
 	(loop $bloop
 	  (local.set $byte (call $byte.read))
-	  (if (i32.ge_s (local.get $byte)(i32.const 0))
+	  (if (i32.ge_s (local.get $byte) _0)
 		(then
 		  (if (i32.eq (local.get $byte) _LF)
 			(return (local.get $strPtr)))
@@ -117,4 +117,20 @@
 	  )
 	)
 	(local.get $strPtr)
+  )
+  (func $readFileAsStrings (result i32)
+	;; reads a file in byte-by-byte and returns a list of string pointers to the lines in it
+	(local $listPtr i32)(local $strPtr i32)
+	(local.set $listPtr (call $i32list.mk))
+	(loop $lineLoop
+	  (local.set $strPtr (call $str.read))
+	  (if
+		(i32.eq
+		  (local.get $strPtr)
+		  (global.get $maxNeg))
+		(return (local.get $listPtr)))
+	  (call $i32list.push (local.get $listPtr) (local.get $strPtr))
+	  (br $lineLoop)
+	)
+	(return (local.get $listPtr))
   )
