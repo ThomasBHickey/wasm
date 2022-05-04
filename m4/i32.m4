@@ -1,5 +1,5 @@
 ;; i32.m4
-  _gdatadef(`gMaxNegAsString',`-2147483648')
+  _gnts(`gMaxNegAsString',`-2147483648')
   _i32GlobalConst(maxNeg, 0x80000000)
 
   (func $i32.compare (param $i1 i32)(param $i2 i32)(result i32)

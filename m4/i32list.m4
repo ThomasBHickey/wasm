@@ -5,7 +5,7 @@
   ;; the list starts out with a maxLen of 1 (4 bytes)
   ;; which is allocated in the next i32 (20 bytes total)
   (global $i32L	  	i32	(i32.const 0x4C323369)) ;; 'i32L' type# for i32 lists
-  _gdatadef(`gi32L', `gi32L')
+  _gnts(`gi32L', `gi32L')
   (func $i32.printMem (param $memOff i32)
 	(call $i32.print (i32.load (local.get $memOff)))
   )

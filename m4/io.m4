@@ -137,7 +137,7 @@
 	)
 	(return (local.get $listPtr))
   )
-  _gdatadef(`gUnableToPrint:', `Unable to print:')
+  _gnts(`gUnableToPrint:', `Unable to print:')
     (func $ptr.toStr (param $ptr i32)(result i32)
     (local $type i32)
 	(local $strPtr i32)

@@ -17,6 +17,9 @@ undivert(`2')  )')dnl
 divert
   _addToTable($str.catByte.test)
   _addToTable($str.catStr.test)
+  _addToTable($i32list.mk.test)
+  _addToTable($i32list.pop.test)
+  _addToTable($i32list.push.test)
   _finishTable
 divert(`1')  (global $tableLength  i32 (i32.const _tableLength))
 divert

@@ -5,8 +5,8 @@
   (func $setTypeNum(param $ptr i32)(param $typeNum i32)
 	(i32.store (local.get $ptr)(local.get $typeNum))
   )
-  _gdatadef(`gExpectedType', `Type error. Expected:')
-  _gdatadef(`gFound:', `Found:')
+  _gnts(`gExpectedType', `Type error. Expected:')
+  _gnts(`gFound:', `Found:')
   (func $typeError (param $typeFound i32)(param $typeExpected i32)
     (call $printwsp (global.get $gExpectedType))
 	(call $printwlf (call $typeNum.toStr (local.get $typeExpected)))
@@ -29,7 +29,7 @@
 		(call $typeNum.toStr (global.get $i32L)) ;; i32 value
 		(call $str.mkdata (global.get $gi32L))))	;; null terminated string
   )
-  _gdatadef(`gBoundsError',`Bounds Error!')
+  _gnts(`gBoundsError',`Bounds Error!')
   (func $boundsError (param $pos i32)(param $max i32)
     (call $printwsp (global.get $gBoundsError))
 	(call $printwsp (local.get $pos))
