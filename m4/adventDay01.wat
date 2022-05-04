@@ -1,8 +1,10 @@
 ;;adventDay00.m4
 ;;defines.m4
 ;; Character defines
-;;define(`_SP',`_CHAR(` '(;SP;))')dnl
 ;; Global defines
+;; gAAA needs to be the first global declared
+;; str.toStr uses the address to recognize the global null terminated strings
+ 
 
 ;;moduleHead.m4
 ;; run resulting file via "wasmtime run xxx.wat" 
@@ -10,6 +12,7 @@
 ;; or "wasmtime string1.wasm" if it has been compiled by
 ;; "wat2wasm --enable-bulk-memory string1.wat"
 ;; run tests: "wasmtime run xxx.wat --invoke _test"
+
 (module
   (import "wasi_unstable" "fd_read"
 	(func $fd_read (param i32 i32 i32 i32)  (result i32)))
@@ -106,7 +109,7 @@
     (call $byte.print (i32.const 45(;-;)))
 	(call $i32.print (local.get $err))
     (call $byte.print (i32.const 45(;-;)))
-	(call $byte.print (i32.const 32))
+	(call $byte.print (i32.const 32(;SP;)))
 	(call $error2)
   )
  
@@ -175,11 +178,11 @@
   (func $showMemUsedHelper (param $numBytes i32)(param $msg i32)
     (call $strdata.print (local.get $msg))
 	(call $i32.print (local.get $numBytes))(call $printsp)
-	(call $byte.print (i32.const 40))
+	(call $byte.print (i32.const 40(;LPAREN;)))
 	(call $i32.print
 	  (i32.shr_u (local.get $numBytes)(i32.const 10)))
 	(call $byte.print (i32.const 75(;K;)))
-	(call $byte.print (i32.const 41))
+	(call $byte.print (i32.const 41(;RPAREN;)))
 	(call $printlf)
   )
    
@@ -252,11 +255,34 @@
 	(i32.store (local.get $ptr)(local.get $typeNum))
   )
    
+   
   (func $typeError (param $typeFound i32)(param $typeExpected i32)
     (call $printwsp (global.get $gExpectedType))
 	(call $printwlf (call $typeNum.toStr (local.get $typeExpected)))
 	(call $printwsp (global.get $gFound:))
 	(call $printwlf (call $typeNum.toStr (local.get $typeFound)))
+	(call $error2)
+  )
+  (func $typeNum.toStr (param $typeNum i32)(result i32)
+    (local $strptr i32)
+	(local.set $strptr (call $str.mk))
+    (call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 24)))
+	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 16)))
+	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 8)))
+	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 0)))
+	(local.get $strptr)  ;;return the new string
+  )
+  (func $typeNum.toStr.test (param $testNum i32)(result i32)
+	(i32.eqz
+	  (call $str.compare
+		(call $typeNum.toStr (global.get $i32L)) ;; i32 value
+		(call $str.mkdata (global.get $gi32L))))	;; null terminated string
+  )
+   
+  (func $boundsError (param $pos i32)(param $max i32)
+    (call $printwsp (global.get $gBoundsError))
+	(call $printwsp (local.get $pos))
+	(call $printwlf (local.get $max))
 	(call $error2)
   )
 
@@ -334,7 +360,7 @@
 			;;(local.set $s2pos (i32.add (local.get $s2pos)(i32.const 1)))
 			(br $bloop))))		
   )
-   
+  ;; already defined in defines.m4: _gdatadef(`gAAA',`AAA')
    
   (func $str.catStr.test (param $testNum i32)(result i32)
     (local $AAA i32)(local $ZZZ i32)(local $aaa i32)
@@ -470,6 +496,61 @@
   (func $strdata.printwlf (param $global i32)
     (call $printwlf (call $str.mkdata (local.get $global)))
   )
+  (func $toStr (param $ptr i32)(result i32)
+    (local $strPtr i32)
+	(if (i32.gt_u (local.get $ptr)(global.get $gZZZ))  ;; should be 'typed' data
+	  (return (call $ptr.toStr (local.get $ptr))))
+	(if
+	  (i32.and
+		(i32.ge_u (local.get $ptr)(global.get $gAAA))
+		(i32.le_u (local.get $ptr)(global.get $gZZZ)))
+	  (return (call $str.mkdata(local.get $ptr))))    ;; should be a null-terminated string
+	(call $i32.toStr (local.get $ptr)) ;; just a number?
+  )
+   
+   
+  (func $toStr.test (param $testNum i32)(result i32)
+	(local $list i32)
+	(local $map i32)
+	(local.set $list (call $i32list.mk))
+	(if
+	  (i32.eqz (call $str.compare
+		(call $toStr (local.get $list))
+		(call $str.mkdata (global.get $gDblBrack))))
+	  (return (i32.const 1)))
+	(call $i32list.push (local.get $list)(call $i32list.mk))
+	(if
+	  (i32.eqz (call $str.compare
+		(call $toStr (local.get $list))
+		(call $str.mkdata (global.get $gDblDblBrack))))
+	  (return (i32.const 2)))
+;;	(local.set $map (call $i32Map.mk))
+;;	(if
+;;	  (i32.eqz (call $str.compare
+;;		(call $toStr (local.get $map))
+;;		(call $str.mkdata (global.get $gDblBrace))))
+;;	  (return (i32.const 3)))
+;;	(local.set $list (call $i32list.mk))
+;;	(call $i32list.push (local.get $list)(call $strMap.mk))
+;;	(if
+;;	  (i32.eqz (call $str.compare
+;;		(call $toStr (local.get $list))
+;;		(call $str.mkdata (global.get $gBrackedBrace))))
+;;	  (return (i32.const 4)))
+	(return (i32.const 0))
+  )
+  (func $str.catsp (param $strPtr i32)
+	(call $str.catByte (local.get $strPtr)(i32.const 32(;SP;))))
+  (func $str.catlf (param $strPtr i32)
+    (call $str.catByte (local.get $strPtr)(i32.const 10(;LF;))))
+  (func $str.drop(param $strPtr i32)
+	(if (i32.eqz (call $str.getByteLen (local.get $strPtr)))
+	  (return))
+	(call $str.setByteLen
+	  (local.get $strPtr)
+	  (i32.sub
+		(call $str.getByteLen (local.get $strPtr)) (i32.const 1)))
+  )
 
 ;; io.m4
   (global $readIOVsOff0 i32 (i32.const 0))
@@ -517,21 +598,24 @@
   )
   (func $print (param $ptr i32)
     ;; 'Universal' print function
-	(local $nextFreeMem i32)
-	(local.set $nextFreeMem (global.get $curMemUsed))
-    ;;(call $str.print (call $toStr (local.get $ptr)))
-    (call $str.print (local.get $ptr))  ;; needs to call $toStr first!!!!
- 	;;(call $reclaimMem (local.get $nextFreeMem))
+	(local $oldCurMemUsed i32)
+	(local.set $oldCurMemUsed (global.get $curMemUsed))
+    (call $str.print (call $toStr (local.get $ptr)))
+ 	(call $reclaimMem (local.get $oldCurMemUsed))
  )
-  (func $printsp (call $byte.print (i32.const 32)))
+  (func $printwsp (param $ptr i32)
+	(call $print (local.get $ptr))
+	(call $printsp)
+  )
+  (func $printsp (call $byte.print (i32.const 32(;SP;))))
   (func $printlf (call $byte.print (i32.const 10(;LF;))))
   (func $printwlf (param $ptr i32)
-	(call $str.print (local.get $ptr))  ;; was just $print
+	(call $print (local.get $ptr))
 	(call $printlf)
   )
   ;; print out ASCII of byte or a period if not printable
   (func $isASCII (param $byte i32)(result i32)
-	(if (i32.ge_u (local.get $byte) (i32.const 32))
+	(if (i32.ge_u (local.get $byte) (i32.const 32(;SP;)))
 	  (then (if (i32.le_u (local.get $byte)(i32.const 126(;~;)))
 	    (then (return (i32.const 1))))))
 	(return (i32.const 0))
@@ -546,7 +630,7 @@
 	(call $byte.print (i32.const 48(;0;)))
 	(call $byte.print (i32.const 120(;x;))) ;; 'x'
 	(call $i32.hexprintsup (local.get $N))
-	(call $byte.print (i32.const 32))  ;; space
+	(call $byte.print (i32.const 32(;SP;)))  ;; space
   )
   (func $i32.hexprintsup (param $n i32)
     (call $byte.hexprint (i32.shr_u (local.get $n)(i32.const 24)))
@@ -607,6 +691,36 @@
 	)
 	(return (local.get $listPtr))
   )
+   
+    (func $ptr.toStr (param $ptr i32)(result i32)
+    (local $type i32)
+	(local $strPtr i32)
+	(local.set $strPtr (call $str.mk))
+	(local.set $type (call $getTypeNum (local.get $ptr)))
+	(if (i32.eq (local.get $type)(global.get $BStr))
+	  (then
+		;;(call $str.catByte (local.get $strPtr)(global.get $DBLQUOTE))
+		(call $str.catByte (local.get $strPtr)(i32.const 34(;";)))
+		(call $str.catStr (local.get $strPtr)(local.get $ptr))
+		(call $str.catByte (local.get $strPtr)(i32.const 34(;";)))
+		(return (local.get $strPtr))))
+	(if (i32.eq (local.get $type)(global.get $i32L))
+	  (call $str.catStr 
+		  (local.get $strPtr)
+		  (call $i32list.toStr (local.get $ptr)))
+	  (return (local.get $strPtr)))
+;;	(if (i32.eq (local.get $type)(global.get $i64L))
+;;	  (call $str.catStr 
+;;		  (local.get $strPtr)
+;;		  (call $i64list.toStr (local.get $ptr)))
+;;	  (return (local.get $strPtr)))
+;;	(if (i32.eq (local.get $type)(global.get $Map))
+;;	  (call $str.catStr (local.get $strPtr)(call $map.toStr (local.get $ptr)))
+;;	  (return (local.get $strPtr)))
+	(call $str.catStr (local.get $strPtr)(call $str.mkdata (global.get $gUnableToPrint:)))
+	(local.get $strPtr)
+  )
+
 
 ;; i32.m4
    
@@ -661,6 +775,7 @@
   ;; the list starts out with a maxLen of 1 (4 bytes)
   ;; which is allocated in the next i32 (20 bytes total)
   (global $i32L	  	i32	(i32.const 0x4C323369)) ;; 'i32L' type# for i32 lists
+   
   (func $i32.printMem (param $memOff i32)
 	(call $i32.print (i32.load (local.get $memOff)))
   )
@@ -855,19 +970,20 @@
 	(local $ipos i32)
 	(local.set $strPtr (call $str.mk))
 	(local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
-	(if
-	  (local.get $curLength)  ;; at least one item
-	  (then
-		(if (call $map.is (call $i32list.get@ (local.get $lstPtr)(i32.const 0)))
-		  (return (call $map.toStr (local.get $lstPtr))))))
-	(call $str.catByte (local.get $strPtr)(global.get $LSQBRACK))
+;;	(if
+;;	  (local.get $curLength)  ;; at least one item
+;;	  (then
+;;		(if (call $map.is (call $i32list.get@ (local.get $lstPtr)(i32.const 0)))
+;;		  (return (call $map.toStr (local.get $lstPtr))))))
+	;;(call $str.catByte (local.get $strPtr)(global.get $LSQBRACK))
+	(call $str.catByte (local.get $strPtr)(i32.const 91(;[;)))
 	(local.set $ipos (i32.const 0))
 	(loop $iLoop
 	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
 		(then
 		  (local.set $strTmp (call $toStr (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))))
 		  (call $str.catStr (local.get $strPtr)(local.get $strTmp))
-		  (call $str.catByte (local.get $strPtr)(global.get $COMMA))
+		  (call $str.catByte (local.get $strPtr)(i32.const 44(;COMMA;)))
 		  (call $str.catsp (local.get $strPtr))
 	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
 	      (br $iLoop))))
@@ -875,51 +991,56 @@
 	  (then
 		(call $str.drop (local.get $strPtr))  ;; extra comma
 		(call $str.drop (local.get $strPtr))))  ;; extra final space
-	(call $str.catByte (local.get $strPtr)(global.get $RSQBRACK)) ;; right bracket
+;;	(call $str.catByte (local.get $strPtr)(global.get $RSQBRACK)) ;; right bracket
+	(call $str.catByte (local.get $strPtr)(i32.const 93(;];))) ;; right bracket
 	(local.get $strPtr)
   )
 
-  (func $day1 (export "_Day1a")
-    (local $lines i32)(local $pairs i32)(local $greaterCount i32)
-	(local $pairsLen i32)(local $pairPos i32)(local $pair i32)
-	(local $p1val i32)(local $p2val i32)
-	(local.set $lines (call $readFileSlow))
-	(local.set $pairs (call $tplwise (local.get $lines)(i32.const 2)))
-	(local.set $pairsLen (call $i32list.getCurLen (local.get $pairs)))
-	(local.set $greaterCount (i32.const 0))
-	(local.set $pairPos (i32.const 0))
-	(loop $pairLoop
-	  (local.set $pair
-		(call $i32list.get@ (local.get $pairs)(local.get $pairPos)))
-	  (local.set $p1val (call $str.toI32 (call $i32list.get@ (local.get $pair)(i32.const 0))))
-	  (local.set $p2val (call $str.toI32 (call $i32list.get@ (local.get $pair)(i32.const 1))))
-	  (if (i32.lt_u (local.get $p1val)(local.get $p2val))
-		(local.set $greaterCount (i32.add (local.get $greaterCount)(i32.const 1))))
-	  (local.set $pairPos (i32.add (local.get $pairPos)(i32.const 1)))
-	  (if (i32.lt_u (local.get $pairPos)(local.get $pairsLen))
-	    (br $pairLoop))
-	)
-	(call $printwlf (local.get $greaterCount))
+;; adventDay01main.m4
+  (func $main (export "_start")
+	(local $byte i32)(local $strPtr1 i32)(local $strPtr2 i32)(local $ctr i32)
+	(call $io.initialize)
+	(call $byte.print (i32.const 62(;>;)))
+	(local.set $strPtr1 (call $str.read))
+	(call $i32.print(local.get $strPtr1))
+	(call $str.printwlf (local.get $strPtr1))
+	(call $byte.print (i32.const 62(;>;)))
+	(local.set $strPtr2 (call $str.read))
+	(call $i32.print(local.get $strPtr2))(call $printlf)
+	(local.set $ctr (i32.const 2))
+	(call $mem.dump)
+	(call $str.catStr(local.get $strPtr1) (local.get $strPtr2))
+	(call $mem.dump)
+	(call $str.printwlf (local.get $strPtr1))
+	(call $str.catStr(local.get $strPtr1) (local.get $strPtr2))	
+	(call $mem.dump)
+	(call $str.printwlf (local.get $strPtr1))
   )
 
 ;; moduleTail.m4
    
+  (data (i32.const 100) "AAA\00") (global $gAAA i32 (i32.const 100))
   (global $gFirstTestOffset i32 (i32.const 4))
   (global $tableLength  i32 (i32.const 6))
-  (data (i32.const 100) "something wrong in $reclaimMem\00") (global $reclaimMem i32 (i32.const 100))
-  (data (i32.const 131) "Mem Reclaimed: \00") (global $gMemReclaimed: i32 (i32.const 131))
-  (data (i32.const 147) "Mem Reclamations: \00") (global $gMemReclamations: i32 (i32.const 147))
-  (data (i32.const 166) "Mem used:\00") (global $gMemUsedMsg: i32 (i32.const 166))
-  (data (i32.const 176) "Max mem used: \00") (global $gMaxUsedMsg: i32 (i32.const 176))
-  (data (i32.const 191) "curMemused:\00") (global $curMemUsed: i32 (i32.const 191))
-  (data (i32.const 203) "Type error. Expected:\00") (global $gExpectedType i32 (i32.const 203))
-  (data (i32.const 225) "ABCDEF\00") (global $gABCDEF i32 (i32.const 225))
-  (data (i32.const 232) "AAA\00") (global $gAAA i32 (i32.const 232))
-  (data (i32.const 236) "AAAZZZ\00") (global $gAAAZZZ i32 (i32.const 236))
-  (data (i32.const 243) "-2147483648\00") (global $gMaxNegAsString i32 (i32.const 243))
-  (data (i32.const 255) "ZZZ\00") (global $gZZZ i32 (i32.const 255))
+  (data (i32.const 104) "something wrong in $reclaimMem\00") (global $reclaimMem i32 (i32.const 104))
+  (data (i32.const 135) "Mem Reclaimed: \00") (global $gMemReclaimed: i32 (i32.const 135))
+  (data (i32.const 151) "Mem Reclamations: \00") (global $gMemReclamations: i32 (i32.const 151))
+  (data (i32.const 170) "Mem used:\00") (global $gMemUsedMsg: i32 (i32.const 170))
+  (data (i32.const 180) "Max mem used: \00") (global $gMaxUsedMsg: i32 (i32.const 180))
+  (data (i32.const 195) "curMemused:\00") (global $curMemUsed: i32 (i32.const 195))
+  (data (i32.const 207) "Type error. Expected:\00") (global $gExpectedType i32 (i32.const 207))
+  (data (i32.const 229) "Found:\00") (global $gFound: i32 (i32.const 229))
+  (data (i32.const 236) "Bounds Error!\00") (global $gBoundsError i32 (i32.const 236))
+  (data (i32.const 250) "ABCDEF\00") (global $gABCDEF i32 (i32.const 250))
+  (data (i32.const 257) "AAAZZZ\00") (global $gAAAZZZ i32 (i32.const 257))
+  (data (i32.const 264) "[]\00") (global $gDblBrack i32 (i32.const 264))
+  (data (i32.const 267) "[[]]\00") (global $gDblDblBrack i32 (i32.const 267))
+  (data (i32.const 272) "Unable to print:\00") (global $gUnableToPrint: i32 (i32.const 272))
+  (data (i32.const 289) "-2147483648\00") (global $gMaxNegAsString i32 (i32.const 289))
+  (data (i32.const 301) "gi32L\00") (global $gi32L i32 (i32.const 301))
+  (data (i32.const 307) "ZZZ\00") (global $gZZZ i32 (i32.const 307))
 
- (global $curMemUsed (mut i32)(i32.const 259))
- (global $maxMemUsed (mut i32)(i32.const 259))
+ (global $curMemUsed (mut i32)(i32.const 311))
+ (global $maxMemUsed (mut i32)(i32.const 311))
 ) ;; end of module
 

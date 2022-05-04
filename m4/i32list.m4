@@ -5,6 +5,7 @@
   ;; the list starts out with a maxLen of 1 (4 bytes)
   ;; which is allocated in the next i32 (20 bytes total)
   (global $i32L	  	i32	(i32.const 0x4C323369)) ;; 'i32L' type# for i32 lists
+  _gdatadef(`gi32L', `gi32L')
   (func $i32.printMem (param $memOff i32)
 	(call $i32.print (i32.load (local.get $memOff)))
   )
@@ -199,19 +200,20 @@
 	(local $ipos i32)
 	(local.set $strPtr (call $str.mk))
 	(local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
-	(if
-	  (local.get $curLength)  ;; at least one item
-	  (then
-		(if (call $map.is (call $i32list.get@ (local.get $lstPtr)(i32.const 0)))
-		  (return (call $map.toStr (local.get $lstPtr))))))
-	(call $str.catByte (local.get $strPtr)(global.get $LSQBRACK))
+;;	(if
+;;	  (local.get $curLength)  ;; at least one item
+;;	  (then
+;;		(if (call $map.is (call $i32list.get@ (local.get $lstPtr)(i32.const 0)))
+;;		  (return (call $map.toStr (local.get $lstPtr))))))
+	;;(call $str.catByte (local.get $strPtr)(global.get $LSQBRACK))
+	(call $str.catByte (local.get $strPtr)_CHAR(`['))
 	(local.set $ipos (i32.const 0))
 	(loop $iLoop
 	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
 		(then
 		  (local.set $strTmp (call $toStr (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))))
 		  (call $str.catStr (local.get $strPtr)(local.get $strTmp))
-		  (call $str.catByte (local.get $strPtr)(global.get $COMMA))
+		  (call $str.catByte (local.get $strPtr)_COMMA)
 		  (call $str.catsp (local.get $strPtr))
 	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
 	      (br $iLoop))))
@@ -219,6 +221,7 @@
 	  (then
 		(call $str.drop (local.get $strPtr))  ;; extra comma
 		(call $str.drop (local.get $strPtr))))  ;; extra final space
-	(call $str.catByte (local.get $strPtr)(global.get $RSQBRACK)) ;; right bracket
+;;	(call $str.catByte (local.get $strPtr)(global.get $RSQBRACK)) ;; right bracket
+	(call $str.catByte (local.get $strPtr)_CHAR(`]')) ;; right bracket
 	(local.get $strPtr)
   )

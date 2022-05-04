@@ -30,7 +30,7 @@
 	(call $str.setByteLen(local.get $strPtr)
 	  (i32.add (local.get $byteLen) _1))
   )
-  _gdef(`gABCDEF', `ABCDEF')
+  _gdatadef(`gABCDEF', `ABCDEF')
   (func $str.catByte.test (param $testNum i32)(result i32)
 	(local $sp i32)
 	(local $memsp i32)
@@ -72,8 +72,8 @@
 			;;(local.set $s2pos (i32.add (local.get $s2pos)(i32.const 1)))
 			(br $bloop))))		
   )
-  _gdef(`gAAA',`AAA')
-  _gdef(`gAAAZZZ',`AAAZZZ')
+  ;; already defined in defines.m4: _gdatadef(`gAAA',`AAA')
+  _gdatadef(`gAAAZZZ',`AAAZZZ')
   (func $str.catStr.test (param $testNum i32)(result i32)
     (local $AAA i32)(local $ZZZ i32)(local $aaa i32)
 	;;(call $mem.dump)
@@ -207,4 +207,59 @@
   )
   (func $strdata.printwlf (param $global i32)
     (call $printwlf (call $str.mkdata (local.get $global)))
+  )
+  (func $toStr (param $ptr i32)(result i32)
+    (local $strPtr i32)
+	(if (i32.gt_u (local.get $ptr)(global.get $gZZZ))  ;; should be 'typed' data
+	  (return (call $ptr.toStr (local.get $ptr))))
+	(if
+	  (i32.and
+		(i32.ge_u (local.get $ptr)(global.get $gAAA))
+		(i32.le_u (local.get $ptr)(global.get $gZZZ)))
+	  (return (call $str.mkdata(local.get $ptr))))    ;; should be a null-terminated string
+	(call $i32.toStr (local.get $ptr)) ;; just a number?
+  )
+  _gdatadef(`gDblBrack',`[]')
+  _gdatadef(`gDblDblBrack', `[[]]')
+  (func $toStr.test (param $testNum i32)(result i32)
+	(local $list i32)
+	(local $map i32)
+	(local.set $list (call $i32list.mk))
+	(if
+	  (i32.eqz (call $str.compare
+		(call $toStr (local.get $list))
+		(call $str.mkdata (global.get $gDblBrack))))
+	  (return (i32.const 1)))
+	(call $i32list.push (local.get $list)(call $i32list.mk))
+	(if
+	  (i32.eqz (call $str.compare
+		(call $toStr (local.get $list))
+		(call $str.mkdata (global.get $gDblDblBrack))))
+	  (return (i32.const 2)))
+;;	(local.set $map (call $i32Map.mk))
+;;	(if
+;;	  (i32.eqz (call $str.compare
+;;		(call $toStr (local.get $map))
+;;		(call $str.mkdata (global.get $gDblBrace))))
+;;	  (return (i32.const 3)))
+;;	(local.set $list (call $i32list.mk))
+;;	(call $i32list.push (local.get $list)(call $strMap.mk))
+;;	(if
+;;	  (i32.eqz (call $str.compare
+;;		(call $toStr (local.get $list))
+;;		(call $str.mkdata (global.get $gBrackedBrace))))
+;;	  (return (i32.const 4)))
+	(return (i32.const 0))
+  )
+  (func $str.catsp (param $strPtr i32)
+	(call $str.catByte (local.get $strPtr)_SP))
+  (func $str.catlf (param $strPtr i32)
+    (call $str.catByte (local.get $strPtr)_LF))
+  (func $str.drop(param $strPtr i32)
+	(if (i32.eqz (call $str.getByteLen (local.get $strPtr)))
+	  (return))
+	(call $str.setByteLen
+	  (local.get $strPtr)
+	  (i32.sub
+		(call $str.getByteLen (local.get $strPtr)) _1))
   )

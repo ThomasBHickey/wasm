@@ -70,10 +70,10 @@
 	(call $byte.print _RPAREN)
 	(call $printlf)
   )
-  _gdef(`gMemReclaimed:',`Mem Reclaimed: ')
-  _gdef(`gMemReclamations:', `Mem Reclamations: ')
-  _gdef(`gMemUsedMsg:', `Mem used:')
-  _gdef(`gMaxUsedMsg:', `Max mem used: ')
+  _gdatadef(`gMemReclaimed:',`Mem Reclaimed: ')
+  _gdatadef(`gMemReclamations:', `Mem Reclamations: ')
+  _gdatadef(`gMemUsedMsg:', `Mem used:')
+  _gdatadef(`gMaxUsedMsg:', `Max mem used: ')
   (func $showMemUsed 
 	(local $memUsedMsg i32)
 	(local $maxUsedMsg i32)
@@ -110,7 +110,7 @@
 		(br $byteLoop2)))
 	(call $printlf)
   )
-  _gdef(`curMemUsed:', `curMemused:')
+  _gdatadef(`curMemUsed:', `curMemused:')
   (func $mem.dump
     (local $memPtr i32)(local $nCols i32)(local $col i32)(local $row i32)(local $byte i32)
 	(local.set $nCols (i32.const 100))

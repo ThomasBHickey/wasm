@@ -4,6 +4,7 @@
 ;; or "wasmtime string1.wasm" if it has been compiled by
 ;; "wat2wasm --enable-bulk-memory string1.wat"
 ;; run tests: "wasmtime run xxx.wat --invoke _test"
+
 (module
   (import "wasi_unstable" "fd_read"
 	(func $fd_read (param i32 i32 i32 i32)  (result i32)))

@@ -5,7 +5,7 @@
 	(call $byte.print _CHAR(`>'))
 	(local.set $strPtr1 (call $str.read))
 	(call $i32.print(local.get $strPtr1))
-	(call $str.printwlf (local.get $strPtr1))mv 
+	(call $str.printwlf (local.get $strPtr1))
 	(call $byte.print _CHAR(`>'))
 	(local.set $strPtr2 (call $str.read))
 	(call $i32.print(local.get $strPtr2))(call $printlf)
