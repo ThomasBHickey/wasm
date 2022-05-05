@@ -145,7 +145,6 @@
 	(local.set $type (call $getTypeNum (local.get $ptr)))
 	(if (i32.eq (local.get $type)(global.get $BStr))
 	  (then
-		;;(call $str.catByte (local.get $strPtr)(global.get $DBLQUOTE))
 		(call $str.catByte (local.get $strPtr)_CHAR(`"'))
 		(call $str.catStr (local.get $strPtr)(local.get $ptr))
 		(call $str.catByte (local.get $strPtr)_CHAR(`"'))
@@ -163,6 +162,7 @@
 ;;	(if (i32.eq (local.get $type)(global.get $Map))
 ;;	  (call $str.catStr (local.get $strPtr)(call $map.toStr (local.get $ptr)))
 ;;	  (return (local.get $strPtr)))
+	(call $i32.hexprint(local.get $type))
 	(call $str.catStr (local.get $strPtr)(call $str.mkdata (global.get $gUnableToPrint:)))
 	(local.get $strPtr)
   )

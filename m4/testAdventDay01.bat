@@ -1,2 +1,2 @@
-m4 newAdvent0.m4 > newAdvent0.wat
+m4 adventDay01.m4 >adventDay01.wat
 wasmtime run adventDay01.wat --invoke _test

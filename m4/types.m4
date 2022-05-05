@@ -24,6 +24,8 @@
 	(local.get $strptr)  ;;return the new string
   )
   (func $typeNum.toStr.test (param $testNum i32)(result i32)
+    (call $str.printwlf (call $i32.toStr (global.get $i32L)))
+	(call $printwlf (global.get $gi32L))
 	(i32.eqz
 	  (call $str.compare
 		(call $typeNum.toStr (global.get $i32L)) ;; i32 value

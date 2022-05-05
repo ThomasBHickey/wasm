@@ -16,10 +16,14 @@ undivert(`2')  )')dnl
   divert(`1')  (global $gFirstTestOffset i32 (i32.const _tableLength))
 divert
   _addToTable($str.catByte.test)
+  _addToTable($toStr.test)
   _addToTable($str.catStr.test)
   _addToTable($i32list.mk.test)
   _addToTable($i32list.pop.test)
   _addToTable($i32list.push.test)
+  _addToTable($i32list.set@.test)
+  _addToTable($str.toI32.test)
+  _addToTable($typeNum.toStr.test)
   _finishTable
 divert(`1')  (global $tableLength  i32 (i32.const _tableLength))
 divert

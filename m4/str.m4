@@ -225,6 +225,7 @@
 	(local $list i32)
 	(local $map i32)
 	(local.set $list (call $i32list.mk))
+	(call $str.print (call $toStr (local.get $list)))
 	(if
 	  (i32.eqz (call $str.compare
 		(call $toStr (local.get $list))
@@ -262,4 +263,44 @@
 	  (local.get $strPtr)
 	  (i32.sub
 		(call $str.getByteLen (local.get $strPtr)) _1))
+  )
+  ;; Needs error checking!
+  (func $str.toI32 (param $strPtr i32)(result i32)
+	(local $bpos i32)
+	(local $sByteLen i32)
+	(local $retv i32)
+	(local $temp i32)
+	(local $byte i32)
+	(local.set $bpos (i32.const 0))
+	(local.set $retv (i32.const 0))
+	(local.set $sByteLen (call $str.getByteLen (local.get $strPtr)))
+	(loop $sloop
+	  (if (i32.lt_u (local.get $bpos) (local.get $sByteLen))
+		(then
+		  ;;(call $print (global.get $gFound))
+		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bpos)))
+		  ;;(call $print (local.get $byte))
+		  (if (i32.eq (local.get $byte) _SP)
+		    (then   ;; skip over blanks!
+			  (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
+			  (br $sloop)))
+			  
+		  (local.set $temp (i32.sub (local.get $byte)_CHAR(`0')))
+		  ;;(call $i32.print (local.get $temp))
+		  (local.set $retv (i32.add (local.get $temp) (i32.mul(local.get $retv)(i32.const 10))))
+		  (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
+		  (br $sloop))))
+	;;(call $i32.print (local.get $retv))
+	(local.get $retv)
+  )
+  _gnts(`g123text',`123')
+  _gnts(`gEmptyString', `')
+  (func $str.toI32.test (param $testNum i32)(result i32)
+    (if
+	  (i32.ne (i32.const 123) (call $str.toI32 (call $toStr(global.get $g123text))))
+	  (return (i32.const 1)))
+	(if
+	  (i32.ne (i32.const 0) (call $str.toI32 (call $toStr(global.get $gEmptyString))))
+	  (return (i32.const 2)))
+    (i32.const 0)
   )

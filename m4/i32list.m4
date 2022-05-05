@@ -5,7 +5,7 @@
   ;; the list starts out with a maxLen of 1 (4 bytes)
   ;; which is allocated in the next i32 (20 bytes total)
   (global $i32L	  	i32	(i32.const 0x4C323369)) ;; 'i32L' type# for i32 lists
-  _gnts(`gi32L', `gi32L')
+  _gnts(`gi32L', `i32L')
   (func $i32.printMem (param $memOff i32)
 	(call $i32.print (i32.load (local.get $memOff)))
   )
@@ -200,11 +200,12 @@
 	(local $ipos i32)
 	(local.set $strPtr (call $str.mk))
 	(local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
-;;	(if
-;;	  (local.get $curLength)  ;; at least one item
-;;	  (then
+	(if
+	  (local.get $curLength)  ;; at least one item
+	  (then
 ;;		(if (call $map.is (call $i32list.get@ (local.get $lstPtr)(i32.const 0)))
 ;;		  (return (call $map.toStr (local.get $lstPtr))))))
+	  ))
 	;;(call $str.catByte (local.get $strPtr)(global.get $LSQBRACK))
 	(call $str.catByte (local.get $strPtr)_CHAR(`['))
 	(local.set $ipos (i32.const 0))
