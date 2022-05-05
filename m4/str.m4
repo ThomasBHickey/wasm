@@ -26,7 +26,7 @@
 	  (then (call $str.extend (local.get $strPtr))))
 	(i32.store8
 	  (i32.add (local.get $byteLen)(call $str.getDataOff (local.get $strPtr)))
-	  (local.get $byte))
+	  (local.get $byte))  ;; only the low order 8 bits are used
 	(call $str.setByteLen(local.get $strPtr)
 	  (i32.add (local.get $byteLen) _1))
   )
@@ -225,7 +225,9 @@
 	(local $list i32)
 	(local $map i32)
 	(local.set $list (call $i32list.mk))
-	(call $str.print (call $toStr (local.get $list)))
+	;;_testString(`emptylist:', `empty list:')
+	;;(call $str.print (call $toStr (local.get $list)))
+	;;(return _0)
 	(if
 	  (i32.eqz (call $str.compare
 		(call $toStr (local.get $list))
@@ -277,20 +279,15 @@
 	(loop $sloop
 	  (if (i32.lt_u (local.get $bpos) (local.get $sByteLen))
 		(then
-		  ;;(call $print (global.get $gFound))
 		  (local.set $byte (call $str.getByte (local.get $strPtr)(local.get $bpos)))
-		  ;;(call $print (local.get $byte))
 		  (if (i32.eq (local.get $byte) _SP)
 		    (then   ;; skip over blanks!
 			  (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
-			  (br $sloop)))
-			  
+			  (br $sloop)))  
 		  (local.set $temp (i32.sub (local.get $byte)_CHAR(`0')))
-		  ;;(call $i32.print (local.get $temp))
 		  (local.set $retv (i32.add (local.get $temp) (i32.mul(local.get $retv)(i32.const 10))))
 		  (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
 		  (br $sloop))))
-	;;(call $i32.print (local.get $retv))
 	(local.get $retv)
   )
   _gnts(`g123text',`123')
@@ -303,4 +300,39 @@
 	  (i32.ne (i32.const 0) (call $str.toI32 (call $toStr(global.get $gEmptyString))))
 	  (return (i32.const 2)))
     (i32.const 0)
+  )
+  _gnts(`gUnableToPrint:', `Unable to print:')
+  (func $ptr.toStr (param $ptr i32)(result i32)
+    (local $type i32)
+	(local $strPtr i32)
+	(local.set $strPtr (call $str.mk))
+	(local.set $type (call $getTypeNum (local.get $ptr)))
+	;;_testString(`t1',`in $ptr.toStr')(call $printsp)
+	;;(call $str.print(call $typeNum.toStr (local.get $type)))(call $printlf)
+	(if (i32.eq (local.get $type)(global.get $BStr))
+	  (then
+		(call $str.catByte (local.get $strPtr)_CHAR(`"'))
+		(call $str.catStr (local.get $strPtr)(local.get $ptr))
+		(call $str.catByte (local.get $strPtr)_CHAR(`"'))
+		(return (local.get $strPtr))))
+	(if (i32.eq (local.get $type)(global.get $i32L))
+	 (then
+	  (call $str.catStr 
+		  (local.get $strPtr)
+		  (call $i32list.toStr (local.get $ptr)))
+	  (return (local.get $strPtr))))
+;; i64L and Map
+;;	(if (i32.eq (local.get $type)(global.get $i64L))
+;;    (then
+;;	  (call $str.catStr 
+;;		  (local.get $strPtr)
+;;		  (call $i64list.toStr (local.get $ptr)))
+;;	  (return (local.get $strPtr))))
+;;	(if (i32.eq (local.get $type)(global.get $Map))
+;;	  (call $str.catStr (local.get $strPtr)(call $map.toStr (local.get $ptr)))
+;;	  (return (local.get $strPtr)))
+	(call $i32.hexprint(local.get $type))
+	(call $str.printwlf (call $typeNum.toStr(local.get $type)))
+	(call $str.catStr (local.get $strPtr)(call $str.mkdata (global.get $gUnableToPrint:)))
+	(local.get $strPtr)
   )

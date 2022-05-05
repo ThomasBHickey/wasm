@@ -17,15 +17,15 @@
   (func $typeNum.toStr (param $typeNum i32)(result i32)
     (local $strptr i32)
 	(local.set $strptr (call $str.mk))
-    (call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 24)))
-	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 16)))
-	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 8)))
 	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 0)))
+	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 8)))
+	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 16)))
+    (call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 24)))
 	(local.get $strptr)  ;;return the new string
   )
   (func $typeNum.toStr.test (param $testNum i32)(result i32)
-    (call $str.printwlf (call $i32.toStr (global.get $i32L)))
-	(call $printwlf (global.get $gi32L))
+    ;;(call $str.printwlf (call $i32.toStr (global.get $i32L)))
+	;;(call $printwlf (global.get $gi32L))
 	(i32.eqz
 	  (call $str.compare
 		(call $typeNum.toStr (global.get $i32L)) ;; i32 value
