@@ -1,7 +1,7 @@
 ;; memory.m4
   ;;(global $memChunks i32 (i32.const 1024))
   ;;(memory (global.get $memChunks))
-  (memory 4096)
+  (memory 1024)
   (export "memory" (memory 0))
   ;;(global $memSize i32 (i32.const 1048576))  ;; 1024*1024 (currently $memSize not used)
   (global $memReclaimed (mut i32) _0)
