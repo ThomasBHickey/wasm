@@ -24,6 +24,7 @@ divert
   _addToTable($i32list.set@.test)
   _addToTable($str.toI32.test)
   _addToTable($typeNum.toStr.test)
+  _addToTable($str.Csplit.test)
   _finishTable
 divert(`1')  (global $tableLength  i32 (i32.const _tableLength))
 divert

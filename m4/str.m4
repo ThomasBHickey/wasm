@@ -336,3 +336,71 @@
 	(call $str.catStr (local.get $strPtr)(call $str.mkdata (global.get $gUnableToPrint:)))
 	(call $i32.toStr (local.get $ptr))
   )
+  (func $str.Csplit (param $toSplit i32)(param $splitC i32)(result i32)
+	;; pass string, char, return list of strings split on char
+	;; Not UTF-8 safe (split character needs to be a single byte long
+	;; and needs a test for that!
+	;; 2021.12.11 Multiple break characters in a row are collapsed
+	(local $splitList i32) (local $strCum i32) (local $bpos i32)(local $inSplit i32)
+	(local $byte i32) (local $strLen i32)
+	(local.set $splitList (call $i32list.mk))
+	(local.set $strCum (call $str.mk)) ;; accumulates chars
+	(local.set $bpos (i32.const 0))
+	(local.set $strLen (call $str.getByteLen (local.get $toSplit)))
+	(local.set $inSplit (i32.const 0))  ;; last character was not the split char
+	(loop $bloop
+	  (if (i32.lt_u (local.get $bpos)(local.get $strLen))
+	    (then
+		  (local.set $byte (call $str.getByte (local.get $toSplit)(local.get $bpos)))
+		  (if (i32.ne (local.get $byte)(local.get $splitC))
+		    (then
+			  (call $str.catByte (local.get $strCum)(local.get $byte))
+			)
+			(else ;; break char
+			  (if (call $str.getByteLen (local.get $strCum))
+				(then
+				  (call $i32list.push (local.get $splitList)(local.get $strCum))
+				  (local.set $strCum (call $str.mk))
+				)
+			  )
+			)
+		  )
+		  (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
+		  (br $bloop)
+		)
+	  )
+	)
+	(if (call $str.getByteLen (local.get $strCum))
+	  (call $i32list.push (local.get $splitList)(local.get $strCum)))
+	(local.get $splitList)
+  )
+  _gnts(`gAbCDbE',`AbCDbE')
+  _gnts(`gAbCDbbE',`AbCDbbE')
+  (func $str.Csplit.test (param $testNum i32)(result i32)
+	;; The split character is not part of the split pieces
+	(local $AbCDbE i32)(local $AbCDbbE i32)(local $listPtr i32)(local $strptr0 i32)
+	(local.set $AbCDbE (call $str.mkdata (global.get $gAbCDbE)))
+	(local.set $AbCDbbE (call $str.mkdata (global.get $gAbCDbbE)))
+	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 98)))  ;; 'b'
+	;;(call $printwlf (local.get $listPtr))
+	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 3))
+	  (return (i32.const 1)))
+	  ;;(call $print (local.get $listPtr)))
+	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 69)))  ;; 'E'
+	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 1))
+	  (return (i32.const 2)))
+	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 122)))  ;; 'z'
+	(local.set $strptr0 (call $i32list.get@ (local.get $listPtr)(i32.const 0)))
+	(if (i32.eqz 
+		  (call $str.compare
+			(call $i32list.get@ (local.get $listPtr)(i32.const 0))
+			(local.get $AbCDbE)))
+	  (return (i32.const 3)))
+	(local.set $listPtr (call $str.Csplit (local.get $AbCDbbE)(i32.const 98))) ;; split on'b'
+	;; test to make sure multiple split characters are treated as a single split
+	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 3))
+	  (return (i32.const 4))
+	  ;;(call $printwlf (local.get $listPtr))
+	  )
+	(i32.const 0) ;; success
+  )
