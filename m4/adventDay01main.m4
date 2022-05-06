@@ -53,7 +53,5 @@
 	  (if (i32.lt_u (local.get $pairPos)(local.get $pairsLen))
 	    (br $pairLoop))
 	)
-	_testString(`done',`all done')
 	(call $i32.print (local.get $greaterCount))(call $printlf)
-	(call $printwlf (local.get $greaterCount))
   )
