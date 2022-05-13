@@ -214,7 +214,7 @@
 		(then
 		  (local.set $strTmp (call $toStr (call $i32list.get@ (local.get $lstPtr)(local.get $ipos))))
 		  (call $str.catStr (local.get $strPtr)(local.get $strTmp))
-		  (call $str.catByte (local.get $strPtr)_COMMA)
+		  (call $str.catByte (local.get $strPtr) _COMMA)
 		  (call $str.catsp (local.get $strPtr))
 	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
 	      (br $iLoop))))

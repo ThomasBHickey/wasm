@@ -321,13 +321,12 @@
 		  (local.get $strPtr)
 		  (call $i32list.toStr (local.get $ptr)))
 	  (return (local.get $strPtr))))
-;; i64L and Map
-;;	(if (i32.eq (local.get $type)(global.get $i64L))
-;;    (then
-;;	  (call $str.catStr 
-;;		  (local.get $strPtr)
-;;		  (call $i64list.toStr (local.get $ptr)))
-;;	  (return (local.get $strPtr))))
+	(if (i32.eq (local.get $type)(global.get $i64L))
+    (then
+	  (call $str.catStr 
+		  (local.get $strPtr)
+		  (call $i64list.toStr (local.get $ptr)))
+	  (return (local.get $strPtr))))
 ;;	(if (i32.eq (local.get $type)(global.get $Map))
 ;;	  (call $str.catStr (local.get $strPtr)(call $map.toStr (local.get $ptr)))
 ;;	  (return (local.get $strPtr)))
