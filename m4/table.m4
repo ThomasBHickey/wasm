@@ -9,9 +9,13 @@ define(`_finishTable',`(table _tableLength funcref)
   (elem (i32.const 0)
 undivert(`2')  )')dnl
 
+  (global $strCompareOffset i32 (i32.const _tableLength))
   _addToTable($str.compare)
+  (global $strToStrOffset	i32 (i32.const _tableLength))
   _addToTable($str.toStr)
+  (global $i32CompareOffset i32 (i32.const _tableLength))
   _addToTable($i32.compare)
+  (global $i32ToStrOffset	i32 (i32.const _tableLength))
   _addToTable($i32.toStr)
   divert(`1')  (global $gFirstTestOffset i32 (i32.const _tableLength))
 divert
@@ -27,6 +31,7 @@ divert
   _addToTable($str.Csplit.test)
   _addToTable($i64list.mk.test)
   _addToTable($i64list.push.test)
+  _addToTable($map.test)
   _finishTable
 divert(`1')  (global $tableLength  i32 (i32.const _tableLength))
 divert
