@@ -289,6 +289,38 @@
 	(call $str.setDataOff(local.get $strPtr)(local.get $newDataOff))
 	(memory.copy (local.get $newDataOff)(local.get $dataOff)(local.get $curLen))
   )
+  (func $str.find (param $string i32)(param $pat i32)(result i32)
+    ;; returns position where found, otherwise -1
+	(local $cpos i32)(local $lastPos i32)
+	(local.set $lastPos (i32.sub (call $str.getByteLen (local.get $string))
+								(call $str.getByteLen(local.get $pat))))
+	(local.set $cpos (i32.const 0))
+	(loop $cloop
+	  (if (i32.le_s (local.get $cpos) (local.get $lastPos))
+		(then
+		  (if (call $str.startsAt (local.get $string)(local.get $pat)(local.get $cpos))
+			(then (local.get $cpos) return))
+		  (local.set $cpos (i32.add (local.get $cpos) (i32.const 1)))
+		  (br $cloop))))
+	(i32.const -1)
+  )
+  _gnts(`gaaa',`aaa')
+  (func $str.find.test (param $testNum i32) (result i32)
+	(local $AAAZZZ i32)(local $AAA i32)(local $ZZZ i32)(local $aaa i32)
+	(local.set $AAAZZZ 	(call $str.mkdata (global.get $gAAAZZZ)))
+	(local.set $AAA 	(call $str.mkdata (global.get $gAAA)))
+	(local.set $ZZZ		(call $str.mkdata (global.get $gZZZ)))
+	(local.set $aaa		(call $str.mkdata (global.get $gaaa)))
+	(if (i32.ne (i32.const 0) (call $str.find (local.get $AAAZZZ)(local.get $AAA)))
+		(return (i32.const 1)))
+	(if (i32.ne (i32.const 3) (call $str.find (local.get $AAAZZZ)(local.get $ZZZ)))
+		(return (i32.const 2)))
+	(if (i32.ne (i32.const -1) (call $str.find (local.get $AAAZZZ)(local.get $aaa)))
+		(return (i32.const 3)))
+	(if (i32.ne (i32.const -1) (call $str.find (local.get $AAA)(local.get $AAAZZZ)))
+		(return (i32.const 4)))
+	(i32.const 0)
+  )
  (func $str.getByteLen (param $strPtr i32)(result i32)
 	(i32.load (i32.add (local.get $strPtr) _4))
   )
@@ -355,6 +387,55 @@
 		(call $str.compare (local.get $aaa)(local.get $first))
 		(call $str.compare (local.get $zzz)(local.get $last))))
   )
+  (func $str.mkslice (param $strptr i32)(param $offset i32)(param $length i32)(result i32)
+	;; Not UTF-8 safe
+	(local $slice i32) 	  ;; to be returned
+	(local $bpos i32)	  ;; byte pointer to copy data
+	(local $lastbpos i32) ;; don't go past this offset
+	(local.set $slice (call $str.mk))
+	(local.set $bpos (local.get $offset))
+	(local.set $lastbpos (i32.add (local.get $offset)(local.get $length)))
+	(loop $bLoop
+	  (if (i32.lt_u (local.get $bpos)(local.get $lastbpos))
+		(then
+		  ;; (call $i32.printwsp (local.get $bpos))
+		  ;; (call $C.print (call $str.getByte (local.get $strptr)(local.get $bpos)))
+		  (call $str.catByte
+			(local.get $slice)
+			(call $str.getByte
+			  (local.get $strptr)
+			  (local.get $bpos)
+			))
+		  (local.set $bpos (i32.add (i32.const 1)(local.get $bpos)))
+		  (br $bLoop)
+		)))
+	(local.get $slice)
+  )
+  (func $str.mkslice.test (param $testNum i32)(result i32)
+	(local $AAAZZZ i32)(local $AAA i32)(local $ZZZ i32)
+	(local $slice i32)
+	(local.set $AAAZZZ (call $str.mkdata (global.get $gAAAZZZ)))
+	(local.set $AAA (call $str.mkdata (global.get $gAAA)))
+	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
+	(local.set $slice
+	  (call $str.mkslice
+		(local.get $AAAZZZ)
+		(i32.const 0)
+		(i32.const 3)))
+	(if (i32.eqz
+		  (call $str.compare (local.get $AAA)(local.get $slice)))
+	  (then
+		(return (i32.const 1))))
+	(local.set $slice
+	  (call $str.mkslice
+		(local.get $AAAZZZ)
+		(i32.const 3)
+		(i32.const 3)))
+	(if (i32.eqz
+		  (call $str.compare (local.get $ZZZ)(local.get $slice)))
+	  (return (i32.const 2)))
+	(return (i32.const 0))
+  )
   (func $str.print (param $strPtr i32)
 	(local $curLength i32)
 	(local $dataOffset i32)  ;; offset to string data
@@ -373,6 +454,56 @@
   (func $str.printwlf (param $strPtr i32)
 	(call $str.print (local.get $strPtr))
 	(call $printlf)
+  )
+  (func $str.startsAt (param $str i32)(param $pat i32)(param $startPos i32)(result i32)
+	(local $patLen i32)(local $patPos i32)(local $cPos i32)
+	(local.set $patLen (call $str.getByteLen(local.get $pat)))
+	(if (i32.gt_u (i32.add (local.get $patLen)(local.get $startPos))
+					(call $str.getByteLen (local.get $str)))
+		(then (return (i32.const 0))))
+	(local.set $patPos (i32.const 0))
+	(local.set $cPos (local.get $startPos))
+	(loop $cloop
+	  (if (i32.lt_u (local.get $patPos)(local.get $patLen))
+		(then
+		  (if (i32.eq (call $str.getByte (local.get $pat)(local.get $patPos))
+						(call $str.getByte (local.get $str)(local.get $cPos)))
+			(then
+			  (local.set $patPos (i32.add (i32.const 1)(local.get $patPos)))
+			  (local.set $cPos   (i32.add (i32.const 1)(local.get $cPos)))
+			  (br $cloop))))))
+	(i32.eq (local.get $patPos)(local.get $patLen))  ;; matched whole pat?
+  )
+  (func $str.stripLeading (param $strPtr i32)(param $charToStrip i32)(result i32)
+	;; Return a new string without any leading $charToStrip's
+	(local $spos i32)(local $curLen i32)(local $stripped i32)
+	(local.set $spos (i32.const 0))
+	(loop $strip ;; $str.getByte returns Null if $spos goes out of bounds
+		(if (i32.eq (local.get $charToStrip)
+			(call $str.getByte (local.get $strPtr)(local.get $spos)))
+		  (then
+			(local.set $spos (i32.add (local.get $spos)(i32.const 1)))
+			(br $strip)
+		  )))
+	(local.set $curLen (call $str.getByteLen(local.get $strPtr)))
+	(local.set $stripped (call $str.mk))
+	(loop $copy
+		(if (i32.lt_u (local.get $spos)(local.get $curLen))
+		  (then
+		    (call $str.catByte (local.get $stripped)
+				(call $str.getByte(local.get $strPtr)(local.get $spos)))
+			(local.set $spos (i32.add (local.get $spos)(i32.const 1)))
+			(br $copy))))
+	(local.get $stripped)
+  )
+  (func $str.stripLeading.test (param $testNum i32) (result i32)
+	(local $strAAAZZZ i32)(local $strZZZ i32)
+	(local.set $strAAAZZZ (call $str.mkdata (global.get $gAAAZZZ)))
+	(local.set $strZZZ (call $str.mkdata (global.get $gZZZ)))
+	(i32.eqz
+	  (call $str.compare
+		(local.get $strZZZ)
+		(call $str.stripLeading (local.get $strAAAZZZ) (i32.const 65))))
   )
   (func $str.toStr (param $strPtr i32)(result i32)
 	;; This is used by map routines to dump a key that is a string
@@ -451,6 +582,21 @@
 	  (local.get $strPtr)
 	  (i32.sub
 		(call $str.getByteLen (local.get $strPtr)) _1))
+  )
+  (func $str.drop.test (param $testNum i32)(result i32)
+    (local $strptr i32)
+	(local.set $strptr (call $str.mk))
+	(call $str.catByte (local.get $strptr)(i32.const 65))
+	(call $str.catByte (local.get $strptr)(i32.const 66))
+	(if (i32.ne (call $str.getLastByte(local.get $strptr))(i32.const 66))
+	  (return (i32.const 1)))
+	(call $str.drop(local.get $strptr))
+	(if (i32.ne (call $str.getLastByte(local.get $strptr))(i32.const 65))
+	  (return (i32.const 2)))
+	(call $str.drop (local.get $strptr))
+	(if (i32.eqz (call $str.getByteLen (local.get $strptr)))
+	  (return (i32.const 0)))  ;; OK
+	(return (i32.const 3))	
   )
   ;; Needs error checking!
   (func $str.toI32 (param $strPtr i32)(result i32)
