@@ -29,25 +29,32 @@
      (global $i32CompareOffset i32 (i32.const 2))
      (global $i32ToStrOffset	i32 (i32.const 3))
      
-                                         (table 17 funcref)
+                                                              (table 24 funcref)
   (elem (i32.const 0)
     (;0;) $str.compare
     (;1;) $str.toStr
     (;2;) $i32.compare
     (;3;) $i32.toStr
-    (;4;) $str.catByte.test
-    (;5;) $toStr.test
-    (;6;) $str.catStr.test
-    (;7;) $i32list.mk.test
-    (;8;) $i32list.pop.test
-    (;9;) $i32list.push.test
-    (;10;) $i32list.set@.test
-    (;11;) $str.toI32.test
-    (;12;) $typeNum.toStr.test
+    (;4;) $i32list.mk.test
+    (;5;) $i32list.pop.test
+    (;6;) $i32list.push.test
+    (;7;) $i32list.set@.test
+    (;8;) $toStr.test
+    (;9;) $str.catByte.test
+    (;10;) $str.catChar.test
+    (;11;) $str.catStr.test
+    (;12;) $str.cat2Strings.test
     (;13;) $str.Csplit.test
-    (;14;) $i64list.mk.test
-    (;15;) $i64list.push.test
-    (;16;) $map.test
+    (;14;) $str.getByte.test
+    (;15;) $str.compare.test
+    (;16;) $str.mkdata.test
+    (;17;) $str.Rev.test
+    (;18;) $str.toI32.test
+    (;19;) $typeNum.toStr.test
+    (;20;) $str.Csplit.test
+    (;21;) $i64list.mk.test
+    (;22;) $i64list.push.test
+    (;23;) $map.test
   )
 
   (func $test (export "_test")
@@ -393,6 +400,151 @@
 		(local.get $aaa) 
 		(call $str.mkdata (global.get $gAAAZZZ))))
   )
+  (func $str.cat2Strings (param $s1Ptr i32)(param $s2Ptr i32)(result i32)
+    ;; Returns a new string with the result
+	(local $bpos i32)
+	(local $s1+2Ptr i32)
+	(local $byteLen1 i32)
+	(local $byteLen2 i32)
+	(local.set $s1+2Ptr (call $str.mk))
+	(local.set $byteLen1 (call $str.getByteLen (local.get $s1Ptr)))
+	(local.set $byteLen2 (call $str.getByteLen (local.get $s2Ptr)))
+	(local.set $bpos (i32.const 0))
+	(loop $bloop1
+	  (if (i32.lt_u (local.get $bpos)(local.get $byteLen1))
+		(then
+		  (call $str.catByte (local.get $s1+2Ptr)
+			(call $str.getByte (local.get $s1Ptr)(local.get $bpos)))
+		  (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
+		  (br $bloop1))))
+	(local.set $bpos (i32.const 0))
+	(loop $bloop2
+	  (if (i32.lt_u (local.get $bpos)(local.get $byteLen2))
+		(then
+		  (call $str.catByte (local.get $s1+2Ptr)
+			(call $str.getByte (local.get $s2Ptr)(local.get $bpos)))
+		  (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
+		  (br $bloop2))))
+	(local.get $s1+2Ptr)
+  )
+  (func $str.cat2Strings.test (param $testNum i32)(result i32)
+    (local $AAA i32)(local $ZZZ i32)(local $AAAZZZ i32)
+	(local.set $AAA (call $str.mkdata (global.get $gAAA)))
+	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
+	(local.set $AAAZZZ (call $str.cat2Strings(local.get $AAA)(local.get $ZZZ)))
+	;; New string!
+	(i32.eqz 
+	  (call $str.compare (local.get $AAAZZZ)
+	  (call $str.mkdata (global.get $gAAAZZZ))))
+  )
+  ;; NOT UTF-8 FRIENDLY!!
+  (func $str.Rev (param $strPtr i32)(result i32)
+	;; Returns a pointer to a new string with reversed characters
+	(local $cpos i32)(local $curLen i32)(local $revStrPtr i32)(local $curChar i32)
+	(local.set $revStrPtr (call $str.mk))
+	(local.set $cpos (i32.const 0))
+	(local.set $curLen (call $str.getByteLen(local.get $strPtr)))
+	(loop $cloop
+	  (if (i32.lt_u (local.get $cpos)(local.get $curLen))
+		(then
+			(local.set $curChar
+			  (call $str.getByte (local.get $strPtr)(local.get $cpos)))
+			(call $str.LcatChar (local.get $revStrPtr)(local.get $curChar))
+			(local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
+		)
+	  )
+	  (br_if $cloop (i32.lt_u (local.get $cpos)(local.get $curLen)))
+	)
+	(local.get $revStrPtr)
+  )
+   
+  (func $str.Rev.test (param $testNum i32)(result i32)
+	(local $abc i32)(local $abc.rev i32)(local $cba i32)
+	(local.set $abc (call $str.mkdata (global.get $gABCDEF)))
+	(local.set $abc.rev (call $str.Rev (local.get $abc)))
+	(local.set $cba (call $str.mkdata (global.get $gFEDCBA)))
+	(i32.eqz
+	  (call $str.compare
+		(local.get $abc.rev)
+		(local.get $cba)))
+  )
+  (func $str.getByte (param $strPtr i32) (param $bytePos i32)(result i32)
+    ;; how to show an error beyond returning null?
+	(if (result i32)
+	  (i32.lt_u (local.get $bytePos)(call $str.getByteLen (local.get $strPtr)))
+	  (then
+		(i32.load8_u (i32.add (call $str.getDataOff
+		  (local.get $strPtr))(local.get $bytePos)))
+	  )
+	  (else (i32.const 0))
+	)
+  )
+  (func $str.getByte.test (param $testNum i32)(result i32)
+    (local $ts i32)(local $lastCharPos i32)
+	(local.set $ts (call $str.mkdata (global.get $gABCDEF)))
+	(local.set $lastCharPos
+		(i32.sub (call $str.getByteLen (local.get $ts))(i32.const 1)))
+	(if (i32.ne (call $str.getByte (local.get $ts)(i32.const 0))
+				(i32.const 65)) ;; 'A'
+		(return (i32.const 1)))
+	(if (i32.ne (call $str.getByte (local.get $ts)(local.get $lastCharPos))
+				(i32.const 70)) ;; 'F'
+		(return (i32.const 1)))
+	(i32.const 0)  ;; success
+  )
+  (func $str.getLastByte (param $strPtr i32)(result i32)
+	(if (i32.eqz (call $str.getByteLen (local.get $strPtr)))
+	  (return (i32.const 0)))
+	(call $str.getByte
+	  (local.get $strPtr)
+	  (i32.sub (call $str.getByteLen (local.get $strPtr))(i32.const 1)))
+  )
+  (func $str.getLastByte.test (param $testNum i32)(result i32)
+	(local $strPtr i32)
+	(local.set $strPtr (call $str.mk))
+	(if (call $str.getLastByte (local.get $strPtr))
+	  (return (i32.const 1)))  ;; should have been zero
+	(local.set $strPtr (call $str.mkdata (global.get $gABCDEF)))
+	(if
+	  (i32.ne
+		(call $str.getLastByte (local.get $strPtr))
+		(i32.const 70)) ;; F
+	  (return (i32.const 2))  ;; failure
+	)
+	(i32.const 0) ;; Success
+  )
+  (func $str.catChar (param $strPtr i32)(param $C i32)
+    (local $byte i32)
+	(if (i32.eqz (local.get $C))  ;; handle null
+	  (return (call $str.catByte (local.get $strPtr) (i32.const 0))))
+	(loop $byteLoop
+	  (local.set $byte ;;assigned to high order byte in $C
+		(i32.shr_u
+		  (i32.and
+			(i32.const 0xFF000000)  ;; mask and shift right
+			  (local.get $C))
+		  (i32.const 24)))
+	  (if (local.get $byte)  ;; ignore leading null's
+		(call $str.catByte (local.get $strPtr)(local.get $byte)))
+		(local.set $C (i32.shl (local.get $C)(i32.const 8)))  ;; move to next byte
+	  (if (local.get $C)  ;; More?
+	   (br $byteLoop)))
+  )
+  (global $UTF8-1 i32 (i32.const 0x24))		;; U+0024	Dollar sign
+  (global $UTF8-2 i32 (i32.const 0xC2A2))		;; U+00A2	Cent sign
+  (global $UTF8-3 i32 (i32.const 0xE0A4B9))	;; U+0939	Devanagari Letter Ha
+  (global $UTF8-4 i32 (i32.const 0xF0908D88))	;; U+10348	Gothic Letter Hwair
+  (func $str.catChar.test (param $testNum i32)(result i32)
+	(local $strPtr i32)
+	(local.set $strPtr (call $str.mk))
+	(call $str.catChar (local.get $strPtr) (global.get $UTF8-1))
+	(call $str.catChar (local.get $strPtr) (global.get $UTF8-2))
+	(call $str.catChar (local.get $strPtr) (global.get $UTF8-3))
+	(call $str.catChar (local.get $strPtr) (global.get $UTF8-4))
+	(if (i32.ne (call $str.getByteLen (local.get $strPtr))(i32.const 10))
+	  (return (i32.const 1)))
+	(i32.const 0)
+  )
   (func $str.compare (type $keyCompSig)
 	(local $s1ptr i32)(local $s2ptr i32)
 	(local $s2len i32)(local $cpos i32)
@@ -415,6 +567,23 @@
 		)))
 	(i32.const 1)  ;; Success
   )
+  (func $str.compare.test (param $testNum i32)(result i32)
+	(local $spAAA i32)(local $spAAA2 i32) (local $spZZZ i32)
+	(local.set $spAAA (call $str.mkdata (global.get $gAAA)))
+	(local.set $spAAA2 (call $str.mk))
+	;;(call $print (local.get $testNum))(call $printwlf (global.get $gFloop))
+	(call $str.catByte (local.get $spAAA2)(i32.const 65))
+	(call $str.catByte (local.get $spAAA2)(i32.const 65))
+	(call $str.catByte (local.get $spAAA2)(i32.const 65))
+	(local.set $spZZZ (call $str.mkdata (global.get $gZZZ)))
+	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA)))
+		(return (i32.const 1)))  ;; same string, should have matched
+	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA2)))
+		(return (i32.const 2)))  ;; same contents, should have matched
+	(if (call $str.compare (local.get $spAAA)(local.get $spZZZ))
+		(return (i32.const 3)))  ;; should not have matched!
+	(i32.const 0) ;; success
+  )
   (func $str.extend(param $strPtr i32)
 	;; double the space available for characters
 	;; move old data into new data
@@ -433,18 +602,7 @@
 	(call $str.setDataOff(local.get $strPtr)(local.get $newDataOff))
 	(memory.copy (local.get $newDataOff)(local.get $dataOff)(local.get $curLen))
   )
-  (func $str.getByte (param $strPtr i32) (param $bytePos i32)(result i32)
-    ;; how to show an error beyond returning null?
-	(if (result i32)
-	  (i32.lt_u (local.get $bytePos)(call $str.getByteLen (local.get $strPtr)))
-	  (then
-		(i32.load8_u (i32.add (call $str.getDataOff
-		  (local.get $strPtr))(local.get $bytePos)))
-	  )
-	  (else (i32.const 0))
-	)
-  )
-  (func $str.getByteLen (param $strPtr i32)(result i32)
+ (func $str.getByteLen (param $strPtr i32)(result i32)
 	(i32.load (i32.add (local.get $strPtr) (i32.const 4)))
   )
   (func $str.setByteLen(param $strPtr i32)(param $newLen i32)
@@ -462,6 +620,23 @@
   (func $str.setDataOff (param $strPtr i32)(param $newDataOff i32)
     (i32.store (i32.add(local.get $strPtr)(i32.const 12))(local.get $newDataOff))
   )
+  (func $str.LcatChar (param $strPtr i32)(param $Lchar i32)
+	;; Add a character to beginning of a string
+	;; Not multibyte character safe
+	(local $cpos i32)(local $dataOff i32)(local $curC i32)
+	;; first make room for the new character
+	;; tack it on at the end (it will get overwritten)
+	(local.set $cpos (call $str.getByteLen (local.get $strPtr)))
+	(call $str.catByte (local.get $strPtr)(local.get $Lchar))
+	(local.set $dataOff (call $str.getDataOff (local.get $strPtr)))
+	(loop $cloop
+		(i32.store8 (i32.add (local.get $dataOff)(local.get $cpos))
+			(i32.load8_u (i32.sub (i32.add (local.get $dataOff)(local.get $cpos))(i32.const 1))))
+		(local.set $cpos (i32.sub (local.get $cpos)(i32.const 1)))
+		(br_if $cloop (i32.gt_s (local.get $cpos)(i32.const 0)))
+	)
+	(i32.store8 (local.get $dataOff)(local.get $Lchar))
+  )
   (func $str.mkdata (param $dataOffset i32) (result i32)
 	(local $curByte i32)(local $strPtr i32)
 	(local.set $strPtr (call $str.mk))
@@ -474,6 +649,24 @@
 		  (br $bLoop)))
 	)
 	(local.get $strPtr)
+  )
+  (func $str.mkdata.test (param $testNum i32)(result i32)
+	;; see if first or last data stings have gotten stomped on
+	(local $aaa i32)(local $zzz i32)(local $first i32)(local $last i32)
+	(local.set $first (call $str.mkdata (global.get $gAAA)))
+	(local.set $last (call $str.mkdata (global.get $gZZZ)))
+	(local.set $aaa (call $str.mk))
+	(call $str.catByte(local.get $aaa) (i32.const 65))
+	(call $str.catByte(local.get $aaa) (i32.const 65))
+	(call $str.catByte(local.get $aaa) (i32.const 65))
+	(local.set $zzz (call $str.mk))
+	(call $str.catByte(local.get $zzz) (i32.const 90))
+	(call $str.catByte(local.get $zzz) (i32.const 90))
+	(call $str.catByte(local.get $zzz) (i32.const 90))
+	(i32.eqz
+	  (i32.and
+		(call $str.compare (local.get $aaa)(local.get $first))
+		(call $str.compare (local.get $zzz)(local.get $last))))
   )
   (func $str.print (param $strPtr i32)
 	(local $curLength i32)
@@ -1470,8 +1663,6 @@
 	  (call $i32list.get@ (local.get $map) (global.get $keyPrintOff)))
 	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
 	(local.set $mapPos (i32.const 0))
-	;;(call $str.catlf (local.get $strPtr))
-	;;(call $str.catByte (local.get $strPtr)(global.get $LBRACE))
 	(call $str.catByte (local.get $strPtr)(i32.const 123(;{;)))
 	(loop $mLoop
 	  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
@@ -1496,7 +1687,6 @@
 			  (call $str.catByte (local.get $strPtr) (i32.const 44(;COMMA;)))
 			  (call $str.catsp (local.get $strPtr))))
 		  (br $mLoop))))
-	;;(call $str.catByte (local.get $strPtr)(global.get $RBRACE))
 	(call $str.catByte (local.get $strPtr)(i32.const 125(;};)))
 	(local.get $strPtr)
   )
@@ -1531,7 +1721,6 @@
 		(call $map.get (local.get $imap)(i32.const 3))
 		(i32.const 45))
 	  (return (i32.const 4)))	;; error #4
-	;;(call $map.dump (local.get $imap))
 	;; create a map with strings as the keys
 	(local.set $smap (call $strMap.mk))
 	;; set $smap 'AAA' -> 42 and test it
@@ -1578,7 +1767,7 @@
    
   (data (i32.const 100) "AAA\00") (global $gAAA i32 (i32.const 100))
   (global $gFirstTestOffset i32 (i32.const 4))
-  (global $tableLength  i32 (i32.const 17))
+  (global $tableLength  i32 (i32.const 24))
   (data (i32.const 104) "something wrong in $reclaimMem\00") (global $reclaimMem i32 (i32.const 104))
   (data (i32.const 135) "Mem Reclaimed: \00") (global $gMemReclaimed: i32 (i32.const 135))
   (data (i32.const 151) "Mem Reclamations: \00") (global $gMemReclamations: i32 (i32.const 151))
@@ -1590,21 +1779,22 @@
   (data (i32.const 236) "Bounds Error!\00") (global $gBoundsError i32 (i32.const 236))
   (data (i32.const 250) "ABCDEF\00") (global $gABCDEF i32 (i32.const 250))
   (data (i32.const 257) "AAAZZZ\00") (global $gAAAZZZ i32 (i32.const 257))
-  (data (i32.const 264) "[]\00") (global $gDblBrack i32 (i32.const 264))
-  (data (i32.const 267) "[[]]\00") (global $gDblDblBrack i32 (i32.const 267))
-  (data (i32.const 272) "123\00") (global $g123text i32 (i32.const 272))
-  (data (i32.const 276) "\00") (global $gEmptyString i32 (i32.const 276))
-  (data (i32.const 277) "Unable to print:\00") (global $gUnableToPrint: i32 (i32.const 277))
-  (data (i32.const 294) "AbCDbE\00") (global $gAbCDbE i32 (i32.const 294))
-  (data (i32.const 301) "AbCDbbE\00") (global $gAbCDbbE i32 (i32.const 301))
-  (data (i32.const 309) "-2147483648\00") (global $gMaxNegAsString i32 (i32.const 309))
-  (data (i32.const 321) "i32L\00") (global $gi32L i32 (i32.const 321))
-  (data (i32.const 326) "i64L\00") (global $gi64L i32 (i32.const 326))
-  (data (i32.const 331) "-9,223,372,036,854,775,808\00") (global $gMaxNeg64AsString i32 (i32.const 331))
-  (data (i32.const 334) "map\00") (global $gmap i32 (i32.const 334))
-  (data (i32.const 338) "ZZZ\00") (global $gZZZ i32 (i32.const 338))
+  (data (i32.const 264) "FEDCBA\00") (global $gFEDCBA i32 (i32.const 264))
+  (data (i32.const 271) "[]\00") (global $gDblBrack i32 (i32.const 271))
+  (data (i32.const 274) "[[]]\00") (global $gDblDblBrack i32 (i32.const 274))
+  (data (i32.const 279) "123\00") (global $g123text i32 (i32.const 279))
+  (data (i32.const 283) "\00") (global $gEmptyString i32 (i32.const 283))
+  (data (i32.const 284) "Unable to print:\00") (global $gUnableToPrint: i32 (i32.const 284))
+  (data (i32.const 301) "AbCDbE\00") (global $gAbCDbE i32 (i32.const 301))
+  (data (i32.const 308) "AbCDbbE\00") (global $gAbCDbbE i32 (i32.const 308))
+  (data (i32.const 316) "-2147483648\00") (global $gMaxNegAsString i32 (i32.const 316))
+  (data (i32.const 328) "i32L\00") (global $gi32L i32 (i32.const 328))
+  (data (i32.const 333) "i64L\00") (global $gi64L i32 (i32.const 333))
+  (data (i32.const 338) "-9,223,372,036,854,775,808\00") (global $gMaxNeg64AsString i32 (i32.const 338))
+  (data (i32.const 341) "map\00") (global $gmap i32 (i32.const 341))
+  (data (i32.const 345) "ZZZ\00") (global $gZZZ i32 (i32.const 345))
 
- (global $curMemUsed (mut i32)(i32.const 342))
- (global $maxMemUsed (mut i32)(i32.const 342))
+ (global $curMemUsed (mut i32)(i32.const 349))
+ (global $maxMemUsed (mut i32)(i32.const 349))
 ) ;; end of module
 

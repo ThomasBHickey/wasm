@@ -87,6 +87,151 @@
 		(local.get $aaa) 
 		(call $str.mkdata (global.get $gAAAZZZ))))
   )
+  (func $str.cat2Strings (param $s1Ptr i32)(param $s2Ptr i32)(result i32)
+    ;; Returns a new string with the result
+	(local $bpos i32)
+	(local $s1+2Ptr i32)
+	(local $byteLen1 i32)
+	(local $byteLen2 i32)
+	(local.set $s1+2Ptr (call $str.mk))
+	(local.set $byteLen1 (call $str.getByteLen (local.get $s1Ptr)))
+	(local.set $byteLen2 (call $str.getByteLen (local.get $s2Ptr)))
+	(local.set $bpos (i32.const 0))
+	(loop $bloop1
+	  (if (i32.lt_u (local.get $bpos)(local.get $byteLen1))
+		(then
+		  (call $str.catByte (local.get $s1+2Ptr)
+			(call $str.getByte (local.get $s1Ptr)(local.get $bpos)))
+		  (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
+		  (br $bloop1))))
+	(local.set $bpos (i32.const 0))
+	(loop $bloop2
+	  (if (i32.lt_u (local.get $bpos)(local.get $byteLen2))
+		(then
+		  (call $str.catByte (local.get $s1+2Ptr)
+			(call $str.getByte (local.get $s2Ptr)(local.get $bpos)))
+		  (local.set $bpos (i32.add (local.get $bpos)(i32.const 1)))
+		  (br $bloop2))))
+	(local.get $s1+2Ptr)
+  )
+  (func $str.cat2Strings.test (param $testNum i32)(result i32)
+    (local $AAA i32)(local $ZZZ i32)(local $AAAZZZ i32)
+	(local.set $AAA (call $str.mkdata (global.get $gAAA)))
+	(local.set $ZZZ (call $str.mkdata (global.get $gZZZ)))
+	(local.set $AAAZZZ (call $str.cat2Strings(local.get $AAA)(local.get $ZZZ)))
+	;; New string!
+	(i32.eqz 
+	  (call $str.compare (local.get $AAAZZZ)
+	  (call $str.mkdata (global.get $gAAAZZZ))))
+  )
+  ;; NOT UTF-8 FRIENDLY!!
+  (func $str.Rev (param $strPtr i32)(result i32)
+	;; Returns a pointer to a new string with reversed characters
+	(local $cpos i32)(local $curLen i32)(local $revStrPtr i32)(local $curChar i32)
+	(local.set $revStrPtr (call $str.mk))
+	(local.set $cpos (i32.const 0))
+	(local.set $curLen (call $str.getByteLen(local.get $strPtr)))
+	(loop $cloop
+	  (if (i32.lt_u (local.get $cpos)(local.get $curLen))
+		(then
+			(local.set $curChar
+			  (call $str.getByte (local.get $strPtr)(local.get $cpos)))
+			(call $str.LcatChar (local.get $revStrPtr)(local.get $curChar))
+			(local.set $cpos (i32.add (local.get $cpos)(i32.const 1)))
+		)
+	  )
+	  (br_if $cloop (i32.lt_u (local.get $cpos)(local.get $curLen)))
+	)
+	(local.get $revStrPtr)
+  )
+  _gnts(`gFEDCBA',`FEDCBA')
+  (func $str.Rev.test (param $testNum i32)(result i32)
+	(local $abc i32)(local $abc.rev i32)(local $cba i32)
+	(local.set $abc (call $str.mkdata (global.get $gABCDEF)))
+	(local.set $abc.rev (call $str.Rev (local.get $abc)))
+	(local.set $cba (call $str.mkdata (global.get $gFEDCBA)))
+	(i32.eqz
+	  (call $str.compare
+		(local.get $abc.rev)
+		(local.get $cba)))
+  )
+  (func $str.getByte (param $strPtr i32) (param $bytePos i32)(result i32)
+    ;; how to show an error beyond returning null?
+	(if (result i32)
+	  (i32.lt_u (local.get $bytePos)(call $str.getByteLen (local.get $strPtr)))
+	  (then
+		(i32.load8_u (i32.add (call $str.getDataOff
+		  (local.get $strPtr))(local.get $bytePos)))
+	  )
+	  (else (i32.const 0))
+	)
+  )
+  (func $str.getByte.test (param $testNum i32)(result i32)
+    (local $ts i32)(local $lastCharPos i32)
+	(local.set $ts (call $str.mkdata (global.get $gABCDEF)))
+	(local.set $lastCharPos
+		(i32.sub (call $str.getByteLen (local.get $ts))(i32.const 1)))
+	(if (i32.ne (call $str.getByte (local.get $ts)(i32.const 0))
+				(i32.const 65)) ;; 'A'
+		(return (i32.const 1)))
+	(if (i32.ne (call $str.getByte (local.get $ts)(local.get $lastCharPos))
+				(i32.const 70)) ;; 'F'
+		(return (i32.const 1)))
+	(i32.const 0)  ;; success
+  )
+  (func $str.getLastByte (param $strPtr i32)(result i32)
+	(if (i32.eqz (call $str.getByteLen (local.get $strPtr)))
+	  (return (i32.const 0)))
+	(call $str.getByte
+	  (local.get $strPtr)
+	  (i32.sub (call $str.getByteLen (local.get $strPtr))(i32.const 1)))
+  )
+  (func $str.getLastByte.test (param $testNum i32)(result i32)
+	(local $strPtr i32)
+	(local.set $strPtr (call $str.mk))
+	(if (call $str.getLastByte (local.get $strPtr))
+	  (return (i32.const 1)))  ;; should have been zero
+	(local.set $strPtr (call $str.mkdata (global.get $gABCDEF)))
+	(if
+	  (i32.ne
+		(call $str.getLastByte (local.get $strPtr))
+		(i32.const 70)) ;; F
+	  (return (i32.const 2))  ;; failure
+	)
+	(i32.const 0) ;; Success
+  )
+  (func $str.catChar (param $strPtr i32)(param $C i32)
+    (local $byte i32)
+	(if (i32.eqz (local.get $C))  ;; handle null
+	  (return (call $str.catByte (local.get $strPtr) (i32.const 0))))
+	(loop $byteLoop
+	  (local.set $byte ;;assigned to high order byte in $C
+		(i32.shr_u
+		  (i32.and
+			(i32.const 0xFF000000)  ;; mask and shift right
+			  (local.get $C))
+		  (i32.const 24)))
+	  (if (local.get $byte)  ;; ignore leading null's
+		(call $str.catByte (local.get $strPtr)(local.get $byte)))
+		(local.set $C (i32.shl (local.get $C)(i32.const 8)))  ;; move to next byte
+	  (if (local.get $C)  ;; More?
+	   (br $byteLoop)))
+  )
+  _i32GlobalConst(`UTF8-1', 0x24)		;; U+0024	Dollar sign
+  _i32GlobalConst(`UTF8-2', 0xC2A2)		;; U+00A2	Cent sign
+  _i32GlobalConst(`UTF8-3', 0xE0A4B9)	;; U+0939	Devanagari Letter Ha
+  _i32GlobalConst(`UTF8-4', 0xF0908D88)	;; U+10348	Gothic Letter Hwair
+  (func $str.catChar.test (param $testNum i32)(result i32)
+	(local $strPtr i32)
+	(local.set $strPtr (call $str.mk))
+	(call $str.catChar (local.get $strPtr) (global.get $UTF8-1))
+	(call $str.catChar (local.get $strPtr) (global.get $UTF8-2))
+	(call $str.catChar (local.get $strPtr) (global.get $UTF8-3))
+	(call $str.catChar (local.get $strPtr) (global.get $UTF8-4))
+	(if (i32.ne (call $str.getByteLen (local.get $strPtr))(i32.const 10))
+	  (return (i32.const 1)))
+	(i32.const 0)
+  )
   (func $str.compare (type $keyCompSig)
 	(local $s1ptr i32)(local $s2ptr i32)
 	(local $s2len i32)(local $cpos i32)
@@ -109,6 +254,23 @@
 		)))
 	_1  ;; Success
   )
+  (func $str.compare.test (param $testNum i32)(result i32)
+	(local $spAAA i32)(local $spAAA2 i32) (local $spZZZ i32)
+	(local.set $spAAA (call $str.mkdata (global.get $gAAA)))
+	(local.set $spAAA2 (call $str.mk))
+	;;(call $print (local.get $testNum))(call $printwlf (global.get $gFloop))
+	(call $str.catByte (local.get $spAAA2)(i32.const 65))
+	(call $str.catByte (local.get $spAAA2)(i32.const 65))
+	(call $str.catByte (local.get $spAAA2)(i32.const 65))
+	(local.set $spZZZ (call $str.mkdata (global.get $gZZZ)))
+	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA)))
+		(return (i32.const 1)))  ;; same string, should have matched
+	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA2)))
+		(return (i32.const 2)))  ;; same contents, should have matched
+	(if (call $str.compare (local.get $spAAA)(local.get $spZZZ))
+		(return (i32.const 3)))  ;; should not have matched!
+	(i32.const 0) ;; success
+  )
   (func $str.extend(param $strPtr i32)
 	;; double the space available for characters
 	;; move old data into new data
@@ -127,18 +289,7 @@
 	(call $str.setDataOff(local.get $strPtr)(local.get $newDataOff))
 	(memory.copy (local.get $newDataOff)(local.get $dataOff)(local.get $curLen))
   )
-  (func $str.getByte (param $strPtr i32) (param $bytePos i32)(result i32)
-    ;; how to show an error beyond returning null?
-	(if (result i32)
-	  (i32.lt_u (local.get $bytePos)(call $str.getByteLen (local.get $strPtr)))
-	  (then
-		(i32.load8_u (i32.add (call $str.getDataOff
-		  (local.get $strPtr))(local.get $bytePos)))
-	  )
-	  (else _0)
-	)
-  )
-  (func $str.getByteLen (param $strPtr i32)(result i32)
+ (func $str.getByteLen (param $strPtr i32)(result i32)
 	(i32.load (i32.add (local.get $strPtr) _4))
   )
   (func $str.setByteLen(param $strPtr i32)(param $newLen i32)
@@ -156,6 +307,23 @@
   (func $str.setDataOff (param $strPtr i32)(param $newDataOff i32)
     (i32.store (i32.add(local.get $strPtr)(i32.const 12))(local.get $newDataOff))
   )
+  (func $str.LcatChar (param $strPtr i32)(param $Lchar i32)
+	;; Add a character to beginning of a string
+	;; Not multibyte character safe
+	(local $cpos i32)(local $dataOff i32)(local $curC i32)
+	;; first make room for the new character
+	;; tack it on at the end (it will get overwritten)
+	(local.set $cpos (call $str.getByteLen (local.get $strPtr)))
+	(call $str.catByte (local.get $strPtr)(local.get $Lchar))
+	(local.set $dataOff (call $str.getDataOff (local.get $strPtr)))
+	(loop $cloop
+		(i32.store8 (i32.add (local.get $dataOff)(local.get $cpos))
+			(i32.load8_u (i32.sub (i32.add (local.get $dataOff)(local.get $cpos))(i32.const 1))))
+		(local.set $cpos (i32.sub (local.get $cpos)(i32.const 1)))
+		(br_if $cloop (i32.gt_s (local.get $cpos)(i32.const 0)))
+	)
+	(i32.store8 (local.get $dataOff)(local.get $Lchar))
+  )
   (func $str.mkdata (param $dataOffset i32) (result i32)
 	(local $curByte i32)(local $strPtr i32)
 	(local.set $strPtr (call $str.mk))
@@ -168,6 +336,24 @@
 		  (br $bLoop)))
 	)
 	(local.get $strPtr)
+  )
+  (func $str.mkdata.test (param $testNum i32)(result i32)
+	;; see if first or last data stings have gotten stomped on
+	(local $aaa i32)(local $zzz i32)(local $first i32)(local $last i32)
+	(local.set $first (call $str.mkdata (global.get $gAAA)))
+	(local.set $last (call $str.mkdata (global.get $gZZZ)))
+	(local.set $aaa (call $str.mk))
+	(call $str.catByte(local.get $aaa) (i32.const 65))
+	(call $str.catByte(local.get $aaa) (i32.const 65))
+	(call $str.catByte(local.get $aaa) (i32.const 65))
+	(local.set $zzz (call $str.mk))
+	(call $str.catByte(local.get $zzz) (i32.const 90))
+	(call $str.catByte(local.get $zzz) (i32.const 90))
+	(call $str.catByte(local.get $zzz) (i32.const 90))
+	(i32.eqz
+	  (i32.and
+		(call $str.compare (local.get $aaa)(local.get $first))
+		(call $str.compare (local.get $zzz)(local.get $last))))
   )
   (func $str.print (param $strPtr i32)
 	(local $curLength i32)

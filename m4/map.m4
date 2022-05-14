@@ -149,8 +149,6 @@
 	  (call $i32list.get@ (local.get $map) (global.get $keyPrintOff)))
 	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
 	(local.set $mapPos (i32.const 0))
-	;;(call $str.catlf (local.get $strPtr))
-	;;(call $str.catByte (local.get $strPtr)(global.get $LBRACE))
 	(call $str.catByte (local.get $strPtr)_CHAR(`{'))
 	(loop $mLoop
 	  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
@@ -175,7 +173,6 @@
 			  (call $str.catByte (local.get $strPtr) _COMMA)
 			  (call $str.catsp (local.get $strPtr))))
 		  (br $mLoop))))
-	;;(call $str.catByte (local.get $strPtr)(global.get $RBRACE))
 	(call $str.catByte (local.get $strPtr)_CHAR(`}'))
 	(local.get $strPtr)
   )
@@ -210,7 +207,6 @@
 		(call $map.get (local.get $imap)(i32.const 3))
 		(i32.const 45))
 	  (return (i32.const 4)))	;; error #4
-	;;(call $map.dump (local.get $imap))
 	;; create a map with strings as the keys
 	(local.set $smap (call $strMap.mk))
 	;; set $smap 'AAA' -> 42 and test it
