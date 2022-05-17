@@ -31,7 +31,8 @@ divert
 	    (then
 		  (local.get $testOff)
 		  (call $Test.show
-			(local.get $testOff)
+			;;(i32.sub (local.get $testOff)(i32.const 4))
+			(i32.const 42)
 			(call_indirect
 			  (type $testSig)
 			  (local.get $testOff)))
@@ -52,6 +53,7 @@ divert
 	  (else
 		(call $Test.showOK (local.get $testNum))))
   )
+  ;; try to avoid allocations during tests
   (func $Test.printTest
     (call $byte.print _CHAR(`T'))
 	(call $byte.print _CHAR(`e'))
@@ -61,7 +63,7 @@ divert
   )
   (func $Test.showOK (param $testnum i32)
     (call $Test.printTest)
-	(call $i32.print (local.get $testnum))
+	(call $i32.print (i32.sub (local.get $testnum)(global.get $gFirstTestOffset)))
 	(call $printsp)
 	(call $byte.print _CHAR(`O'))
 	(call $byte.print _CHAR(`K'))
@@ -69,7 +71,7 @@ divert
   )
   (func $Test.showFailed (param $testnum i32)(param $testResult i32)
     (call $Test.printTest)
-	(call $i32.print (local.get $testnum))
+	(call $i32.print (i32.sub(local.get $testnum)(global.get $gFirstTestOffset)))
 	(call $printsp)
 	(call $byte.print _CHAR(`N'))
 	(call $byte.print _CHAR(`O'))
