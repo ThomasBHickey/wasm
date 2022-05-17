@@ -5,7 +5,8 @@ define(`_tableLength',`0')dnl
 define(`_incrTableLength',`define(`_tableLength',eval(_tableLength+1))dnl')dnl
 define(`_addToTable', `divert(`2')    (;_tableLength;) $1
 divert _incrTableLength')dnl
-define(`_finishTable',`(table _tableLength funcref)
+define(`_finishTable',`(global $tableLength i32 (i32.const _tableLength))
+  (table _tableLength funcref)
   (elem (i32.const 0)
 undivert(`2')  )')dnl
 
@@ -18,33 +19,6 @@ undivert(`2')  )')dnl
   (global $i32ToStrOffset	i32 (i32.const _tableLength))
   _addToTable($i32.toStr)
   divert(`1')  (global $gFirstTestOffset i32 (i32.const _tableLength))
-divert
-  _addToTable($i32list.mk.test)
-  _addToTable($i32list.pop.test)
-  _addToTable($i32list.push.test)
-  _addToTable($i32list.set@.test)
-  _addToTable($i64list.mk.test)
-  _addToTable($i64list.push.test)
-  _addToTable($str.catByte.test)
-  _addToTable($str.catChar.test)
-  _addToTable($str.catStr.test)
-  _addToTable($str.cat2Strings.test)
-  _addToTable($str.Csplit.test)
-  _addToTable($str.compare.test)
-  _addToTable($str.drop.test)
-  _addToTable($str.find.test)
-  _addToTable($str.getByte.test)
-  _addToTable($str.getLastByte.test)
-  _addToTable($str.mkdata.test)
-  _addToTable($str.mkslice.test)
-  _addToTable($str.Rev.test)
-  _addToTable($str.stripLeading.test)
-  _addToTable($str.toI32.test)
-  _addToTable($toStr.test)
-  _addToTable($typeNum.toStr.test)
-  _addToTable($map.test)
-  _finishTable
-divert(`1')  (global $tableLength  i32 (i32.const _tableLength))
 divert
   (func $test (export "_test")
 	;; Run tests: wasmtime run XXX.wat --invoke _test

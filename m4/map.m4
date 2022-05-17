@@ -176,6 +176,7 @@
 	(call $str.catByte (local.get $strPtr)_CHAR(`}'))
 	(local.get $strPtr)
   )
+  _addToTable($map.test)
   (func $map.test (param $testNum i32)(result i32)
 	(local $imap i32)
 	(local $smap i32)

@@ -70,6 +70,7 @@
 		  (return (i32.const 2)))
 	(i32.const 0) ;; OK
   )
+  _addToTable($i64list.mk.test)
   ;; Add element to the end of the list
   (func $i64list.push (param $lstPtr i32)(param $val i64)
 	(local $maxLen i32) (local $curLen i32)
@@ -103,6 +104,7 @@
 	  (return (i32.const 3)))
 	(i32.const 0) ;; passed
   )
+  _addToTable($i64list.push.test)
   (func $i64list.pop (param $lstPtr i32)(result i64)
     (local $curLen i32)
 	(local $lastPos i32)
