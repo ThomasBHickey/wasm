@@ -18,8 +18,6 @@
 	(global.set $curMemUsed (i32.add (global.get $curMemUsed)(local.get $size)))
 	(if (i32.gt_u (global.get $curMemUsed)(global.get $maxMemUsed))
 	  (global.set $maxMemUsed (global.get $curMemUsed)))
-;;	(loop $tloop          ;; a little tight loop!
-;;	  (br $tloop))
   )
   (func $reclaimMem (param $newCurMemUsed i32)
   ;; A simple way to reclaim memory

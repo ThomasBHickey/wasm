@@ -23,6 +23,7 @@
     (call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 24)))
 	(local.get $strptr)  ;;return the new string
   )
+  _addToTable($typeNum.toStr.test)
   (func $typeNum.toStr.test (param $testNum i32)(result i32)
     ;;(call $str.printwlf (call $i32.toStr (global.get $i32L)))
 	;;(call $printwlf (global.get $gi32L))
