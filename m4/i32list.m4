@@ -231,3 +231,44 @@
 	(call $str.catByte (local.get $strPtr)_CHAR(`]')) ;; right bracket
 	(local.get $strPtr)
   )
+  ;; from www.geeksforgeeks.org/quick-sort
+  ;; fixed by using StackOverflow examp by BartoszKP
+  (func $i32list.qsort (param $listPtr i32)(param $low i32)(param $high i32)
+    (local $pi i32)  ;; partitioning index
+	(if (i32.lt_s (local.get $low)(local.get $high))
+	  (then
+		(local.set $pi (call $i32list.partition (local.get $listPtr)(local.get $low)(local.get $high)))
+		(call $i32list.qsort(local.get $listPtr)(local.get $low)(i32.sub (local.get $pi)(i32.const 1)))
+		(call $i32list.qsort(local.get $listPtr)(i32.add (local.get $pi)(i32.const 1))(local.get $high))
+	  )
+	)
+  )
+  (func $i32list.partition (param $listPtr i32)(param $low i32)(param $high i32)(result i32)
+	(local $pivot i32)(local $i i32)(local $j i32);;(local $highMinus1 i32)
+	(local.set $pivot (call $i32list.get@ (local.get $listPtr)(local.get $high)))
+	(local.set $i (i32.sub (local.get $low)(i32.const 1)))
+	(local.set $j (local.get $low))
+	(loop $swapLoop
+	  (if (i32.le_s (local.get $j)(local.get $high))  ;; was highMinu1 instead of just $high
+		(then
+		  (if (i32.lt_s (call $i32list.get@ (local.get $listPtr)(local.get $j))(local.get $pivot))
+			(then
+			  (local.set $i (i32.add (local.get $i)(i32.const 1)))
+			  (call $i32list.swap (local.get $listPtr)(local.get $i)(local.get $j))
+			)
+		  )
+		(local.set $j (i32.add (local.get $j)(i32.const 1)))
+		(br $swapLoop)
+		)
+	  )
+	)
+	(call $i32list.swap (local.get $listPtr)(i32.add (local.get $i)(i32.const 1))(local.get $high))
+	(i32.add (local.get $i)(i32.const 1))
+  )
+  (func $i32list.swap (param $listPtr i32)(param $i i32)(param $j i32)
+    (local $temp i32)
+	(local.set $temp (call $i32list.get@ (local.get $listPtr)(local.get $i)))
+	(call $i32list.set@ (local.get $listPtr)(local.get $i)
+		(call $i32list.get@ (local.get $listPtr)(local.get $j)))
+	(call $i32list.set@ (local.get $listPtr)(local.get $j)(local.get $temp))
+  )
