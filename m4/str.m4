@@ -269,7 +269,7 @@
 	(if (i32.eqz (call $str.compare (local.get $spAAA)(local.get $spAAA2)))
 		(return (i32.const 2)))  ;; same contents, should have matched
 	(if (call $str.compare (local.get $spAAA)(local.get $spZZZ))
-		(return (i32.const 3)))  ;; should not have matched!
+		(return _3))  ;; should not have matched!
 	_0 ;; success
   )
   (func $str.extend(param $strPtr i32)
@@ -315,12 +315,12 @@
 	(local.set $aaa		(call $str.mkdata (global.get $gaaa)))
 	(if (i32.ne _0 (call $str.find (local.get $AAAZZZ)(local.get $AAA)))
 		(return _1))
-	(if (i32.ne (i32.const 3) (call $str.find (local.get $AAAZZZ)(local.get $ZZZ)))
-		(return (i32.const 2)))
+	(if (i32.ne _3 (call $str.find (local.get $AAAZZZ)(local.get $ZZZ)))
+		(return _2))
 	(if (i32.ne (i32.const -1) (call $str.find (local.get $AAAZZZ)(local.get $aaa)))
-		(return (i32.const 3)))
+		(return _3))
 	(if (i32.ne (i32.const -1) (call $str.find (local.get $AAA)(local.get $AAAZZZ)))
-		(return (i32.const 4)))
+		(return _4))
 	_0
   )
  (func $str.getByteLen (param $strPtr i32)(result i32)
@@ -425,7 +425,7 @@
 	  (call $str.mkslice
 		(local.get $AAAZZZ)
 		_0
-		(i32.const 3)))
+		_3))
 	(if (i32.eqz
 		  (call $str.compare (local.get $AAA)(local.get $slice)))
 	  (then
@@ -433,8 +433,8 @@
 	(local.set $slice
 	  (call $str.mkslice
 		(local.get $AAAZZZ)
-		(i32.const 3)
-		(i32.const 3)))
+		_3
+		_3))
 	(if (i32.eqz
 		  (call $str.compare (local.get $ZZZ)(local.get $slice)))
 	  (return (i32.const 2)))
@@ -587,7 +587,7 @@
 	(call $str.drop (local.get $strptr))
 	(if (i32.eqz (call $str.getByteLen (local.get $strptr)))
 	  (return _0))  ;; OK
-	(return (i32.const 3))	
+	(return _3)	
   )
   ;; Needs error checking!
   (func $str.toI32 (param $strPtr i32)(result i32)
@@ -704,7 +704,7 @@
 	(local.set $AbCDbbE (call $str.mkdata (global.get $gAbCDbbE)))
 	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 98)))  ;; 'b'
 	;;(call $printwlf (local.get $listPtr))
-	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr))(i32.const 3))
+	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr)) _3)
 	  (return _1))
 	  ;;(call $print (local.get $listPtr)))
 	(local.set $listPtr (call $str.Csplit (local.get $AbCDbE)(i32.const 69)))  ;; 'E'
@@ -716,7 +716,7 @@
 		  (call $str.compare
 			(call $i32list.get@ (local.get $listPtr) _0)
 			(local.get $AbCDbE)))
-	  (return (i32.const 3)))
+	  (return _3))
 	(local.set $listPtr (call $str.Csplit (local.get $AbCDbbE)(i32.const 98))) ;; split on'b'
 	;; test to make sure multiple split characters are treated as a single split
 	(if (i32.ne (call $i32list.getCurLen (local.get $listPtr)) _3)
