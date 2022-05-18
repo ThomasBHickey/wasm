@@ -21,10 +21,10 @@
 	  (then
 		(call $str.catStr (local.get $strPtr)(call $str.mkdata (global.get $gMaxNegAsString)))
 		 return))
-	(if (i32.lt_s (local.get $N)(i32.const 0))
+	(if (i32.lt_s (local.get $N) _0 )
 	  (then
 		(call $str.catByte(local.get $strPtr)(i32.const 45))  ;; hyphen
-		(call $i32.toStrHelper (local.get $strPtr)(i32.sub (i32.const 0)(local.get $N)))
+		(call $i32.toStrHelper (local.get $strPtr)(i32.sub  _0 (local.get $N)))
 		return))
     (if (i32.ge_u (local.get $N)(i32.const 10))
 	  (call $i32.toStrHelper

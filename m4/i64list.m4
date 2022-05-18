@@ -8,7 +8,7 @@
 	(local.set $curLength (call $i32list.getCurLen (local.get $lstPtr)))
 	;;(call $str.catByte (local.get $strPtr)(global.get $LSQBRACK))
 	(call $str.catByte (local.get $strPtr)_CHAR(`['))
-	(local.set $ipos (i32.const 0))
+	(local.set $ipos  _0 )
 	(loop $iLoop
 	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
 		(then
@@ -16,7 +16,7 @@
 		  (call $str.catStr (local.get $strPtr)(local.get $strTmp))
 		  (call $str.catByte (local.get $strPtr) _COMMA)
 		  (call $str.catsp (local.get $strPtr))
-	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
+	      (local.set $ipos (i32.add (local.get $ipos) _1 ))
 	      (br $iLoop))))
 	(if (local.get $curLength)
 	  (then
@@ -35,7 +35,7 @@
 	;;(local.set $lstPtr (call $getMem (i32.const 96))) ;; 80 +16
 	(local.set $lstPtr (call $mem.get (i32.const 96))) ;; 80 + 16
 	(call $setTypeNum (local.get $lstPtr)(global.get $i64L))
-	(call $i64list.setCurLen (local.get $lstPtr) (i32.const 0))
+	(call $i64list.setCurLen (local.get $lstPtr)  _0 )
 	(call $i64list.setMaxLen (local.get $lstPtr)(i32.const 10))
 	(call $i64list.setDataOff(local.get $lstPtr)
 		(i32.add(local.get $lstPtr)(i32.const 16))) ;; 16 bytes for header info
@@ -65,10 +65,10 @@
 	(if (i32.ne 
 		  (call $getTypeNum (local.get $lstPtr))
 		  (global.get $i64L))
-	  (return (i32.const 1)))
-	(if (i32.ne (call $i64list.getCurLen (local.get $lstPtr))(i32.const 0)) ;; should be False
-		  (return (i32.const 2)))
-	(i32.const 0) ;; OK
+	  (return  _1 ))
+	(if (i32.ne (call $i64list.getCurLen (local.get $lstPtr)) _0 ) ;; should be False
+		  (return  _2 ))
+	 _0  ;; OK
   )
   _addToTable($i64list.mk.test)
   ;; Add element to the end of the list
@@ -84,7 +84,7 @@
 		))
 	(call $i64list.set@ (local.get $lstPtr)(local.get $curLen)(local.get $val))
 	(call $i64list.setCurLen (local.get $lstPtr)
-		(i32.add (local.get $curLen)(i32.const 1)))
+		(i32.add (local.get $curLen) _1 ))
   )
   (func $i64list.push.test (param $testNum i32)(result i32)
     (local $lstPtr i32)
@@ -92,17 +92,17 @@
 	(local.set $lstPtr (call $i64list.mk))
 	(call $i64list.push (local.get $lstPtr) (i64.const 3))
 	(if (i32.ne
-	  (i32.const 1)
+	   _1 
 	  (call $i64list.getCurLen (local.get $lstPtr)))
-	  (return (i32.const 1)))
+	  (return  _1 ))
 	(local.set $temp (call $i64list.pop (local.get $lstPtr)))
 	(if (i64.ne (i64.const 3) (local.get $temp))
-	  (return (i32.const 2)))
+	  (return  _2 ))
 	(if (i32.ne
-	  (i32.const 0)
+	   _0 
 	  (call $i32list.getCurLen (local.get $lstPtr)))
-	  (return (i32.const 3)))
-	(i32.const 0) ;; passed
+	  (return  _3 ))
+	 _0  ;; passed
   )
   _addToTable($i64list.push.test)
   (func $i64list.pop (param $lstPtr i32)(result i64)
@@ -112,7 +112,7 @@
     (local.set $curLen (call $i64list.getCurLen(local.get $lstPtr)))
 	(if (i32.eqz (local.get $curLen))
 	  (call $error2))
-	(local.set $lastPos (i32.sub (local.get $curLen)(i32.const 1)))
+	(local.set $lastPos (i32.sub (local.get $curLen) _1 ))
 	(local.set $popped (call $i64list.get@
 	    (local.get $lstPtr)(local.get $lastPos)))
 	(call $i64list.setCurLen

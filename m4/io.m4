@@ -1,39 +1,39 @@
 ;; io.m4
   _i32GlobalConst(`readIOVsOff0',`0')
-  (global $readIOVsOff4 	i32 (i32.const 4))
-  (global $readBuffOff 		i32 (i32.const 8))
-  (global $readBuffLen 		i32 (i32.const 4))
-  (global $writeIOVsOff0 	i32 (i32.const 16))
+  (global $readIOVsOff4 	i32  _4 )
+  (global $readBuffOff 		i32  _8 )
+  (global $readBuffLen 		i32  _4 )
+  (global $writeIOVsOff0 	i32  _16 )
   (global $writeIOVsOff4 	i32 (i32.const 20))
   (global $writeBuffOff 	i32 (i32.const 24))
-  (global $writeBufLen 		i32 (i32.const 4))
-  (global $bytesRead		i32 (i32.const 4))
-  (global $bytesWritten		(mut i32) (i32.const 0))
+  (global $writeBufLen 		i32  _4 )
+  (global $bytesRead		i32  _4 )
+  (global $bytesWritten		(mut i32)  _0 )
   (func $io.initialize
   )
   (func $byte.print (param $B i32)
 	(i32.store (global.get $writeIOVsOff0)(global.get $writeBuffOff))
-	(i32.store (global.get $writeIOVsOff4)(i32.const 1))
+	(i32.store (global.get $writeIOVsOff4) _1 )
 	(i32.store
 		(global.get $writeBuffOff)
 		(local.get $B))
 	(call $fd_write
-		(i32.const 1) ;; stdout
+		 _1  ;; stdout
 		(global.get $writeIOVsOff0)
-		(i32.const 1) ;; # iovs
-		(i32.const 0) ;; length?
+		 _1  ;; # iovs
+		 _0  ;; length?
 	)
 	drop
-	(global.set $bytesWritten (i32.add (global.get $bytesWritten)(i32.const 1)))
+	(global.set $bytesWritten (i32.add (global.get $bytesWritten) _1 ))
   )
   (func $byte.read (result i32)
 	(local $nread i32)(local $rbyte i32)
 	(i32.store (global.get $readIOVsOff0) (global.get $readBuffOff))
-	(i32.store (global.get $readIOVsOff4) (i32.const 1))
+	(i32.store (global.get $readIOVsOff4)  _1 )
 	(call $fd_read
-	  (i32.const 0) ;; 0 for stdin
+	   _0  ;; 0 for stdin
 	  (global.get $readIOVsOff0) ;; *iovs
-	  (i32.const 1) ;; iovs_len
+	   _1  ;; iovs_len
 	  (global.get $readIOVsOff4) ;; num bytes read goes here
 	)
 	drop  ;; $fd_read return value
@@ -80,13 +80,13 @@
   )
   (func $i32.hexprintsup (param $n i32)
     (call $byte.hexprint (i32.shr_u (local.get $n)(i32.const 24)))
-    (call $byte.hexprint (i32.shr_u (local.get $n)(i32.const 16)))
-    (call $byte.hexprint (i32.shr_u (local.get $n)(i32.const 8)))
+    (call $byte.hexprint (i32.shr_u (local.get $n) _16 ))
+    (call $byte.hexprint (i32.shr_u (local.get $n) _8 ))
     (call $byte.hexprint (local.get $n))
   )
   (func $byte.hexprint (param $byte i32)
     (local.set $byte (i32.and (local.get $byte)(i32.const 0xff)))
-	(call $nibble.hexprint (i32.shr_u (local.get $byte)(i32.const 4)))
+	(call $nibble.hexprint (i32.shr_u (local.get $byte) _4 ))
 	(call $nibble.hexprint (i32.and (i32.const 0xF)(local.get $byte)))
   )
   (func $nibble.hexprint (param $nibble i32)

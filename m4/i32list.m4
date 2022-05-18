@@ -16,10 +16,10 @@
 	(local.set $lstPtr (call $mem.get (i32.const 20))) 
 	;; 4 bytes for type, 12 for the pointer info, 4 for first int32
 	(call $setTypeNum (local.get $lstPtr)(global.get $i32L))
-	(call $i32list.setCurLen (local.get $lstPtr) (i32.const 0))
-	(call $i32list.setMaxLen (local.get $lstPtr)(i32.const 1))
+	(call $i32list.setCurLen (local.get $lstPtr) _0)
+	(call $i32list.setMaxLen (local.get $lstPtr)_1)
 	(call $i32list.setDataOff(local.get $lstPtr)
-		(i32.add(local.get $lstPtr)(i32.const 16))) ;; 16 bytes for header info
+		(i32.add(local.get $lstPtr) _16)) ;; 16 bytes for header info
 	(local.get $lstPtr)  ;; return ptr to the new list
   )
   _addToTable($i32list.mk.test)
@@ -29,22 +29,22 @@
 	(if (i32.ne 
 		  (call $getTypeNum (local.get $lstPtr))
 		  (global.get $i32L))
-	  (return (i32.const 1)))
+	  (return _1))
 	(if (call $i32list.getCurLen (local.get $lstPtr)) ;; should be False
-		  (return (i32.const 2)))
-	(i32.const 0) ;; OK
+		  (return _2))
+	_0 ;; OK
   )
   (func $i32list.getCurLen(param $lstPtr i32)(result i32)
-	(i32.load (i32.add (local.get $lstPtr)(i32.const 4)))
+	(i32.load (i32.add (local.get $lstPtr)_4))
   )
   (func $i32list.setCurLen (param $lstPtr i32)(param $newLen i32)
-	(i32.store (i32.add (local.get $lstPtr)(i32.const 4))(local.get $newLen))
+	(i32.store (i32.add (local.get $lstPtr)_4)(local.get $newLen))
   )
   (func $i32list.getMaxLen (param $lstPtr i32)(result i32)
-    (i32.load (i32.add (local.get $lstPtr)(i32.const 8)))
+    (i32.load (i32.add (local.get $lstPtr)_8))
   )
   (func $i32list.setMaxLen (param $lstPtr i32)(param $newMaxLen i32)
-    (i32.store (i32.add (local.get $lstPtr)(i32.const 8))(local.get $newMaxLen))
+    (i32.store (i32.add (local.get $lstPtr)_8)(local.get $newMaxLen))
   )
   (func $i32list.getDataOff (param $lstPtr i32)(result i32)
     (i32.load (i32.add (local.get $lstPtr)(i32.const 12)))
@@ -60,14 +60,14 @@
 	(call $i32list.setMaxLen (local.get $lstPtr)(i32.const 38))
 	(call $i32list.setDataOff (local.get $lstPtr)(i32.const 39))
 	(if (i32.ne (call $getTypeNum (local.get $lstPtr))(global.get $i32L))
-		(return (i32.const 1)))
+		(return _1))
 	(if (i32.ne (call $i32list.getCurLen (local.get $lstPtr))(i32.const 37))
-		(return (i32.const 2)))
+		(return _2))
 	(if (i32.ne (call $i32list.getMaxLen (local.get $lstPtr))(i32.const 38))
-		(return (i32.const 3)))
+		(return _3))
 	(if (i32.ne (call $i32list.getDataOff (local.get $lstPtr))(i32.const 39))
-		(return (i32.const 4)))
-	(i32.const 0)
+		(return _4))
+	_0
   )
   (func $i32list.extend (param $lstPtr i32)
     ;; double the space available
@@ -77,12 +77,12 @@
 	(local.set $curLen (call $i32list.getCurLen (local.get $lstPtr)))
 	(local.set $maxLen (call $i32list.getMaxLen (local.get $lstPtr)))
 	(local.set $dataOff   (call $i32list.getDataOff (local.get $lstPtr)))
-	(local.set $newMaxLen (i32.mul (local.get $maxLen)(i32.const 2)))
-	(local.set $newDataOff (call $mem.get (i32.mul (local.get $newMaxLen)(i32.const 4))))
+	(local.set $newMaxLen (i32.mul (local.get $maxLen)_2))
+	(local.set $newDataOff (call $mem.get (i32.mul (local.get $newMaxLen)_4)))
 	(call $i32list.setMaxLen (local.get $lstPtr)(local.get $newMaxLen))
 	(call $i32list.setDataOff(local.get $lstPtr)(local.get $newDataOff))
 	(memory.copy (local.get $newDataOff)(local.get $dataOff)
-				 (i32.mul (local.get $curLen)(i32.const 4)))
+				 (i32.mul (local.get $curLen)_4))
   ) 
   (func $i32list.set@ (param $lstPtr i32)(param $pos i32)(param $val i32)
 	;; Needs bounds tests
@@ -99,7 +99,7 @@
 	(local.set $dataOff (call $i32list.getDataOff (local.get $lstPtr)))
 	(local.set $dataOffOff
 		(i32.add (local.get $dataOff)
-		  (i32.mul (local.get $pos)(i32.const 4))))
+		  (i32.mul (local.get $pos)_4)))
     (i32.store (local.get $dataOffOff) (local.get $val))
   )
   (func $i32list.get@ (param $lstPtr i32)(param $pos i32)(result i32)
@@ -116,14 +116,14 @@
 	  (call $boundsError (local.get $pos)(call $i32list.getCurLen (local.get $lstPtr))))
 	(i32.load
 		(i32.add (call $i32list.getDataOff (local.get $lstPtr))
-				 (i32.mul (i32.const 4) (local.get $pos))))
+				 (i32.mul _4 (local.get $pos))))
   )
   _addToTable($i32list.set@.test)
   (func $i32list.set@.test (param $testNum i32)(result i32)
     (local $listPtr i32)
 	(local.set $listPtr (call $i32list.mk))
-	(call $i32list.set@ (local.get $listPtr)(i32.const 0)(i32.const 33)) ;; should fail
-	(i32.const 0)
+	(call $i32list.set@ (local.get $listPtr) _0 (i32.const 33)) ;; should fail
+	_0
   )
   (func $i32list.tail (param $lstPtr i32)(result i32)
 	(local $curLen i32)
@@ -131,7 +131,7 @@
 	(if (i32.eqz (local.get $curLen))  (call $error2))
 	(call $i32list.get@
 	  (local.get $lstPtr)
-	  (i32.sub (local.get $curLen)(i32.const 1)))
+	  (i32.sub (local.get $curLen)_1))
   )
   ;; Add element to the end of the list
   (func $i32list.push (param $lstPtr i32)(param $val i32)
@@ -146,7 +146,7 @@
 	;;(local.set $dataOffset (call $i32list.getDataOff (local.get $lstPtr)))
 	(call $i32list.set@ (local.get $lstPtr)(local.get $curLen)(local.get $val))
 	(call $i32list.setCurLen (local.get $lstPtr)
-		(i32.add (local.get $curLen)(i32.const 1)))
+		(i32.add (local.get $curLen)_1))
   )
   (func $i32list.pop (param $lstPtr i32)(result i32)
     (local $curLen i32)
@@ -155,7 +155,7 @@
 	(local.set $curLen (call $i32list.getCurLen(local.get $lstPtr)))
 	(if (i32.eqz (local.get $curLen))
 	  (return (call $error)))
-	(local.set $lastPos (i32.sub (local.get $curLen)(i32.const 1)))
+	(local.set $lastPos (i32.sub (local.get $curLen)_1))
 	(local.set $popped (call $i32list.get@
 	    (local.get $lstPtr)(local.get $lastPos)))
 	(call $i32list.setCurLen
@@ -172,10 +172,10 @@
 	(call $i32list.push (local.get $lstPtr)(i32.const 43))
 	(local.set $temp (call $i32list.pop (local.get $lstPtr)))
 	(if (i32.ne (local.get $temp)(i32.const 43))
-	  (return (i32.const 1)))
+	  (return _1))
 	(local.set $temp (call $i32list.pop (local.get $lstPtr)))
 	(if (i32.ne (local.get $temp)(i32.const 42))
-	  (return (i32.const 2)))
+	  (return _2))
 	(return (call $i32list.getCurLen (local.get $lstPtr)))
   )
   _addToTable($i32list.push.test)
@@ -183,19 +183,19 @@
     (local $lstPtr i32)
 	(local $temp i32)
 	(local.set $lstPtr (call $i32list.mk))
-	(call $i32list.push (local.get $lstPtr) (i32.const 3))
+	(call $i32list.push (local.get $lstPtr) _3)
 	(if (i32.ne
-	  (i32.const 1)
+	  _1
 	  (call $i32list.getCurLen (local.get $lstPtr)))
-	  (return (i32.const 1)))
+	  (return _1))
 	(local.set $temp (call $i32list.pop (local.get $lstPtr)))
-	(if (i32.ne (i32.const 3) (local.get $temp))
-	  (return (i32.const 2)))
+	(if (i32.ne _3 (local.get $temp))
+	  (return _2))
 	(if (i32.ne
-	  (i32.const 0)
+	  _0
 	  (call $i32list.getCurLen (local.get $lstPtr)))
-	  (return (i32.const 3)))
-	(i32.const 0) ;; passed
+	  (return _3))
+	_0 ;; passed
   )
   (func $i32list.toStr (param $lstPtr i32)(result i32)
 	;; check if first entry is a TypeNum
@@ -208,12 +208,12 @@
 	(if
 	  (local.get $curLength)  ;; at least one item
 	  (then
-;;		(if (call $map.is (call $i32list.get@ (local.get $lstPtr)(i32.const 0)))
+;;		(if (call $map.is (call $i32list.get@ (local.get $lstPtr)_0))
 ;;		  (return (call $map.toStr (local.get $lstPtr))))))
 	  ))
 	;;(call $str.catByte (local.get $strPtr)(global.get $LSQBRACK))
 	(call $str.catByte (local.get $strPtr)_CHAR(`['))
-	(local.set $ipos (i32.const 0))
+	(local.set $ipos _0)
 	(loop $iLoop
 	  (if (i32.lt_u (local.get $ipos)(local.get $curLength))
 		(then
@@ -221,7 +221,7 @@
 		  (call $str.catStr (local.get $strPtr)(local.get $strTmp))
 		  (call $str.catByte (local.get $strPtr) _COMMA)
 		  (call $str.catsp (local.get $strPtr))
-	      (local.set $ipos (i32.add (local.get $ipos)(i32.const 1)))
+	      (local.set $ipos (i32.add (local.get $ipos)_1))
 	      (br $iLoop))))
 	(if (local.get $curLength)
 	  (then
