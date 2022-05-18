@@ -17,9 +17,9 @@
   (func $typeNum.toStr (param $typeNum i32)(result i32)
     (local $strptr i32)
 	(local.set $strptr (call $str.mk))
-	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 0)))
-	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 8)))
-	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 16)))
+	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum) _0))
+	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum) _8))
+	(call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum) _16))
     (call $str.catByte (local.get $strptr)(i32.shr_u (local.get $typeNum)(i32.const 24)))
 	(local.get $strptr)  ;;return the new string
   )

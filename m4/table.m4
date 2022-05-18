@@ -7,7 +7,7 @@ define(`_addToTable', `divert(`2')    (;_tableLength;) $1
 divert _incrTableLength')dnl
 define(`_finishTable',`(global $tableLength i32 (i32.const _tableLength))
   (table _tableLength funcref)
-  (elem (i32.const 0)
+  (elem _0
 undivert(`2')  )')dnl
 
   (global $strCompareOffset i32 (i32.const _tableLength))
@@ -31,7 +31,7 @@ divert
 	    (then
 		  (local.get $testOff)
 		  (call $Test.show
-			;;(i32.sub (local.get $testOff)(i32.const 4))
+			;;(i32.sub (local.get $testOff) _4)
 			(i32.const 42)
 			(call_indirect
 			  (type $testSig)
