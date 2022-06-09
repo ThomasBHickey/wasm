@@ -1,6 +1,6 @@
 ;; i64list.m4
 
-  (global $i64L	  	i32	(i32.const 0x4C323369)) ;; 'i32L' type# for i32 lists
+  (global $i64L	  	i32	(i32.const 0x4C323369)) ;; 'i64L' type# for i64 lists
   _gnts(`gi64L', `i64L')
 
   _gnts(`gMaxNeg64AsString',`-9,223,372,036,854,775,808')

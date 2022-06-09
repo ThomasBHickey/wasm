@@ -18,6 +18,7 @@ define(`_3',`(i32.const 3)')dnl
 define(`_4',`(i32.const 4)')dnl
 define(`_8',`(i32.const 8)')dnl
 define(`_16',`(i32.const 16)')dnl
+define(`_32',`(i32.const 32)')dnl
 ;; Global defines
 define(`_globalPos', `100')dnl
 define(`_newGlobalPos', `define(`_globalPos',eval(_globalPos+1+len($1)))')dnl
