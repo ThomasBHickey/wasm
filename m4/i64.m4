@@ -36,3 +36,13 @@
 		;;(global.get $zero)))
 		_CHAR(`0')))
   )
+_addToTable($i64.toStr.test)
+_gnts(`gi64strTest', `123456789123456789')
+(func $i64.toStr.test (param $testNum i32)(result i32)
+    (local $t i64)
+	(local.set $t (i64.const 123456789123456789))
+	(i32.eqz
+	  (call $str.compare
+		(call $i64.toStr (local.get $t)) ;; i64 value
+		(call $str.mkdata (global.get $gi64strTest))))
+  )
