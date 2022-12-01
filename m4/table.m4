@@ -31,8 +31,7 @@ divert
 	    (then
 		  (local.get $testOff)
 		  (call $Test.show
-			;;(i32.sub (local.get $testOff) _4)
-			(i32.const 42)
+			(i32.const 42)  ;; I've forgotten why this is needed!
 			(call_indirect
 			  (type $testSig)
 			  (local.get $testOff)))
