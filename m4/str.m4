@@ -651,7 +651,7 @@
 		  (local.get $strPtr)
 		  (call $i64list.toStr (local.get $ptr)))
 	  (return (local.get $strPtr))))
-	(call $i32.hexprint(local.get $type))
+	;;(call $i32.hexprint(local.get $type))
 	(call $str.printwlf (call $typeNum.toStr(local.get $type)))
 	(call $str.catStr (local.get $strPtr)(call $str.mkdata (global.get $gUnableToPrint:)))
 	(call $i32.toStr (local.get $ptr))

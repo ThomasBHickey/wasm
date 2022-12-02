@@ -136,11 +136,36 @@
 	    (then
 		  (if (call $str.getByteLen (local.get $strPtr))
 			(return (local.get $strPtr)))
-		  (return (global.get $maxNeg))
+		  (return _maxNeg)
 		)
 	  )
 	)
 	(local.get $strPtr)
+  )
+  ;; Clear passed string before reading line into it
+  (func $str.readIntoStr (param $strPtr i32)(result i32)
+    (call $str.setByteLen (local.get $strPtr) _0)
+	(call $str.readOntoStr (local.get $strPtr))
+  )
+  ;; Add bytes up to LF to passed string
+  ;; Returns eol terminator (LF or $maxNeg)
+  (func $str.readOntoStr (param $strPtr i32)(result i32)
+	(local $byte i32)
+	(loop $bloop
+	  (local.set $byte (call $byte.read))
+	  (if (i32.ge_s (local.get $byte) _0)
+		(then
+		  (if (i32.eq (local.get $byte) _LF)
+			(return _LF))
+		  (call $str.catByte(local.get $strPtr)(local.get $byte))
+		  (br $bloop)
+		)
+		(else
+		  (return _maxNeg)
+		)
+	  )
+	)
+	(return _maxNeg)
   )
   (func $readFileAsStrings (result i32)
 	;; reads a file in byte-by-byte and returns a list of string pointers to the lines in it

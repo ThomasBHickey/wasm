@@ -211,7 +211,6 @@
 ;;		(if (call $map.is (call $i32list.get@ (local.get $lstPtr)_0))
 ;;		  (return (call $map.toStr (local.get $lstPtr))))))
 	  ))
-	;;(call $str.catByte (local.get $strPtr)(global.get $LSQBRACK))
 	(call $str.catByte (local.get $strPtr)_CHAR(`['))
 	(local.set $ipos _0)
 	(loop $iLoop
