@@ -148,6 +148,7 @@
 	(call $i32list.setCurLen (local.get $lstPtr)
 		(i32.add (local.get $curLen)_1))
   )
+  ;; Take last element from list and return it
   (func $i32list.pop (param $lstPtr i32)(result i32)
     (local $curLen i32)
 	(local $lastPos i32)
@@ -270,4 +271,48 @@
 	(call $i32list.set@ (local.get $listPtr)(local.get $i)
 		(call $i32list.get@ (local.get $listPtr)(local.get $j)))
 	(call $i32list.set@ (local.get $listPtr)(local.get $j)(local.get $temp))
+  )
+  ;; copies a slice from a list
+  (func $i32list.mkslice (param $lstptr i32)(param $offset i32)(param $length i32)(result i32)
+	(local $slice i32) 	  ;; to be returned
+	(local $ipos i32)	  ;;  pointer to copy data
+	(local $lastipos i32) ;; don't go past this offset
+	(local.set $slice (call $i32list.mk))  ;; new list to return
+	(local.set $ipos (local.get $offset))
+	(local.set $lastipos (i32.add (local.get $offset)(local.get $length)))
+	(if (i32.gt_u (local.get $lastipos)(call $i32list.getCurLen (local.get $lstptr)))
+	  (local.set $lastipos (call $i32list.getCurLen (local.get $lstptr))))
+	(loop $iLoop
+	  (if (i32.lt_u (local.get $ipos)(local.get $lastipos))
+		(then
+		  (call $i32list.push
+		    (local.get $slice)
+			  (call $i32list.get@
+				(local.get $lstptr)
+				(local.get $ipos)
+			))
+		  _incrLocal($ipos)
+		  (br $iLoop)
+		)))
+	(local.get $slice)
+  )
+  ;; Sum the members of the list
+  (func $i32list.sum (param $lstptr i32)(result i32)
+    (local $sum i32)(local $ipos i32)(local $len i32)
+	(local.set $sum _0)
+	(local.set $ipos _0)
+	(local.set $len (call $i32list.getCurLen (local.get $lstptr)))
+	(loop $iLoop
+	  (if (i32.lt_u (local.get $ipos)(local.get $len))
+	    (then
+		  (local.set $sum
+		    (i32.add
+			  (local.get $sum)
+			  (call $i32list.get@ (local.get $lstptr)(local.get $ipos))))
+		  _incrLocal($ipos)
+		  (br $iLoop)
+		)
+	  )
+	)
+	(local.get $sum)
   )
