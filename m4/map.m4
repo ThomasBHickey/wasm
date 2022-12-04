@@ -39,7 +39,6 @@
   (global $valListOff i32  _2 )
   (global $keyCompareOff i32  _3 )
   (global $keyPrintOff i32  _4 )
-  ;; Currently here is just one type of map
   ;; Offsets for routines for key compare and key print are passed to $map.mk
   (func $strMap.mk (result i32)
 	(call $map.mk
@@ -173,7 +172,7 @@
 			  (call $str.catByte (local.get $strPtr) _COMMA)
 			  (call $str.catsp (local.get $strPtr))))
 		  (br $mLoop))))
-	(call $str.catByte (local.get $strPtr)_CHAR(`}'))
+	(call $str.catByte (local.get $strPtr) _CHAR(`}'))
 	(local.get $strPtr)
   )
   _addToTable($map.test)

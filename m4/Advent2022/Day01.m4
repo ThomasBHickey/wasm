@@ -1,6 +1,6 @@
 ;;Advent2022/Day01.m4
 include(`stdHeaders.m4')
-  (func $day01 (export "_Day01a")
+  (func $day01a (export "_Day01a")
     (local $line i32)(local $lineTerm i32)
 	(local $elfCount i32)(local $elfCalories i32)
 	(local $calories i32)

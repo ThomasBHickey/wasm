@@ -2,9 +2,6 @@
 
   (global $f64L	  	i32	(i32.const 0x4C343666)) ;; 'f64L' type# for f64 lists
   _gnts(`gf64L', `f64L')
-
-;;  _gnts(`gMaxNeg64AsString',`-9,223,372,036,854,775,808')
-;;  _i64GlobalConst(maxNeg64, 0x8000000000000000)
   
   (func $f64.print (param $F f64)
 	(call $str.print (call $f64.toStr (local.get $F)))
