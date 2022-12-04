@@ -1,4 +1,4 @@
-;;Adven2022/Day02.m4
+;;Advent2022/Day02.m4
 include(`stdHeaders.m4')
 _gnts(`gAX', `A X')
 _gnts(`gAY', `A Y')
