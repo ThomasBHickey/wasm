@@ -25,6 +25,7 @@ include(`stdHeaders.m4')
 	)
   _maxNeg ;; no duplicates
   )
+  (;
   (func $day03a (export "_Day03a")
 	(local $line i32) (local $score i32) (local $lineTerm i32)
 	(local $lineLen i32)(local $halfLen i32)(local $priority i32)
@@ -62,4 +63,86 @@ include(`stdHeaders.m4')
 	)
 	(call $i32.print(local.get $score))(call $printlf)
   )
+  ;)
+  (func $char2priority (param $char i32)(result i32)
+	  (if (i32.le_u (local.get $char) _CHAR(`Z'))
+		(return (i32.sub (local.get $char) (i32.const 38))))
+	  (i32.sub (local.get $char) (i32.const 96))
+  )
+  (func $read3lines (result i32)
+	(local $3lines i32)(local $line i32)
+	(local.set $3lines (call $i32list.mk))  ;; array for the lines
+    (local.set $line (call $str.read))
+	(if (i32.eq (local.get $line) _maxNeg) (return _maxNeg))  ;; check first line of triple
+	(call $i32list.push (local.get $3lines)(local.get $line))
+	;; Assume there are at least a couple more lines
+	(call $i32list.push (local.get $3lines)(call $str.read))
+	(call $i32list.push (local.get $3lines)(call $str.read))
+	(local.get $3lines)
+  )
+  (func $findCommon (param $3lines i32)(result i32)
+    (local $curChar i32)(local $firstLen i32)(local $curPos i32)
+	(local $firstLine i32)(local $secondLine i32)(local $thirdLine i32)
+	(local.set $curPos _0)
+	(local.set $firstLine (call $i32list.get@ (local.get $3lines) _0))
+	(local.set $firstLen (call $str.getByteLen (local.get $firstLine)))
+	(local.set $secondLine (call $i32list.get@ (local.get $3lines) _1))
+	(local.set $thirdLine (call $i32list.get@ (local.get $3lines) _2))
+	;;(call $printwlf (local.get $firstLine))
+	(loop $cloop
+	  (if (i32.lt_u (local.get $curPos)(local.get $firstLen))
+	   (then
+	    (local.set $curChar (call $str.getByte (local.get $firstLine)(local.get $curPos)))
+		(if
+		  (i32.and
+			(i32.ne (call $str.index (local.get $secondLine)(local.get $curChar)) _maxNeg)
+			(i32.ne (call $str.index (local.get $thirdLine) (local.get $curChar)) _maxNeg))
+		  (return (local.get $curChar)))
+		))
+	  _incrLocal($curPos)
+	  (br $cloop)
+	)
+	_maxNeg
+  )
+  (func $day03b (export "_Day03b")
+	(local $3lines i32)(local $comChar i32)(local $sum i32)
+	(local.set $sum _0)
+	
+	(loop $3loop
+	  (local.set $3lines (call $read3lines))
+	  (if (i32.eq (local.get $3lines) _maxNeg)
+		(then
+		  (call $i32.print (local.get $sum))(call $printlf)
+		  (return)))
+	  ;;(call $printwlf (local.get $3lines))
+	  (local.set $comChar (call $findCommon (local.get $3lines)))
+	  ;;(call $byte.print (local.get $comChar))(call $printlf)
+	  (local.set $sum (i32.add 
+		(local.get $sum)
+		(call $char2priority (local.get $comChar))))
+	  (br $3loop)
+	)
+  )
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 include(`../moduleTail.m4')

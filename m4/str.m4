@@ -323,7 +323,7 @@
 		(return _4))
 	_0
   )
- (func $str.getByteLen (param $strPtr i32)(result i32)
+  (func $str.getByteLen (param $strPtr i32)(result i32)
 	(i32.load (i32.add (local.get $strPtr) _4))
   )
   (func $str.setByteLen(param $strPtr i32)(param $newLen i32)
