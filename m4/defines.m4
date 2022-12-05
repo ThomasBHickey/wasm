@@ -16,6 +16,7 @@ define(`_1',`(i32.const 1)')dnl
 define(`_2',`(i32.const 2)')dnl
 define(`_3',`(i32.const 3)')dnl
 define(`_4',`(i32.const 4)')dnl
+define(`_5',`(i32.const 5)')dnl
 define(`_8',`(i32.const 8)')dnl
 define(`_16',`(i32.const 16)')dnl
 define(`_32',`(i32.const 32)')dnl
@@ -33,3 +34,4 @@ define(`_i64GlobalConst', `(global $$1 i64 (i64.const $2))')dnl
 ;; gAAA needs to be the first global declared
 ;; str.toStr uses the address to recognize the global null terminated strings
 _gnts(`gAAA',`AAA')
+_gnts(`gMaxNegAsChars', `-2,147,483,648')

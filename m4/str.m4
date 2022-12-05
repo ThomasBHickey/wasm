@@ -532,6 +532,8 @@
   )
   (func $toStr (param $ptr i32)(result i32)
     (local $strPtr i32)
+	(if (i32.eq (local.get $ptr) _maxNeg)
+	  (return (call $i32.toStr (local.get $ptr))))
 	(if (i32.gt_u (local.get $ptr)(global.get $gZZZ))  ;; should be 'typed' data
 	  (return (call $ptr.toStr (local.get $ptr))))
 	(if
@@ -725,3 +727,37 @@
 	  )
 	_0 ;; success
   )
+  (func $str.index (param $strPtr i32)(param $ichar i32)(result i32)
+	;; looks for $ichar in the string passed.  Returns position, or _maxNeg if not found
+	(local $cpos i32)(local $strLen i32)
+	(local.set $cpos _0)
+	(local.set $strLen (call $str.getByteLen (local.get $strPtr)))
+	(loop $cLoop
+	  (if (i32.lt_u (local.get $cpos)(local.get $strLen))
+	    (then
+		  (if (i32.eq (call $str.getByte (local.get $strPtr)(local.get $cpos))(local.get $ichar))
+			(return (local.get $cpos)))
+		  _incrLocal($cpos)
+		  (br $cLoop)
+		)
+	  )
+	)
+	_maxNeg
+  )
+  _gnts(`gABCdef',`ABCdef')
+  (func $str.index.test (param $testNum i32)(result i32)
+    (local $testString i32)
+	(local.set $testString (call $str.mkdata(global.get $gABCdef)))
+    ;; test for first char
+	(if (i32.ne (call $str.index (local.get $testString) _CHAR(`A')) _0)
+	  (return _1))
+	;; test for last char
+	(if (i32.ne (call $str.index (local.get $testString) _CHAR(`f')) _5)
+	  (return _1))
+	;; test for missing char
+	(if (i32.ne (call $str.index (local.get $testString) _CHAR(`Z')) _maxNeg)
+	  (return _1))
+	_0 ;; success
+  )
+  _addToTable($str.index.test)
+
