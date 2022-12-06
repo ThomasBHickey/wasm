@@ -1,4 +1,4 @@
-;; i64list.m4
+;; i64.m4
 
   (global $i64L	  	i32	(i32.const 0x4C323369)) ;; 'i64L' type# for i64 lists
   _gnts(`gi64L', `i64L')
