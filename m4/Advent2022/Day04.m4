@@ -107,26 +107,4 @@ include(`stdHeaders.m4')
 	)
 	(call $i32.print(local.get $score))(call $printlf)
   )
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 include(`../moduleTail.m4')
