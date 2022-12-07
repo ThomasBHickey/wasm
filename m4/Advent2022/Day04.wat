@@ -2055,14 +2055,11 @@
     (local $leftStart i32)(local $leftLast i32)(local $id i32)
 	(call $i32.print (i32.const 4))(call $printlf)
 	(call  $printwlf (local.get $leftRange))
-	(local.set $leftStart (call $i32list.get@ (local.get $leftRange (i32.const 0))))
-	(local.set $leftLast  (call $i32list.get@ (local.get $leftRange (i32.const 1))))
-	(call $i32.print (local.get $leftStart))(call $printlf)
-	(call $i32.print (local.get $leftLast))(call $printlf)
+	(local.set $leftStart (call $i32list.get@ (local.get $leftRange) (i32.const 0)))
+	(local.set $leftLast  (call $i32list.get@ (local.get $leftRange) (i32.const 1)))
 	(local.set $id (local.get $leftStart))
-	(call $printwlf (local.get $leftRange))(call $printwlf(local.get $rightRange))
 	(loop $check
-	  (call $i32.print (local.get $id))(call $printlf)
+	  ;;(call $i32.print (local.get $id))(call $printlf)
 	  (if (i32.le_u (local.get $id)(local.get $leftLast))
 		(then
 		  (if (call $isInRange (local.get $rightRange)(local.get $id))

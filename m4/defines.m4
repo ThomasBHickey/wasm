@@ -17,6 +17,8 @@ define(`_2',`(i32.const 2)')dnl
 define(`_3',`(i32.const 3)')dnl
 define(`_4',`(i32.const 4)')dnl
 define(`_5',`(i32.const 5)')dnl
+define(`_6',`(i32.const 6)')dnl
+define(`_7',`(i32.const 7)')dnl
 define(`_8',`(i32.const 8)')dnl
 define(`_16',`(i32.const 16)')dnl
 define(`_32',`(i32.const 32)')dnl
