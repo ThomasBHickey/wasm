@@ -1658,7 +1658,7 @@
 	;;(local.set $dataOffset (call $i32list.getDataOff (local.get $lstPtr)))
 	(call $i32list.set@ (local.get $lstPtr)(local.get $curLen)(local.get $val))
 	(call $i32list.setCurLen (local.get $lstPtr)
-		(i32.add (local.get $curLen)(i32.const 1)))
+		(i32.add (local.get $curLen) (i32.const 1)))
   )
   ;; Take last element from list and return it
   (func $i32list.pop (param $lstPtr i32)(result i32)
@@ -2030,29 +2030,77 @@
   )
 
 
-
-  (func $makeSet (param $half i32)(result i64)
-    (local $set i64) (local $pieces i32)
-	(local.set $set (i64.const 0))
-	(call $print (local.get $half))(call $printlf)
-	(local.set $pieces (call $str.Csplit (local.get $half) (i32.const 45(;-;))))
-	(call $print (local.get $pieces))(call $printlf)
-	(local.get $set)
+  ;; expects a string such as "2-8"
+  ;; a 'range' is an i32.list, e.g. [2, 8]
+  (func $mkRange (param $chRange i32)(result i32)
+    (local $split i32)(local $irange i32)
+	;;(call $printwlf (local.get $chRange))
+	(local.set $split (call $str.Csplit (local.get $chRange)(i32.const 45(;-;))))
+	;;(call $printwlf (local.get $split))
+	(local.set $irange (call $i32list.mk))
+	(call $i32list.push (local.get $irange) (call $str.toI32 (call $i32list.get@(local.get $split) (i32.const 0))))
+	(call $i32list.push (local.get $irange) (call $str.toI32 (call $i32list.get@(local.get $split) (i32.const 1))))
+	;;(call $i32list.print (local.get $irange))
+	(local.get $irange)
   )
-  (func $decodePair (param $line i32)
+  ;; e.g. [2, 8] & 4 -> _1
+  (func $isInRange (param $range i32)(param $member i32)(result i32)
+    (call $print (local.get $range))(call $i32.print (local.get $member))(call $printlf)
+    (i32.and 
+		(i32.ge_u (local.get $member)(call $i32list.get@(local.get $range)(i32.const 0)))
+		(i32.le_u (local.get $member)(call $i32list.get@(local.get $range) (i32.const 1))))
+  )
+  ;; [5, 7] & [7, 9]  -> _1
+  (func $overlap (param $leftRange i32)(param $rightRange i32)(result i32)
+    (local $leftStart i32)(local $leftLast i32)(local $id i32)
+	(call $i32.print (i32.const 4))(call $printlf)
+	(call  $printwlf (local.get $leftRange))
+	(local.set $leftStart (call $i32list.get@ (local.get $leftRange (i32.const 0))))
+	(local.set $leftLast  (call $i32list.get@ (local.get $leftRange (i32.const 1))))
+	(call $i32.print (local.get $leftStart))(call $printlf)
+	(call $i32.print (local.get $leftLast))(call $printlf)
+	(local.set $id (local.get $leftStart))
+	(call $printwlf (local.get $leftRange))(call $printwlf(local.get $rightRange))
+	(loop $check
+	  (call $i32.print (local.get $id))(call $printlf)
+	  (if (i32.le_u (local.get $id)(local.get $leftLast))
+		(then
+		  (if (call $isInRange (local.get $rightRange)(local.get $id))
+		    (return (i32.const 1)))
+		  (local.set $id (i32.add(local.get $id)(i32.const 1)))
+		  (br $check)
+		)
+	  )
+	)
+	(i32.const 0)  ;; no overlap
+  )
+  (func $decodePair (param $line i32)(result i32)
     (local $halves i32)(local $leftSet i64)(local $rightSet i64)
+	(local $leftRange i32)(local $rightRange i32)
 	
 	(call $printwlf (local.get $line))
-	(local.set $halves (call $str.Csplit (local.get $line) (i32.const 32(;,;))))
+	(local.set $halves (call $str.Csplit (local.get $line) (i32.const 44))) ;; split on comma
 	(call $printwlf (local.get $halves))
-	(local.set $leftSet (call $makeSet (call $i32list.get@ (local.get $halves) (i32.const 0))))
-	
-	(call $i64.print (local.get $leftSet)(call $printlf))
+	(local.set $rightRange (call $mkRange (call $i32list.pop (local.get $halves)))) ;; last one is the right side
+	(local.set $leftRange  (call $mkRange (call $i32list.pop (local.get $halves))))
+	(call $print (local.get $leftRange))
+	(call $print (local.get $rightRange))(call $printlf)
+	(call $overlap (local.get $leftRange)(local.get $rightRange))
   )
   (func $day04a (export "_Day04a")
-    (local $line i32)
-	(local.set $line (call $str.read))
-	(call $decodePair (local.get $line))
+    (local $line i32)(local $lineTerm i32)(local $score i32)
+	(local.set $score (i32.const 0))(local.set $line (call $str.mk))
+	(loop $lineLoop
+	  (local.set $lineTerm (call $str.readIntoStr (local.get $line)))
+	  (call $str.print(local.get $line))(call $printlf)
+	  (local.set $score
+		(i32.add
+		  (local.get $score)(call $decodePair (local.get $line))))
+	  (call $i32.print (local.get $score))(call $printlf)
+	  (if (i32.ne (local.get $lineTerm) (i32.const 0x80000000))
+	    (br $lineLoop))
+	)
+	(call $i32.print(local.get $score))(call $printlf)
   )
   
   

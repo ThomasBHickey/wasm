@@ -146,7 +146,7 @@
 	;;(local.set $dataOffset (call $i32list.getDataOff (local.get $lstPtr)))
 	(call $i32list.set@ (local.get $lstPtr)(local.get $curLen)(local.get $val))
 	(call $i32list.setCurLen (local.get $lstPtr)
-		(i32.add (local.get $curLen)_1))
+		(i32.add (local.get $curLen) _1))
   )
   ;; Take last element from list and return it
   (func $i32list.pop (param $lstPtr i32)(result i32)
