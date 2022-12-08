@@ -567,7 +567,7 @@
 	(call $str.catByte (local.get $strPtr)_SP))
   (func $str.catlf (param $strPtr i32)
     (call $str.catByte (local.get $strPtr)_LF))
-  (func $str.drop(param $strPtr i32)
+  (func $str.drop(param $strPtr i32)  ;; drops last byte in string
 	(if (i32.eqz (call $str.getByteLen (local.get $strPtr)))
 	  (return))
 	(call $str.setByteLen
