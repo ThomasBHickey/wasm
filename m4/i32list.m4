@@ -52,7 +52,8 @@
   (func $i32list.setDataOff (param $lstPtr i32)(param $newDataOff i32)
     (i32.store (i32.add (local.get $lstPtr)(i32.const 12))(local.get $newDataOff))
   )
-  _addToTable($i32list.sets.test)
+(;;
+;;  _addToTable($i32list.sets.test)
   (func $i32list.sets.test (param $testNum i32) (result i32)
 	(local $lstPtr i32)
 	(local.set $lstPtr (call $i32list.mk))
@@ -69,6 +70,7 @@
 		(return _4))
 	_0
   )
+;;)
   (func $i32list.extend (param $lstPtr i32)
     ;; double the space available
 	(local $maxLen i32) (local $curLen i32) (local $dataOff i32)
@@ -104,6 +106,8 @@
   )
   (func $i32list.get@ (param $lstPtr i32)(param $pos i32)(result i32)
 	;; Needs bounds test  ;; added typecheck 2021-12-19
+	(if (i32.lt_s (call $i32list.getCurLen (local.get $lstPtr)) _0)
+	  (call $boundsError (local.get $pos)(call $i32list.getCurLen (local.get $lstPtr))))
 	(if (i32.ne 
 		  (call $getTypeNum (local.get $lstPtr))
 		  (global.get $i32L))
@@ -197,6 +201,57 @@
 	  (call $i32list.getCurLen (local.get $lstPtr)))
 	  (return _3))
 	_0 ;; passed
+  )
+  ;; reverse the list in-place
+  (func $i32list.reverse (param $lstPtr i32)
+	(local $leftPos i32)(local $rightPos i32)(local $temp i32)
+	(local.set $leftPos _0)
+	(local.set $rightPos (call $i32list.getCurLen(local.get $lstPtr)))
+	_decrLocal($rightPos)
+	(loop $revLoop
+	  (if
+		(i32.lt_s (local.get $leftPos)(local.get $rightPos))
+		  (then
+			;; remember right value
+			(local.set $temp (call $i32list.get@ (local.get $lstPtr)(local.get $rightPos)))
+			;; put left value into right pos
+			(call $i32list.set@ (local.get $lstPtr)(local.get $rightPos)
+				(call $i32list.get@ (local.get $lstPtr)(local.get $leftPos)))
+			;; put old right value into left pos
+			(call $i32list.set@ (local.get $lstPtr)(local.get $leftPos)(local.get $temp))
+			_incrLocal($leftPos)
+			_decrLocal($rightPos)
+			(br $revLoop)
+			)
+	  )
+	)
+  )
+  _addToTable($i32list.reverse.test)
+  (func $i32list.reverse.test(param $testNum i32)(result i32)
+    (local $list i32)
+	(local.set $list (call $i32list.mk))
+	(call $i32list.reverse (local.get $list))
+	(if (call $i32list.getCurLen(local.get $list))
+	  (return _1)) ;; should have been 0 (false)
+	(call $i32list.push (local.get $list) _1)
+	(call $i32list.reverse (local.get $list))
+	(if (i32.ne (call $i32list.get@ (local.get $list) _0) _1)
+	  (return _2))
+	(call $i32list.push (local.get $list) _2)  ;; list should now be [1, 2]
+	(call $i32list.reverse (local.get $list))      ;; should be [2, 1]
+	(if (i32.ne (call $i32list.get@(local.get $list) _0) _2)
+	  (return _3))
+	(if (i32.ne (call $i32list.get@(local.get $list) _1) _1)
+	  (return _4))
+	(call $i32list.push (local.get $list) _3)  ;; list now should be [2, 1, 3]
+	(call $i32list.reverse (local.get $list))  ;; list now should be [3, 1, 2]
+	(if (i32.ne (call $i32list.get@(local.get $list) _0) _3)
+	  (return _3))
+	(if (i32.ne (call $i32list.get@(local.get $list) _1) _1)
+	  (return _4))
+	(if (i32.ne (call $i32list.get@(local.get $list) _2) _2)
+	  (return _4))
+	(return _0)  ;; success
   )
   (func $i32list.toStr (param $lstPtr i32)(result i32)
 	;; check if first entry is a TypeNum
