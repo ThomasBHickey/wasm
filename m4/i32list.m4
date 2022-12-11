@@ -139,7 +139,7 @@
   )
   ;; Add element to the end of the list
   (func $i32list.push (param $lstPtr i32)(param $val i32)
-	(local $maxLen i32) (local $curLen i32);;(local $dataOffset i32)
+	(local $maxLen i32) (local $curLen i32)
 	(local.set $curLen (call $i32list.getCurLen(local.get $lstPtr)))
 	(local.set $maxLen (call $i32list.getMaxLen(local.get $lstPtr)))
 	(if (i32.ge_u (local.get $curLen) (local.get $maxLen));;handle reallocation
@@ -147,10 +147,23 @@
 		  (call $i32list.extend (local.get $lstPtr))
 		  (local.set $maxLen (call $i32list.getMaxLen(local.get $lstPtr)))
 		))
-	;;(local.set $dataOffset (call $i32list.getDataOff (local.get $lstPtr)))
 	(call $i32list.set@ (local.get $lstPtr)(local.get $curLen)(local.get $val))
 	(call $i32list.setCurLen (local.get $lstPtr)
 		(i32.add (local.get $curLen) _1))
+  )
+  ;; Catenate a list to another
+  (func $i32list.cat (param $basePtr i32) (param $newPtr i32)
+    (local $newPos i32)(local $newLen i32)
+	(local.set $newLen (call $i32list.getCurLen (local.get $basePtr)))
+	(local.set $newPos _0)
+	(loop $move
+	  (if (i32.lt_s (local.get $newPos)(local.get $newLen))
+		(then
+	      (call $i32list.push (local.get $basePtr)(call $i32list.get@ (local.get $newPtr)(local.get $newPos)))
+		  _incrLocal($newPos)
+		  (br $move))
+	  )
+	)
   )
   ;; Take last element from list and return it
   (func $i32list.pop (param $lstPtr i32)(result i32)
