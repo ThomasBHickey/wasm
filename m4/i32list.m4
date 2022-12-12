@@ -154,7 +154,7 @@
   ;; Catenate a list to another
   (func $i32list.cat (param $basePtr i32) (param $newPtr i32)
     (local $newPos i32)(local $newLen i32)
-	(local.set $newLen (call $i32list.getCurLen (local.get $basePtr)))
+	(local.set $newLen (call $i32list.getCurLen (local.get $newPtr)))
 	(local.set $newPos _0)
 	(loop $move
 	  (if (i32.lt_s (local.get $newPos)(local.get $newLen))
