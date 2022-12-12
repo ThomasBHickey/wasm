@@ -157,7 +157,8 @@
 		(then
 		  (if (i32.eq (local.get $byte) _LF)
 			(return _LF))
-		  (call $str.catByte(local.get $strPtr)(local.get $byte))
+		  (if (i32.ne (local.get $byte) _CR);; skip over carriage returns!
+			(call $str.catByte(local.get $strPtr)(local.get $byte)))
 		  (br $bloop)
 		)
 		(else
