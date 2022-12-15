@@ -1,6 +1,6 @@
 ;;Advent2022/Day05.m4
 include(`stdHeaders.m4')
-
+(global $fullWinSize i32 _4) 
 ;; at position passed, checks to see if the first byte repeats within window
 ;; returns True if finds a dup of first char ($target)
 (func $lookForDup (param $stream i32)(param $start i32)(param $len i32)(result i32)
@@ -30,6 +30,7 @@ include(`stdHeaders.m4')
 )
 ;; Check a sliding window against duplicate chars within it
 ;; Returns Pos of first window without duplicates, or _maxNeg if none found
+(;;
 (func $checkStream (param $stream i32)(param $winSize i32)(result i32)
 	(local $pos i32)
 	(local $lastPos i32)
@@ -49,13 +50,26 @@ include(`stdHeaders.m4')
   )
   (return _maxNeg)  ;; didn't find any non-dup window
 )
+;;)
+(func $checkStream (param $stream i32)(param $pos i32)(param $winSize i32)(result i32)
+  (if (i32.eqz (local.get $winSize))
+	(return (local.get $pos)))
+  (if (call $lookForDup (local.get $stream)(local.get $pos)(local.get $winSize))
+    (then
+	  _incrLocal($pos)
+	  (return (call $lookForDup (local.get $stream)(local.get $pos)(global.get $fullWinSize)))
+	)
+  )
+  _incrLocal($pos) _decrLocal($winSize)
+  (call $checkStream (local.get $stream)(local.get $pos)(local.get $winSize))
+)
+	
 (func $day06a (export "_Day06a")
-  (local $dataStream i32)(local $winSize i32)
-  (local.set $winSize _4)
+  (local $dataStream i32)
   (local.set $dataStream (call $str.read))
   (call $str.printwlf (local.get $dataStream))
-  (call $i32.print (call $checkStream (local.get $dataStream) (local.get $winSize)))(call $printlf)
-  (call $i32.print (i32.add (local.get $winSize)(call $checkStream (local.get $dataStream) (local.get $winSize))))
+  (call $i32.print (call $checkStream (local.get $dataStream) _0 (global.get $fullWinSize)))(call $printlf)
+  ;;(call $i32.print (i32.add (global.get $fullWinSize)(call $checkStream (local.get $dataStream) (global.get $fullWinSize))))
   (call $printlf)
 )
 
