@@ -184,3 +184,22 @@
 	)
 	(return (local.get $listPtr))
   )
+  (func $readFileAsMatrix (result i32)
+	(local $matrix i32)(local $row i32)
+	(local $line i32)(local $lineTerm i32)
+	(local.set $line (call $str.mk))
+	(local.set $matrix (call $i32Mtrx.mk))
+	(loop $lineLoop
+	  (local.set $lineTerm (call $str.readIntoStr (local.get $line)))
+	  (if (call $str.getByteLen(local.get $line))
+		(then
+		  (local.set $row (call $strToInt32s (local.get $line)))
+		  (call $i32Mtrx.addRow (local.get $matrix)(local.get $row))
+		  (br $lineLoop)
+		)
+	  )
+	)
+	(local.get $matrix)
+  )
+	  
+

@@ -764,7 +764,7 @@
   (func $strToInt32s (param $line i32)(result i32)
     (local $cList i32)(local $numInts i32)(local $pos i32)(local $intList i32)
 	(local $int i32)
-	(local.set $cList (call $str.Csplit (local.get $line)(global.get $COMMA)))
+	(local.set $cList (call $str.Csplit (local.get $line) _SP))
 	;;(call $printwlf (local.get $cList))
 	(local.set $numInts (call $i32list.getCurLen (local.get $cList)))
 	(local.set $pos (i32.const 0))
