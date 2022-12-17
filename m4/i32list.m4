@@ -1,5 +1,5 @@
 ;;i32list.m4
-  ;; i32Lists
+  ;; i32Lists (basically 1-dimensional arrays of i32's)
   ;; an i32list pointer points at
   ;; a typeNum, curLen, maxLen, data pointer, all i32
   ;; the list starts out with a maxLen of 1 (4 bytes)

@@ -760,4 +760,21 @@
 	_0 ;; success
   )
   _addToTable($str.index.test)
+  ;; split a string into i32's 
+  (func $strToInt32s (param $line i32)(result i32)
+    (local $cList i32)(local $numInts i32)(local $pos i32)(local $intList i32)
+	(local $int i32)
+	(local.set $cList (call $str.Csplit (local.get $line)(global.get $COMMA)))
+	;;(call $printwlf (local.get $cList))
+	(local.set $numInts (call $i32list.getCurLen (local.get $cList)))
+	(local.set $pos (i32.const 0))
+	(local.set $intList (call $i32list.mk))
+	(loop $intLoop  ;; oops, assumes string isn't empty!
+	  (local.set $int (call $str.toI32 (call $i32list.get@ (local.get $cList)(local.get $pos))))
+	  (call $i32list.push (local.get $intList)(local.get $int))
+	  (local.set $pos (i32.add (local.get $pos)(i32.const 1)))
+	  (if (i32.lt_u (local.get $pos)(local.get $numInts))
+	    (br $intLoop)))
+	(local.get $intList)
+  )
 
