@@ -1,4 +1,4 @@
-;;Advent2022/Day05.m4
+;;Advent2022/Day06.m4
 include(`stdHeaders.m4')
 (global $fullWinSize i32 (i32.const 14)) 
 ;; at position passed, checks to see if the first byte repeats within window
