@@ -11,6 +11,7 @@ define(`_SINGQUOTE',(i32.const 39(;SINGQUOTE;)))dnl
 define(`_LPAREN', `(i32.const 40(;LPAREN;))')dnl
 define(`_RPAREN', `(i32.const 41(;RPAREN;))')dnl
 define(`_COMMA', `(i32.const 44(;COMMA;))')dnl
+define(`_DOLLAR', `(i32.const 36(;DOLLAR;))')dnl
 define(`_0',`(i32.const 0)')dnl
 define(`_1',`(i32.const 1)')dnl
 define(`_2',`(i32.const 2)')dnl
