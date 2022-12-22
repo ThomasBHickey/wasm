@@ -44,17 +44,10 @@ _gnts(`gDol', `$')
 	  (local.get $dir)
 	  (global.get $strChildren)
 	  (call $i32list.mk))
-;;  (if (i32.eqz (local.get $parent))  ;; if empty, point to itself
-;;    (local.set $parent (local.get $dir)))
- ;; (call $printwlf (local.get $dir))
- ;; (call $printwlf (global.get $strParent))
-  ;;(call $printwlf (local.get $parent))
-(;;
   (call $map.set
-	(local.get $dir)
-	(global.get $strParent)
-	(local.get $parent))
-	;;)
+	  (local.get $dir)
+	  (global.get $strParent)
+	  (local.get $parent))
   (local.get $dir)
 )
 (func $initFileSystem (result i32) ;; returns the initialized root directory
@@ -72,7 +65,28 @@ _gnts(`gDol', `$')
   (global.set $strDol (call $str.mkdata (global.get $gDol)))
   (global.set $pushed (call $str.mk))
   (local.set $root (call $mkDir (global.get $strSlash) _0))  ;;null parent
+  (call $map.set(local.get $root)(global.get $strParent)(local.get $root)) ;; it's own parent
   (local.get $root)
+)
+(func $fileSystemToStr (param $root i32)(result i32)
+   ;; strMap's toStr won't work because of circular references
+  (local $strPtr i32)
+  (local.set $strPtr (call $str.mk))
+  (call $str.catStr (local.get $strPtr)(global.get $strType))
+  (call $str.catByte (local.get $strPtr) _CHAR(`:'))
+  (call $str.catStr (local.get $strPtr) (call $map.get(local.get $root)(global.get $strType)))
+  (call $str.catByte (local.get $strPtr) _LF)
+  (call $str.catStr (local.get $strPtr)(global.get $strName))
+  (call $str.catByte (local.get $strPtr) _CHAR(`:'))
+  (call $str.catStr (local.get $strPtr) (call $map.get(local.get $root)(global.get $strName)))
+  (call $str.catByte (local.get $strPtr) _LF)
+
+  (call $str.catStr (local.get $strPtr)(global.get $strChildren))
+  (call $str.catByte (local.get $strPtr) _CHAR(`:'))
+  (call $str.catStr (local.get $strPtr) (call $map.get(local.get $root)(global.get $strChildren)))
+  ;;(call $printwlf(local.get $strPtr))
+  (call $str.catByte (local.get $strPtr) _LF)
+  (local.get $strPtr)
 )
 (func $handleCD (param $root i32)(param $line i32)
   (local $cdName i32)
@@ -102,8 +116,6 @@ _gnts(`gDol', `$')
 	(global.set $pushed (local.get $line))
 		(return))
 )	
-
-
 (func $parseLine (param $root i32)(param $line i32)
   _testString(`ginparseline',`in parseLine')
   (call $printwlf(local.get $line))
@@ -118,8 +130,8 @@ _gnts(`gDol', `$')
   (local $line i32)(local $lineTerm i32)
   (local $root i32) ;; root of directory structue
   (local.set $root (call $initFileSystem))
-  (call $printwlf (call $map.toStr(local.get $root)))
-  (local.set $line (call $str.mk))  ;; reused in $linkLoop
+  (call $printwlf (call $fileSystemToStr(local.get $root)))
+  (local.set $line (call $str.mk))  ;; reused in $lineLoop
   (loop $lineLoop
 	(local.set $lineTerm (call $str.readIntoStr (local.get $line)))
 	(call $printwlf (local.get $line))
