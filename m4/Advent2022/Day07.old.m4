@@ -1,6 +1,6 @@
 ;;Advent2022/Day07.m4
 include(`stdHeaders.m4')
-
+(;;
 _gnts(`gChildren',`Children')
 _gnts(`gcd',`$ cd ')
 _gnts(`gDir',`Dir')
@@ -25,10 +25,11 @@ _gnts(`gDol', `$')
 (global $pushed (mut i32) _0)
 
 (global $curDir (mut i32) _0)
-
+;;)
 (func $mkDir (param $name i32)(param $parent i32)(result i32)
   (local $dir i32)
- ;; _testString(`g$mkDir',`in $mkDir')
+  _testString(`g$mkDir',`in $mkDir')
+(;;
   (call $printwlf (local.get $name))
   (call $printwlf (local.get $parent))
   (local.set $dir (call $strMap.mk))
@@ -48,12 +49,13 @@ _gnts(`gDol', `$')
 	  (local.get $dir)
 	  (global.get $strParent)
 	  (local.get $parent))
+;;)
   (local.get $dir)
 )
-
 (func $initFileSystem (result i32) ;; returns the initialized root directory
   (local $root i32)
-  ;;(call $printwlf (local.get $root))
+(;;
+  (call $printwlf (local.get $root))
   (global.set $strCd (call $str.mkdata (global.get $gcd)))
   (global.set $strChildren (call $str.mkdata (global.get $gChildren)))
   (global.set $strDir (call $str.mkdata (global.get $gDir)))
@@ -67,9 +69,10 @@ _gnts(`gDol', `$')
   (global.set $pushed (call $str.mk))
   (local.set $root (call $mkDir (global.get $strSlash) _0))  ;;null parent
   (call $map.set(local.get $root)(global.get $strParent)(local.get $root)) ;; it's own parent
+;;)
   (local.get $root)
 )
-
+(;;
 (func $fileSystemToStr (param $root i32)(result i32)
    ;; strMap's toStr won't work because of circular references
   (local $strPtr i32)
@@ -85,30 +88,35 @@ _gnts(`gDol', `$')
 
   (call $str.catStr (local.get $strPtr)(global.get $strChildren))
   (call $str.catByte (local.get $strPtr) _CHAR(`:'))
-  (call $printwlf (call $map.get(local.get $root)(global.get $strChildren)))
-  (call $str.catStr (local.get $strPtr) (call $str.toStr(call $map.get(local.get $root)(global.get $strChildren))))
+  (call $str.catStr (local.get $strPtr) (call $map.get(local.get $root)(global.get $strChildren)))
+  ;;(call $printwlf(local.get $strPtr))
   (call $str.catByte (local.get $strPtr) _LF)
   (local.get $strPtr)
 )
-(func $cdCommand (param $root i32)(param $line i32)
+;;)
+(func $handleCD (param $root i32)(param $line i32)
+(;;
   (local $cdName i32)
-  _testString(`gcdCommand',`in $cdCommand')
+  _testString(`ghandleCD',`in $handleCD')
   (local.set $cdName
 	(call $str.mkslice (local.get $line) _5 
 		(i32.sub (call $str.getByteLen(local.get $line) _5))))
   (call $printwlf (local.get $cdName))
+;;)
 )
-(func $dirCommand (param $root i32)(param $line i32)
+(func $handleDir (param $root i32)(param $line i32)
+(;;
   (local $dirName i32)
-  _testString(`gdirCommand',`in $dirCommand')
+  _testString(`ghandleDir',`in $handleDir')
   (local.set $dirName
 	(call $str.mkslice (local.get $line) _4 
 		(i32.sub (call $str.getByteLen(local.get $line) _4))))
   (call $printwlf (local.get $dirName))
+;;)
 )
-(func $lsCommand (param $root i32)(param $line i32)
-  (local $dirName i32)(local $lineTerm i32)
-  _testString(`glsCommand',`in $lsCommand')
+(func $handleLs (param $root i32)(param $line i32)
+(;;  (local $dirName i32)(local $lineTerm i32)
+  _testString(`ghandleLs',`in $handleLs')
   (loop $lineLoop
 	(local.set $lineTerm (call $str.readIntoStr (local.get $line)))
 	(call $printwlf (local.get $line))
@@ -117,23 +125,25 @@ _gnts(`gDol', `$')
 	_testString(`ghandling',`ls handling line')
 	(global.set $pushed (local.get $line))
 		(return))
+;;)
 )	
 (func $parseLine (param $root i32)(param $line i32)
+(;;
   _testString(`ginparseline',`in parseLine')
   (call $printwlf(local.get $line))
   (if (call $str.startsAt (local.get $line)(global.get $strCd) _0)
-	(then (call $cdCommand(local.get $root)(local.get $line))))
+	(then (call $handleCD(local.get $root)(local.get $line))))
   (if (call $str.startsAt (local.get $line)(global.get $strLs) _0)
-	(then (call $lsCommand (local.get $root)(local.get $line))))
+	(then (call $handleLs (local.get $root)(local.get $line))))
   (if (call $str.startsAt (local.get $line)(global.get $strDir) _0)
-	(then (call $dirCommand (local.get $root)(local.get $line))))
+	(then (call $handleDir (local.get $root)(local.get $line))))
+;;)
 )
-
-(func $Day07a (export "_Day07a")
-  (local $line i32)(local $lineTerm i32)
+(func $day07a (export "_Day07a")
+(;;  (local $line i32)(local $lineTerm i32)
   (local $root i32) ;; root of directory structue
   (local.set $root (call $initFileSystem))
-  (call $printwlf (call $fileSystemToStr(local.get $root)))
+  ;;(call $printwlf (call $fileSystemToStr(local.get $root)))
   (local.set $line (call $str.mk))  ;; reused in $lineLoop
   (loop $lineLoop
 	(local.set $lineTerm (call $str.readIntoStr (local.get $line)))
@@ -142,5 +152,6 @@ _gnts(`gDol', `$')
 	(if (i32.ne (local.get $lineTerm) _maxNeg)
 	  (br $lineLoop))
   )
+;;)
 )
 include(`../moduleTail.m4')

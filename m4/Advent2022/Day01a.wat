@@ -995,256 +995,6 @@
 	(i32.const 0) ;; success
   )
 
-;; map.m4
-
-  (global $Map		i32 (i32.const 0x4D617020))	;; 'Map ' type# for i32 maps
-   
-
-  (func $map.mk (param $compareOff i32)(param $keyPrintOff i32)(result i32)
-	;; returns a pointer to an i32 list of:
-	;;	 TypeNum ('Map ')
-	;;   pointer to list of keys ($mapListOff)
-	;;   pointer to list of the values ($valListOff)
-	;;   function offset to the key comparison routine ($compareOff)
-	;;   function offset to the key print routine ($printOff) [NOT CURRENTLY USED]
-	(local $mapList i32)
-	(local.set $mapList
-	  (call $i32list.mk))
-	(call $i32list.push ;; TypeNum
-	  (local.get $mapList)
-	  (global.get $Map))
-	(call $i32list.push	;; keys
-	  (local.get $mapList)
-	  (call $i32list.mk))
-	(call $i32list.push	;; vals to
-	  (local.get $mapList)
-	  (call $i32list.mk))
-	(call $i32list.push
-	  (local.get $mapList)
-	  (local.get $compareOff))
-	(call $i32list.push
-	  (local.get $mapList)
-	  (local.get $keyPrintOff))
-	(local.get $mapList)
-  )
-  (func $map.is (param $ptr i32)(result i32)
-    (i32.eq (local.get $ptr)(global.get $Map))
-  )
-  ;; these are offsets within the state info list in each map
-  (global $mapTypeOff i32  (i32.const 0) )
-  (global $mapListOff i32  (i32.const 1) )
-  (global $valListOff i32  (i32.const 2) )
-  (global $keyCompareOff i32  (i32.const 3) )
-  (global $keyPrintOff i32  (i32.const 4) )
-  ;; Offsets for routines for key compare and key print are passed to $map.mk
-  (func $strMap.mk (result i32)
-	(call $map.mk
-	  (global.get $strCompareOffset)
-	  (global.get $strToStrOffset))
-  )
-  (func $i32Map.mk (result i32)
-	(call $map.mk
-	  (global.get $i32CompareOffset)
-	  (global.get $i32ToStrOffset))
-  )
-  (func $map.set (param $map i32)(param $key i32)(param $val i32)
-	(local $keyList i32)
-	(local $valList i32)
-	(local $keyCompareOff i32)
-	(local $keyPrintOff i32)
-	(local $mapLen i32)
-	(local $mapPos i32)
-	(local $testKey i32)
-	(local.set $keyList
-	  (call $i32list.get@ (local.get $map) (global.get $mapListOff)))
-	(local.set $valList
-	  (call $i32list.get@ (local.get $map) (global.get $valListOff)))
-	(local.set $keyCompareOff
-	  (call $i32list.get@ (local.get $map) (global.get $keyCompareOff)))
-	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
-	(local.set $mapPos  (i32.const 0) )
-	(loop $mLoop  ;; reset value if key is already in keymap
-	  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
-		(then
-		  (local.set $testKey
-		    (call $i32list.get@
-			  (local.get $keyList)
-			  (local.get $mapPos)))
-		  (local.get $key)
-		  (local.get $testKey)
-		  (call_indirect
-			(type $keyCompSig)
-			(local.get $keyCompareOff))
-		  (if
-			(then
-			  (call $i32list.set@
-				(local.get $valList)
-				(local.get $mapPos)
-				(local.get $val))
-			  return
-			)
-		  )
-		  (local.set $mapPos (i32.add (local.get $mapPos) (i32.const 1) ))
-		  (br $mLoop))))
-	(call $i32list.push (local.get $keyList)(local.get $key))
-	(call $i32list.push (local.get $valList)(local.get $val))
-  )
-  (func $map.get (param $map i32)(param $key i32)(result i32)
-	(local $keyList i32)
-	(local $valList i32)
-	(local $compareOff i32)
-	(local $mapLen i32)
-	(local $mapPos i32)
-	(local $testKey i32)
-	(local.set $keyList
-	  (call $i32list.get@ (local.get $map) (global.get $mapListOff)))
-	(local.set $valList
-	  (call $i32list.get@ (local.get $map) (global.get $valListOff)))
-	(local.set $compareOff
-	  (call $i32list.get@ (local.get $map) (global.get $keyCompareOff)))
-	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
-	(local.set $mapPos  (i32.const 0) )
-	(loop $mLoop  ;; look for $key in $keyList
-	  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
-		(then
-		  (local.set $testKey
-		    (call $i32list.get@
-			  (local.get $keyList)
-			  (local.get $mapPos)))
-		  (local.get $testKey)  ;; param 0
-		  (local.get $key)		;; param 1
-		  (call_indirect (type $keyCompSig) ;;(param i32)(param i32)(result i32)
-			(local.get $compareOff))
-		  (if
-			(then
-			  (return (call $i32list.get@
-				(local.get $valList)
-				(local.get $mapPos)))))
-		  (local.set $mapPos (i32.add (local.get $mapPos) (i32.const 1) ))
-		  (br $mLoop))))
-	(global.get $maxNeg)	;; didn't find any match flag
-  )
-  (func $map.toStr(param $map i32)(result i32)
-	(local $mapLen i32)
-	(local $mapPos i32)
-	(local $keytoStrOff i32)
-	(local $keyList i32)
-	(local $valList i32)
-	(local $key i32)
-	(local $val i32)
-	(local $strPtr i32)
-	
-	(local.set $strPtr (call $str.mk))
-	
-	(local.set $keyList
-	  (call $i32list.get@ (local.get $map) (global.get $mapListOff)))
-	(local.set $valList
-	  (call $i32list.get@ (local.get $map) (global.get $valListOff)))
-
-	(local.set $keytoStrOff
-	  (call $i32list.get@ (local.get $map) (global.get $keyPrintOff)))
-	(local.set $mapLen (call $i32list.getCurLen (local.get $keyList)))
-	(local.set $mapPos  (i32.const 0) )
-	(call $str.catByte (local.get $strPtr)(i32.const 123(;{;)))
-	(loop $mLoop
-	  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
-		(then
-		  (local.set $key
-		    (call $i32list.get@
-			  (local.get $keyList)
-			  (local.get $mapPos)))
-		  (local.set $val
-		    (call $i32list.get@
-			  (local.get $valList)
-			  (local.get $mapPos)))
-		  (call $str.catStr
-		    (local.get $strPtr)
-			(local.get $key)
-			(call $toStr))
-		  (call $str.catByte (local.get $strPtr) (i32.const 58)) ;; colon
-		  (call $str.catStr (local.get $strPtr) (call $toStr(local.get $val)))
-		  (local.set $mapPos (i32.add (local.get $mapPos) (i32.const 1) ))
-		  (if (i32.lt_u (local.get $mapPos)(local.get $mapLen))
-		    (then
-			  (call $str.catByte (local.get $strPtr) (i32.const 44(;COMMA;)))
-			  (call $str.catsp (local.get $strPtr))))
-		  (br $mLoop))))
-	(call $str.catByte (local.get $strPtr) (i32.const 125(;};)))
-	(local.get $strPtr)
-  )
-     (func $map.test (param $testNum i32)(result i32)
-	(local $imap i32)
-	(local $smap i32)
-	(local.set $imap (call $i32Map.mk))
-	;; set map 3 -> 42 and test it
-	(call $map.set (local.get $imap) (i32.const 3) (i32.const 42))
-	(if
-	  (i32.ne
-		(call $map.get (local.get $imap) (i32.const 3) )
-		(i32.const 42))
-	  (return  (i32.const 1) )) ;; error #1
-	;; use a key that hasn't been set
-	(if
-	  (i32.ne
-		(call $map.get (local.get $imap) (i32.const 4) )
-		(global.get $maxNeg))  	;; expect it not to be there
-	  (return  (i32.const 2) ))	;; error #2
-	;; set a second key/val pair and test it 4 ->43
-	(call $map.set (local.get $imap) (i32.const 4) (i32.const 43))
-	(if
-	  (i32.ne
-		(call $map.get (local.get $imap) (i32.const 4) )
-		(i32.const 43))
-	  (return  (i32.const 3) ))	;; error #3
-	;; reset the value of key 3
-	(call $map.set (local.get $imap) (i32.const 3) (i32.const 45))
-	(if
-	  (i32.ne
-		(call $map.get (local.get $imap) (i32.const 3) )
-		(i32.const 45))
-	  (return  (i32.const 4) ))	;; error #4
-	;; create a map with strings as the keys
-	(local.set $smap (call $strMap.mk))
-	;; set $smap 'AAA' -> 42 and test it
-	(call $map.set
-	  (local.get $smap)
-	  (call $str.mkdata (global.get $gAAA))
-	  (i32.const 42))
-	(if
-	  (i32.ne
-		(call $map.get
-		  (local.get $smap)
-		  (call $str.mkdata (global.get $gAAA)))
-		(i32.const 42))
-	  (return (i32.const 5)))	;; error #5
-	;; Add another key/value pair and look for it
-	(call $map.set
-	  (local.get $smap)
-	  (call $str.mkdata (global.get $gZZZ))
-	  (i32.const 43))
-	(if
-	  (i32.ne
-		(call $map.get
-		  (local.get $smap)
-		  (call $str.mkdata (global.get $gZZZ)))
-		(i32.const 43))
-	  (return (i32.const 6)))	;; error #5
-	;; Replace value for ZZZ and retrieve it
-	(call $map.set
-	  (local.get $smap)
-	  (call $str.mkdata (global.get $gZZZ))
-	  (i32.const 44))
-	(if
-	  (i32.ne
-		(call $map.get
-		  (local.get $smap)
-		  (call $str.mkdata (global.get $gZZZ)))
-		(i32.const 44))
-	  (return (i32.const 6)))	;; error #5
-	;;(call $map.dump (local.get $smap))
-     (i32.const 0)  ;; Success
-  )
-
 ;; io.m4
   (global $readIOVsOff0 i32 (i32.const 0))
   (global $readIOVsOff4 	i32  (i32.const 4) )
@@ -1624,7 +1374,6 @@
 	(call $i32list.setCurLen (local.get $lstPtr)
 		(i32.add (local.get $curLen)(i32.const 1)))
   )
-  ;; Take last element from list and return it
   (func $i32list.pop (param $lstPtr i32)(result i32)
     (local $curLen i32)
 	(local $lastPos i32)
@@ -1745,50 +1494,6 @@
 	(call $i32list.set@ (local.get $listPtr)(local.get $i)
 		(call $i32list.get@ (local.get $listPtr)(local.get $j)))
 	(call $i32list.set@ (local.get $listPtr)(local.get $j)(local.get $temp))
-  )
-  ;; copies a slice from a list
-  (func $i32list.mkslice (param $lstptr i32)(param $offset i32)(param $length i32)(result i32)
-	(local $slice i32) 	  ;; to be returned
-	(local $ipos i32)	  ;;  pointer to copy data
-	(local $lastipos i32) ;; don't go past this offset
-	(local.set $slice (call $i32list.mk))  ;; new list to return
-	(local.set $ipos (local.get $offset))
-	(local.set $lastipos (i32.add (local.get $offset)(local.get $length)))
-	(if (i32.gt_u (local.get $lastipos)(call $i32list.getCurLen (local.get $lstptr)))
-	  (local.set $lastipos (call $i32list.getCurLen (local.get $lstptr))))
-	(loop $iLoop
-	  (if (i32.lt_u (local.get $ipos)(local.get $lastipos))
-		(then
-		  (call $i32list.push
-		    (local.get $slice)
-			  (call $i32list.get@
-				(local.get $lstptr)
-				(local.get $ipos)
-			))
-		  (local.set $ipos (i32.add(local.get $ipos)(i32.const 1)))
-		  (br $iLoop)
-		)))
-	(local.get $slice)
-  )
-  ;; Sum the members of the list
-  (func $i32list.sum (param $lstptr i32)(result i32)
-    (local $sum i32)(local $ipos i32)(local $len i32)
-	(local.set $sum (i32.const 0))
-	(local.set $ipos (i32.const 0))
-	(local.set $len (call $i32list.getCurLen (local.get $lstptr)))
-	(loop $iLoop
-	  (if (i32.lt_u (local.get $ipos)(local.get $len))
-	    (then
-		  (local.set $sum
-		    (i32.add
-			  (local.get $sum)
-			  (call $i32list.get@ (local.get $lstptr)(local.get $ipos))))
-		  (local.set $ipos (i32.add(local.get $ipos)(i32.const 1)))
-		  (br $iLoop)
-		)
-	  )
-	)
-	(local.get $sum)
   )
 
 ;; i64list.m4
@@ -1994,7 +1699,7 @@
   )
 
 
-  (func $day01a (export "_Day01a")
+  (func $day01 (export "_Day01")
     (local $line i32)(local $lineTerm i32)
 	(local $elfCount i32)(local $elfCalories i32)
 	(local $calories i32)
@@ -2028,46 +1733,6 @@
 	(call $print (local.get $maxElf))
 	(call $printwlf (local.get $maxCalories))
   )
-  (func $top3 (param $listPtr i32) (result i32)
-	(local $listPos i32)(local $listlen i32)(local $slice i32)
-	(local.set $listlen (call $i32list.getCurLen (local.get $listPtr)))
-	(call $i32list.qsort 
-	  (local.get $listPtr)
-	  (i32.const 0) 
-	  (i32.sub (call $i32list.getCurLen (local.get $listPtr)) (i32.const 1)))
-	(local.set $slice
-	  (call $i32list.mkslice
-		(local.get $listPtr)
-		(i32.sub (local.get $listlen) (i32.const 3))
-		 (i32.const 3)))
-	(local.get $slice)
-  )
-  (func $day01b (export "_Day01b")
-    (local $line i32)(local $lineTerm i32)(local $top3calories i32)
-	(local $elfCount i32)(local $elfCalories i32)
-	(local $calories i32)
-	(local $elves i32) ;; array with total calories for each elf
-	(local $maxCalories i32)
-	(local.set $line (call $str.mk))
-	(local.set $elfCalories (i32.const 0))
-	(local.set $elves (call $i32list.mk))
-	(loop $lineLoop
-	  (local.set $lineTerm (call $str.readIntoStr (local.get $line)))
-	  (local.set $calories (call $str.toI32 (local.get $line)))
-	  (local.set $elfCalories (i32.add (local.get $elfCalories)(local.get $calories)))
-	  (if (i32.or (i32.eq (local.get $lineTerm) (i32.const 0x80000000))(i32.eqz (call $str.getByteLen (local.get $line))))  ;; end of an elf
-	    (then
-		  (call $i32list.push (local.get $elves)(local.get $elfCalories))
-		  (local.set $elfCalories (i32.const 0))
-		  )
-		)
-	  (if (i32.ne (local.get $lineTerm) (i32.const 0x80000000))
-	    (br $lineLoop))
-	)
-	(local.set $top3calories (call $top3 (local.get $elves)))
-	(call $print (local.get $top3calories))
-	(call $printwlf (call $i32list.sum(local.get $top3calories)))
-  )
 ;; moduleTail.m4
    
 ;; ready to undivert
@@ -2093,19 +1758,18 @@
   (data (i32.const 288) "Unable to print:\00") (global $gUnableToPrint: i32 (i32.const 288))
   (data (i32.const 305) "AbCDbE\00") (global $gAbCDbE i32 (i32.const 305))
   (data (i32.const 312) "AbCDbbE\00") (global $gAbCDbbE i32 (i32.const 312))
-  (data (i32.const 320) "map\00") (global $gmap i32 (i32.const 320))
-  (data (i32.const 324) "-2147483648\00") (global $gMaxNegAsString i32 (i32.const 324))
-  (data (i32.const 336) "i32L\00") (global $gi32L i32 (i32.const 336))
-  (data (i32.const 341) "i64L\00") (global $gi64L i32 (i32.const 341))
-  (data (i32.const 346) "-9,223,372,036,854,775,808\00") (global $gMaxNeg64AsString i32 (i32.const 346))
-  (data (i32.const 349) "123456789123456789\00") (global $gi64strTest i32 (i32.const 349))
-  (data (i32.const 368) "ZZZ\00") (global $gZZZ i32 (i32.const 368))
+  (data (i32.const 320) "-2147483648\00") (global $gMaxNegAsString i32 (i32.const 320))
+  (data (i32.const 332) "i32L\00") (global $gi32L i32 (i32.const 332))
+  (data (i32.const 337) "i64L\00") (global $gi64L i32 (i32.const 337))
+  (data (i32.const 342) "-9,223,372,036,854,775,808\00") (global $gMaxNeg64AsString i32 (i32.const 342))
+  (data (i32.const 345) "123456789123456789\00") (global $gi64strTest i32 (i32.const 345))
+  (data (i32.const 364) "ZZZ\00") (global $gZZZ i32 (i32.const 364))
 
 ;; undiverted
- (global $curMemUsed (mut i32)(i32.const 372))
- (global $maxMemUsed (mut i32)(i32.const 372))
- (global $tableLength i32 (i32.const 30))
-  (table 30 funcref)
+ (global $curMemUsed (mut i32)(i32.const 368))
+ (global $maxMemUsed (mut i32)(i32.const 368))
+ (global $tableLength i32 (i32.const 29))
+  (table 29 funcref)
   (elem (i32.const 0)
     (;0;) $str.compare
     (;1;) $str.toStr
@@ -2128,15 +1792,14 @@
     (;18;) $str.drop.test
     (;19;) $str.toI32.test
     (;20;) $str.Csplit.test
-    (;21;) $map.test
-    (;22;) $i32list.mk.test
-    (;23;) $i32list.sets.test
-    (;24;) $i32list.set@.test
-    (;25;) $i32list.pop.test
-    (;26;) $i32list.push.test
-    (;27;) $i64.toStr.test
-    (;28;) $i64list.mk.test
-    (;29;) $i64list.push.test
+    (;21;) $i32list.mk.test
+    (;22;) $i32list.sets.test
+    (;23;) $i32list.set@.test
+    (;24;) $i32list.pop.test
+    (;25;) $i32list.push.test
+    (;26;) $i64.toStr.test
+    (;27;) $i64list.mk.test
+    (;28;) $i64list.push.test
   )
 ) ;; end of module
 
