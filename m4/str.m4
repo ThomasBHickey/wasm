@@ -234,7 +234,7 @@
 	  (return _1))
 	_0
   )
-  (func $str.compare (type $keyCompSig)
+  (func $str.compare (type $keyCompSig)  ;; return _1 if equal
 	(local $s1ptr i32)(local $s2ptr i32)
 	(local $s2len i32)(local $cpos i32)
 	(local.set $s1ptr (local.get 0))
