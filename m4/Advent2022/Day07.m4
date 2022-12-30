@@ -12,7 +12,8 @@ _gnts(`gLength', `length')
 _gnts(`gSlash',`/')
 _gnts(`gType',`type')
 _gnts(`gDol', `$')
-_gnts(`gSizeEq', `file: size=')
+_gnts(`gSizeEq', `file\2C size=')  ;; 2C=',' work around comma problem
+_gnts(`gDotDot', `..')
 
 (global $strChildren (mut i32) _0);;'children'
 (global $strCd (mut i32) _0)	;; 'cd'
@@ -25,6 +26,7 @@ _gnts(`gSizeEq', `file: size=')
 (global $strSlash (mut i32) _0)	;; '/'
 (global $strType (mut i32) _0)	;; 'type'
 (global $strDol (mut i32) _0)	;; '$'
+(global $strDotDot (mut i32) _0) ;; ..
 ;;(global $pushed (mut i32) _0)
 (global $strSizeEq (mut i32) _0) ;; 'file, size='
 
@@ -55,6 +57,7 @@ _gnts(`gSizeEq', `file: size=')
   (global.set $strType (call $str.mkdata (global.get $gType)))
   (global.set $strDol (call $str.mkdata (global.get $gDol)))
   (global.set $strSizeEq (call $str.mkdata (global.get $gSizeEq)))
+  (global.set $strDotDot (call $str.mkdata (global.get $gDotDot)))
 ;;  (global.set $pushed (call $str.mk))
   (local.set $root (call $mkDir (global.get $strSlash) _0))  ;;null parent
   (local.get $root)
@@ -110,46 +113,68 @@ _gnts(`gSizeEq', `file: size=')
 		_incrLocal($childNum)
 		(br $childLoop))))
 )
-(func $cdCommand (param $root i32)(param $line i32)(result i32)
+(func $cdCommand (param $curDir i32)(param $line i32)(result i32)
   (local $cdName i32)(local $children i32)(local $child i32)
-  (local $numChildren i32)(local $childNum i32)
+  (local $numChildren i32)(local $childNum i32)(local $newDir i32)
   (local.set $cdName
 	(call $str.mkslice
 	  (local.get $line) _5 (i32.sub (call $str.getByteLen(local.get $line)) _5)))
   (if (call $str.compare
 		(local.get $cdName)
-		(call $map.get (local.get $root)(global.get $strName)))
+		(call $map.get (local.get $curDir)(global.get $strName)))
 	(then _testString(`galready',`cd already there!')
-	    (return (local.get $root))))
+	    (return (local.get $curDir))))
   _testString(`gneedtochange',`need to change directory')
+  (if (call $str.compare
+		(local.get $cdName)
+		(global.get $strDotDot))
+	(then
+	  _testString(`gcurrentpos', `current directory')
+	  (call $str.printwlf(call $map.get(local.get $curDir)(global.get $strName)))	  
+	  _testString(`gcdtoparent', `moving up to:')
+	  (local.set $newDir (call $map.get (local.get $curDir)(global.get $strParent)))
+	  (call $str.printwlf(call $map.get(local.get $newDir)(global.get $strName)))
+	  (return (local.get $newDir))))
   (local.set $childNum _0)
-  (local.set $children (call $map.get(local.get $root)(global.get $strChildren)))
+  (local.set $children (call $map.get(local.get $curDir)(global.get $strChildren)))
   (local.set $numChildren (call $i32list.getCurLen(local.get $children)))
   (loop $childLoop
     (if (i32.lt_s (local.get $childNum)(local.get $numChildren))
 	  (then
 	    (local.set $child (call $i32list.get@ (local.get $children)(local.get $childNum)))
-		;;_testString(`glookingfor',`looking for child with right name')
+		_testString(`glookingfor',`looking for child with right name')
+		(call $byte.print _CHAR(`@'))
+		(call $str.printwlf (call $map.get (local.get $child)(global.get $strName)))
 	    (if (call $str.compare
 		  (local.get $cdName)
 		  (call $map.get (local.get $child)(global.get $strName)))
 		  (then
 			_testString(`gfoundname',`found name for $cdCommand')
 			(return (local.get $child))
-		  )))))
-  (local.get $root)
+		  )
+		)
+		_incrLocal($childNum)
+		(br $childLoop)
+	  )
+	)
+  )
+  (local.get $curDir)
 )
-(func $dirCommand (param $root i32)(param $line i32)
+(func $dirCommand (param $curDir i32)(param $line i32)
   (local $dirName i32)(local $newDir i32)(local $rchildren i32)
   ;;_testString(`gdirCommand',`in $dirCommand')
   (local.set $dirName
 	(call $str.mkslice (local.get $line) _4 
 		(i32.sub (call $str.getByteLen(local.get $line)) _4)))
-  (local.set $newDir (call $mkDir (local.get $dirName)(local.get $root)))
-  (local.set $rchildren (call $map.get (local.get $root)(global.get $strChildren)))
+  (local.set $newDir (call $mkDir (local.get $dirName)(local.get $curDir)))
+  (local.set $rchildren (call $map.get (local.get $curDir)(global.get $strChildren)))
   (call  $i32list.push (local.get $rchildren)(local.get $newDir))
 )
-(func $addFile (param $root i32)(param $line i32)
+(func $lsCommand (param $curDir i32)(param $line i32)
+	_testString(`ginlscom',`in $lsCommand')
+	(call $printwlf (call $map.get(local.get $curDir)(global.get $strName)))
+)
+(func $addFile (param $curDir i32)(param $line i32)
   (local $splits i32)(local $fileLength i32)(local $fileName i32)(local $file i32)
   ;;_testString(`gaddFile',`adding a file')
   (local.set $splits (call $str.Csplit(local.get $line) _SP))
@@ -159,8 +184,8 @@ _gnts(`gSizeEq', `file: size=')
   (call $map.set(local.get $file)(global.get $strType)(global.get $strFile))
   (call $map.set(local.get $file)(global.get $strName)(local.get $fileName))
   (call $map.set(local.get $file)(global.get $strLength)(local.get $fileLength))
-  (call $i32list.push  ;; the file object is a new child to the directory passed as 'root'
-	(call $map.get (local.get $root)(global.get $strChildren))  ;; i32list of children
+  (call $i32list.push
+	(call $map.get (local.get $curDir)(global.get $strChildren))  ;; i32list of children
 	(local.get $file))
 )
 (func $Day07a (export "_Day07a")
@@ -171,7 +196,7 @@ _gnts(`gSizeEq', `file: size=')
   (local.set $curDir (local.get $root))
   (local.set $line (call $str.mk))  ;; string object reused in $lineLoop
   (loop $lineLoop
-	(call $printElem(local.get $curDir) _0)
+	(call $printElem(local.get $root) _0)
 	(local.set $lineTerm (call $str.readIntoStr (local.get $line)))
 	(call $byte.print _CHAR(`>'))(call $printwlf (local.get $line))
     (if (call $str.startsAt (local.get $line)(global.get $strCd) _0)
@@ -179,7 +204,9 @@ _gnts(`gSizeEq', `file: size=')
 		(local.set $curDir (call $cdCommand(local.get $curDir)(local.get $line)))
 		(br $lineLoop)))
 	(if (call $str.startsAt (local.get $line)(global.get $strLs) _0)
-		(then (br $lineLoop)))  ;; doesn't do anything yet?
+		(then
+		  (call $lsCommand (local.get $curDir)(local.get $line))
+		  (br $lineLoop)))
 	(if (call $str.startsAt (local.get $line)(global.get $strDir) _0)
 		(then
 		  (call $dirCommand (local.get $curDir)(local.get $line))
