@@ -28,6 +28,7 @@ define(`_maxNeg',`(i32.const 0x80000000)')dnl
 define(`_globalPos', `100')dnl
 define(`_newGlobalPos', `define(`_globalPos',eval(_globalPos+1+len($1)))')dnl
 ;; global null terminated strings (gnts's):
+;; NOTE: For some reason commas in a _gnts cause the offset not to increment correctly!!!
 define(`_gnts', `divert(`1')  (data (i32.const _globalPos) "$2\00") (global $$1 i32 (i32.const _globalPos))
 divert _newGlobalPos($2)')dnl
 define(`_incrLocal', (local.set $1 (i32.add(local.get $1)_1)))dnl
