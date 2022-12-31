@@ -14,6 +14,8 @@ _gnts(`gType',`type')
 _gnts(`gDol', `$')
 _gnts(`gSizeEq', `file\2C size=')  ;; 2C=',' work around comma problem
 _gnts(`gDotDot', `..')
+_gnts(`gLook4',`dir swrgwp')
+;;_gnts(`gLook4',`dir XXXXX')
 
 (global $strChildren (mut i32) _0);;'children'
 (global $strCd (mut i32) _0)	;; 'cd'
@@ -29,6 +31,7 @@ _gnts(`gDotDot', `..')
 (global $strDotDot (mut i32) _0) ;; ..
 ;;(global $pushed (mut i32) _0)
 (global $strSizeEq (mut i32) _0) ;; 'file, size='
+(global $strLook4 (mut i32) _0)
 
 (global $curDir (mut i32) _0)
 
@@ -57,6 +60,7 @@ _gnts(`gDotDot', `..')
   (global.set $strDol (call $str.mkdata (global.get $gDol)))
   (global.set $strSizeEq (call $str.mkdata (global.get $gSizeEq)))
   (global.set $strDotDot (call $str.mkdata (global.get $gDotDot)))
+  (global.set $strLook4 (call $str.mkdata (global.get $gLook4)))
 ;;  (global.set $pushed (call $str.mk))
   (local.set $root (call $mkDir (global.get $strSlash) _0))  ;;null parent
   (call $map.set(local.get $root)(global.get $strParent)(local.get $root))
@@ -143,7 +147,9 @@ _gnts(`gDotDot', `..')
 	    (if (call $str.compare
 		  (local.get $cdName)
 		  (call $map.get (local.get $child)(global.get $strName)))
-		  (then(return (local.get $child))
+		(then
+		    (if (call $map.get (local.get $child)(global.get $strDir))
+		    (return (local.get $child)))
 		  ))
 		_incrLocal($childNum)
 		(br $childLoop)
@@ -186,7 +192,12 @@ _gnts(`gDotDot', `..')
     ;;(call $str.print (call $map.get(local.get $curDir)(global.get $strName)))(call $printlf)
 	;;(call $printElem(local.get $root) _0)
 	(local.set $lineTerm (call $str.readIntoStr (local.get $line)))
-	(call $byte.print _CHAR(`>'))(call $printwlf (local.get $line))
+	;;(call $byte.print _CHAR(`>'))(call $printwlf (local.get $line))
+	(if (call $str.startsAt (local.get $line)(global.get $strLook4) _0)
+	  (then
+		(call $byte.print _CHAR(`>'))(call $printwlf (local.get $line))
+		(call $printElem (local.get $root) _0))
+	   )
     (if (call $str.startsAt (local.get $line)(global.get $strCd) _0)
 	  (then
 		(local.set $curDir (call $cdCommand(local.get $curDir)(local.get $line)))
